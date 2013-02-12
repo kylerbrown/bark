@@ -6,7 +6,7 @@
 #ifndef _ARF_HH
 #define _ARF_HH 1
 
-#include "arf/types.hpp"
+#include "types.hpp"
 #include "arf/h5e.hpp"
 #include "arf/h5f.hpp"
 #include "arf/h5a.hpp"
@@ -16,7 +16,7 @@
 #include "arf/h5pt.hpp"
 #include <sys/time.h>
 
-#define ARF_LIBRARY_VERSION "1.1.0"
+#define ARF_LIBRARY_VERSION "2.0.0"
 
 namespace arf {
 /*
