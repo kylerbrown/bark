@@ -1,0 +1,4 @@
+include README.org COPYING Makefile
+recursive-include c++ *.hpp
+recursive-include matlab *.m
+recursive-include test *.py *.cpp
