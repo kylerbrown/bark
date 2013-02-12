@@ -31,6 +31,11 @@ void write_entry(arf::file & f, char const * entry) {
 	gettimeofday(&tp,0);
 	arf::entry g(f,entry,&tp);
 
+        // check that stored uuid matches created one
+        boost::uuids::uuid u;
+        g.read_attribute("uuid",u);
+        assert (u == g.uuid());
+
 	g.write_attribute()
                 ("intattr",testval_int)
                 ("vecattr",testval_intvec)

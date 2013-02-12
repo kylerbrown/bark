@@ -15,6 +15,7 @@
 #include <boost/static_assert.hpp>
 #include <boost/integer_traits.hpp>
 #include <boost/type_traits/remove_cv.hpp>
+#include <boost/uuid/uuid.hpp>
 #include "hdf5.hpp"
 #include "h5e.hpp"
 
@@ -86,6 +87,17 @@ struct datatype_traits<std::string> {
 template<>
 struct datatype_traits<char const *> {
 	static hid_t value() { return H5Tcopy(H5T_C_S1); }
+};
+
+/** uuid's are stored as a 16-byte array */
+template<>
+struct datatype_traits<boost::uuids::uuid> {
+        static hid_t value() {
+                hid_t v = H5Tcopy(H5T_C_S1);
+                // H5Tset_strpad(v, H5T_STR_NULLPAD);  // seems not to matter
+                H5Tset_size(v, 16);
+                return v;
+        }
 };
 
 template<>

@@ -16,6 +16,9 @@
 #include <boost/shared_ptr.hpp>
 #include <hdf5.h>
 
+#define ARF_VERSION "2.0"
+#define ARF_LIBRARY_VERSION "2.0.0"
+
 namespace arf {
 
 class entry;

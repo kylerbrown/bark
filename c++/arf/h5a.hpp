@@ -95,12 +95,11 @@ public:
 		h5e::check_error(H5Aread(_self, type.hid(), &out));
 	}
 
-
 	template <typename Type>
 	void read(std::vector<Type> & out) {
 		h5t::wrapper<Type> t;
 		h5t::datatype type(t);
-		out.resize(dataspace()->size());
+                out.resize(dataspace()->size());
 		h5e::check_error(H5Aread(_self, type.hid(), &out[0]));
 	}
 

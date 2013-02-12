@@ -61,9 +61,8 @@ attributes are required:
                 element the number of seconds since January 1, 1970, and the
                 second the rest of the elapsed time, in microseconds. Must have
                 at least 64-bit integer precision.
-+ recid :: A unique ID for the entry. Points to an entry in an external
-           database. The value 0 is reserved, and indicates an unknown or
-           undefined ID. Must have at least 128-bit unsigned integer precision.
++ uuid :: A universally unique ID for the entry (see [[http://tools.ietf.org/html/rfc4122.html][RFC 4122]]). Stored as a
+          16-byte character array in big-endian order.
 
 In addition, the following optional attributes are defined. They do not need to
 be present in the group if not applicable, but if they are present they must
@@ -75,7 +74,7 @@ must be ASCII or UTF-8.
 + experimenter :: Indicates the name or ID of the experimenter.
 + protocol :: Optional comment field, indicating the treatment, stimulus, or any
               other user-specified comment.
-+ recuri :: The URI of the external database referenced by =recid=.
++ recuri :: The URI of an external database where =uuid= can be looked up.
 
 ** Datasets
    :PROPERTIES:
@@ -182,6 +181,10 @@ semantic versioning, such changes should receive new major version numbers.
 
 ** version 2.0
 
+The required "recid" attribute was dropped because it was unsuitable for an open
+standard, and because it depended on an external database for uniqueness.
+Instead, a "uuid" attribute is now required.
+
 Event data was defined to include both "simple" and "complex" events. Interval
 data became a special case of complex event data. This was to allow data
 collection programs to store more information about events, without forcing them
@@ -194,9 +197,6 @@ The times for event data were no longer required to be in units of seconds, and
 the format was not required to be double-precision floating point. The
 sampling_rate attribute was required for event datasets where the units are in
 samples.
-
-The required bit-depth for the recid attribute was increased to 128 bits (for
-compatibility with boost::uuid)
 
 Root-level datasets were explicitly allowed.
 

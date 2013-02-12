@@ -6,6 +6,8 @@
 #ifndef _ARF_HH
 #define _ARF_HH 1
 
+#include <boost/uuid/random_generator.hpp>
+
 #include "types.hpp"
 #include "arf/h5e.hpp"
 #include "arf/h5f.hpp"
@@ -15,8 +17,6 @@
 #include "arf/h5d.hpp"
 #include "arf/h5pt.hpp"
 #include <sys/time.h>
-
-#define ARF_LIBRARY_VERSION "2.0.0"
 
 namespace arf {
 /*
@@ -89,29 +89,34 @@ public:
 
 	/** Open an existing entry object */
 	entry(h5a::node const & parent, std::string const & name)
-		: h5g::group(parent, name) {}
+		: h5g::group(parent, name) {
+                if (contains("uuid"))
+                        read_attribute("uuid",_uuid);
+        }
 
 	/** Create a new entry object */
 	template <typename Type>
 	entry(h5a::node const & parent, std::string const & name,
-	      std::vector<Type> const & timestamp, boost::uint64_t recid=0)
-		: h5g::group(parent, name, true) {
+	      std::vector<Type> const & timestamp)
+		: h5g::group(parent, name, true),
+                  _uuid(boost::uuids::random_generator()()) {
 		write_attribute("CLASS","GROUP");
 		write_attribute("TITLE",name);
 		write_attribute("VERSION","1.0");
 		write_attribute<boost::int64_t, Type>("timestamp", timestamp);
-		write_attribute("recid", recid);
+		write_attribute("uuid", _uuid);
 	}
 
 	entry(h5a::node const & parent, std::string const & name,
-	      timeval const * timestamp, boost::uint64_t recid=0)
-		: h5g::group(parent, name, true) {
+	      timeval const * timestamp)
+		: h5g::group(parent, name, true),
+                  _uuid(boost::uuids::random_generator()()) {
                 boost::int64_t ts[2] = { timestamp->tv_sec, timestamp->tv_usec };
 		write_attribute("CLASS","GROUP");
 		write_attribute("TITLE",name);
 		write_attribute("VERSION","1.0");
 		write_attribute("timestamp", ts, 2);
-		write_attribute("recid", recid);
+		write_attribute("uuid", _uuid);
 	}
 
 	/**
@@ -187,6 +192,10 @@ public:
 		return pt;
 	}
 
+        boost::uuids::uuid const & uuid() const { return _uuid; }
+
+private:
+        boost::uuids::uuid _uuid;
 };
 
 /**
@@ -219,7 +228,7 @@ public:
 			write_attribute("CLASS","GROUP");
 			write_attribute("PYTABLES_FORMAT_VERSION","2.0");
 			write_attribute("VERSION","1.0");
-			write_attribute("arf_version", ARF_LIBRARY_VERSION);
+			write_attribute("arf_version", ARF_VERSION);
 		}
 	}
 
