@@ -19,7 +19,6 @@ Versions:
 """ % (version, h5py_version, hdf5_version)
 
 # some constants and enumerations
-RECID_INVALID = 0L
 class DataTypes:
     """
     Available data types, by name and integer code:
@@ -173,10 +172,17 @@ class entry(hp.Group):
         """
         return timestamp_to_float(self.attrs['timestamp'])
 
+    @property
+    def uuid(self):
+        """ return the uuid for the entry """
+        from uuid import UUID
+        return UUID(bytes=self.attrs.get('uuid',0))
+
     def __repr__(self):
         return '%s: %d channel%s' % (self.name, self.nchannels,pluralize(self.nchannels))
 
     def __str__(self):
+        from uuid import UUID
         attrs = self.attrs
         datatypes = DataTypes._todict()
         out = "%s" % (self.name)
@@ -184,17 +190,20 @@ class entry(hp.Group):
             if k.isupper(): continue
             if k=='timestamp':
                 out += "\n  timestamp : %s" % datetime_timestamp(v).strftime("%Y-%m-%d %H:%M:%S.%f %z")
+            elif k=='uuid':
+                out += "\n  uuid : %s" % UUID(bytes=v)
             else:
                 out += "\n  %s : %s" % (k, v)
         for name,dset in self.iteritems():
-            dtype,stype,ncols = dataset_properties(dset)
             out += "\n  /%s :" % name
-            if stype == 'table':
-                out += " intervals, count %d" % len(dset)
-            elif stype == 'vlarray':
-                out += " events (in %s)" % stype
-            elif 'sampling_rate' in dset.attrs:
-                out += " dimension %s @ %.1f/s" % (dset.shape, dset.attrs['sampling_rate'])
+            if isinstance(dset.id.get_type(),hp.h5t.TypeVlenID):
+                out += " vlarray"
+            else:
+                out += " array %s" % (dset.shape,)
+                if 'sampling_rate' in dset.attrs:
+                    out += " @ %.1f/s" % dset.attrs['sampling_rate']
+                if dset.dtype.names is not None:
+                    out += " (compound type)"
 
             out += ", type %s"  % datatypes[dset.attrs.get('datatype',DataTypes.UNDEFINED)]
             if dset.compression: out += " [%s%d]" % (dset.compression,dset.compression_opts)
@@ -349,15 +358,15 @@ class file(object):
         Returns: newly created entry object
         Raises: IOError for read-only file; ValueError if the entry name is taken
         """
+        from uuid import uuid4
+
         if self.readonly: raise IOError, "the file is not writable"
         ts = convert_timestamp(timestamp)
         if name in self.h5:
             raise ValueError, "The entry %s already exists" % name
 
-        recid,recuri = self._get_recid(name,ts,**attributes)
-        # TODO force storage of creation order
         grp = self.h5.create_group(name)
-        self.set_attributes(grp, recid=recid, recuri=recuri, timestamp=ts, **attributes)
+        self.set_attributes(grp, uuid=uuid4().bytes, timestamp=ts, **attributes)
         # set pytables required attributes
         for k,v in _pytables_attributes["group"].items(): grp.attrs[k] = v
         return entry.promote(grp)
@@ -425,14 +434,6 @@ class file(object):
             if i > 20: return out + '\n(list truncated)'
 
         return out
-
-    def _get_recid(self, name, timestamp, **attributes):
-        """
-        Return a unique record id and a database uri for a newly
-        created entry. This is a default implementation that doesn't
-        attempt to contact a database.
-        """
-        return RECID_INVALID,''
 
     def _check_version(self, exists=True):
         """
@@ -546,7 +547,7 @@ def check_file_compatibility(file_ver):
     return ver >= Version('1.1') and ver < Version('3.0')
 
 
-__all__ = ['file', 'entry', 'table', 'DataTypes', 'RECID_INVALID']
+__all__ = ['file', 'entry', 'table', 'DataTypes']
 
 # Variables:
 # End:
