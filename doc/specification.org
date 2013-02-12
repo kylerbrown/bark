@@ -63,7 +63,7 @@ attributes are required:
                 at least 64-bit integer precision.
 + recid :: A unique ID for the entry. Points to an entry in an external
            database. The value 0 is reserved, and indicates an unknown or
-           undefined ID. Must have at least 64-bit unsigned integer precision.
+           undefined ID. Must have at least 128-bit unsigned integer precision.
 
 In addition, the following optional attributes are defined. They do not need to
 be present in the group if not applicable, but if they are present they must
@@ -182,17 +182,21 @@ semantic versioning, such changes should receive new major version numbers.
 
 ** version 2.0
 
-Event data was defined to include both "simple" and "complex" events.  Interval
-data became a special case of complex event data.  This was to allow data
-collection programs to store more information about events, without forcing
-them to use the strictly defined data type for intervals.  The definition of
-a distinct interval data type was dropped unceremoniously.  Software should
-check for the existence of a 'stop' field.
+Event data was defined to include both "simple" and "complex" events. Interval
+data became a special case of complex event data. This was to allow data
+collection programs to store more information about events, without forcing them
+to use the strictly defined data type for intervals. The definition of a
+distinct interval data type was dropped unceremoniously. Software reading the
+INTERVAL, STIMI, and COMPONENTL should check for the existence of a 'stop'
+field.
 
 The times for event data were no longer required to be in units of seconds, and
 the format was not required to be double-precision floating point. The
 sampling_rate attribute was required for event datasets where the units are in
 samples.
+
+The required bit-depth for the recid attribute was increased to 128 bits (for
+compatibility with boost::uuid)
 
 Root-level datasets were explicitly allowed.
 

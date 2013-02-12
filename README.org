@@ -3,15 +3,17 @@
 #+EMAIL:     dan@meliza.org
 #+DATE: [2013-02-08 Fri]
 
-* arf
+*arf* (the advanced recording format) is designed for storing data from neuronal
+and behavioral experiments in a portable, high-performance, archival format.
+The goal is to enable labs to share data and tools, and to allow valuable data
+to be accessed and analyzed for many years in the future.
 
-arf (the advanced recording format) is for storing data from neuronal and
-behavioral experiments in a portable, high-performance, archival format. It's
-built on the the [[http://www.hdfgroup.org/HDF5/][HDF5]] format, and consists of a set of specifications on how
-different kinds of data are stored.
-
-The organization of arf files is based around the concept of an /entry/, a set
-of data associated with a particular point in time. An entry might contain one
+*arf* is built on the the [[http://www.hdfgroup.org/HDF5/][HDF5]] format, and all arf files are accessible through
+standard HDF5 tools, along with many of the interfaces to HDF5 written for other
+languages (e.g. MATLAB, Python, etc). *arf* itself consists of a set of
+specifications on how different kinds of data are stored. The organization of
+arf files is based around the concept of an /entry/, a collection of data
+channels associated with a particular point in time. An entry might contain one
 or more of the following:
 
 + raw extracellular neural signals recorded from a multichannel probe
@@ -20,11 +22,16 @@ or more of the following:
 + times when an animal interacted with a behavioral apparatus
 + the times when a real-time signal analyzer detected vocalization
 
+Entries and datasets have metadata attributes describing how the data were
+collected. Datasets and entries retain these attributes when copied or moved
+between arf files, helping to prevent data from becoming orphaned and
+uninterpretable.
+
 This repository contains:
 
 + The [[file:doc/specification.org][specification]] for arf
-+ A templated C++ interface for reading and writing arf files
-+ A python interface for reading and writing arf files (based on [[http://code.google.com/p/h5py/][h5py]])
++ A fast, type-safe C++ interface for reading and writing arf files
++ A python interface for reading and writing arf files (based on [[http://code.google.com/p/h5py/][h5py]]).
 + A very rudimentary MATLAB interface
 
 ** Dependencies
@@ -47,9 +54,3 @@ The python interface requires Python >= 2.6, h5py >= 2.0
 
 + To install the MATLAB interface, add the matlab subdirectory to MATLAB's
   search path
-
-
-## Copyright 2010 Daniel Meliza
-##
-## Author: dmeliza@dylan.uchicago.edu
-## Keywords:
