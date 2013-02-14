@@ -147,10 +147,7 @@ class entry(hp.Group):
         dset = self.create_dataset(name, data=data, maxshape=maxshape, chunks=chunks, compression=compression)
 
         # set user attributes
-        dset.attrs['units'] = units
-        dset.attrs['datatype'] = datatype
-        for k,v in attributes.items():
-            dset.attrs[k.lower()] = v
+        set_attributes(dset, units=units, datatype=datatype, **attributes)
 
         return dset
 
@@ -228,10 +225,8 @@ class table(object):
         Create a new array dataset with compound datatype and maxshape=(None,)
         """
         dset = group.create_dataset(name, shape=(0,), dtype=dtype, maxshape=(None,))
-        for k,v in attributes.items():
-            dset.attrs[k] = v
-        for k,v in _pytables_attributes["table"].items():
-            dset.attrs[k] = v
+        set_attributes(dset, **attributes)
+        set_attributes(dset, **_pytables_attributes["table"])
         return cls(dset)
 
     def append(self, *records):
@@ -269,9 +264,6 @@ class file(object):
     create_entry(name,...): create a new entry
     delete_entry(name): remove entry from the file
 
-    get_attributes(node,keys): get attributes of an object in the database
-    set_attributes(node,**attributes): set attributes on a node
-
     File information
     --------------------
     __contains__(name): membership test, returns true if an entry 'name' exists
@@ -300,7 +292,9 @@ class file(object):
             exists = os.path.isfile(name)
             self.h5 = hp.File(name, mode=mode, **kwargs)
         if not self.readonly:
-            for k,v in _pytables_attributes["file"].items(): self.h5.attrs[k] = v
+            set_attributes(self.h5, overwrite=False,
+                           arf_version=__version__,
+                           **_pytables_attributes["file"])
         self._check_version(exists)
 
     def __enter__(self):
@@ -366,44 +360,23 @@ class file(object):
             raise ValueError, "The entry %s already exists" % name
 
         grp = self.h5.create_group(name)
-        self.set_attributes(grp, uuid=uuid4().bytes, timestamp=ts, **attributes)
+
+        set_attributes(grp,
+                       uuid=uuid4().bytes,
+                       timestamp=ts,
+                       **attributes)
         # set pytables required attributes
-        for k,v in _pytables_attributes["group"].items(): grp.attrs[k] = v
+        set_attributes(grp, **_pytables_attributes["group"])
         return entry.promote(grp)
 
-    def set_attributes(self, node='/', **attributes):
-        """
-        Set attributes on a node. Attribute names are coerced to
-        lowercase strings to avoid overwriting any important
-        metadata.  If the value for a key is None or '', the attribute is deleted.
-        """
-        if isinstance(node, basestring):
-            aset = self.h5[node].attrs
-        else:
-            aset = node.attrs
-        for k,v in attributes.items():
-            if v == None or v == '':
-                if k.lower() in aset: del aset[k.lower()]
-            else:
-                aset[k.lower()] = v
+    def set_attributes(self, node="/", **kwargs):
+        if isinstance(node,basestring): node = self.h5[node]
+        set_attributes(node, **kwargs)
 
-    def get_attributes(self, node='/', key=None):
-        """
-        Get attributes on a node. If Key is none, returns the
-        AttributeSet; otherwise attempts to look up the key(s),
-        returning None if it does not exist.
-        """
-        if isinstance(node, basestring):
-            aset = self.h5[node].attrs
-        else:
-            aset = node.attrs
-        if key is not None:
-            if hasattr(key,'__iter__'):
-                return tuple(aset.get(k,None) for k in key)
-            else:
-                return aset.get(key, None)
-        else:
-            return aset
+    def get_attributes(self, node="/", *args, **kwargs):
+        if isinstance(node,basestring): node = self.h5[node]
+        return get_attributes(node, *args, **kwargs)
+
 
     @property
     def entries(self):
@@ -441,15 +414,44 @@ class file(object):
         version of this class.  Issues a warning if the class is older
         than the file.
         """
-        if not exists:
-            self.set_attributes(arf_version=__version__)
-        else:
-            file_version = self.get_attributes(key='arf_version') or "0.9"
-            if not check_file_compatibility(file_version):
-                print "Warning: file version (%s) may not be compatible with library (%s)" % \
-                    (file_version, __version__)
+        file_version = get_attributes(self.h5, key='arf_version') or "0.9"
+        if not check_file_compatibility(file_version):
+            print "Warning: file version (%s) may not be compatible with library (%s)" % \
+                (file_version, __version__)
 
 # module-level convenience functions:
+def set_attributes(node, overwrite=True, **attributes):
+    """
+    Set attributes on a node. Attribute names are coerced to lowercase
+    strings to avoid overwriting any important metadata. Values are coerced
+    to numpy arrays, mostly to ensure strings are stored correctly. If the
+    value for a key is None or '', the attribute is deleted.
+    """
+    aset = node.attrs
+    for k,v in attributes.items():
+        if not overwrite and k in aset: continue
+        if v == None or v == '':
+            if k.lower() in aset: del aset[k.lower()]
+        else:
+            aset[k.lower()] = nx.asarray(v)
+
+def get_attributes(node, key=None):
+    """
+    Get attributes on a node. If Key is none, returns the
+    AttributeSet; otherwise attempts to look up the key(s),
+    returning None if it does not exist.
+    """
+    aset = node.attrs
+    if key is not None:
+        if hasattr(key,'__iter__'):
+            return tuple(aset.get(k,None) for k in key)
+        else:
+            return aset.get(key, None)
+    else:
+        return aset
+
+
+
 def nodes_by_creation(group):
     """ Iterate through nodes in a group in order of creation """
     def f(x):
