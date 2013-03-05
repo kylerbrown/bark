@@ -3,18 +3,17 @@
 #+EMAIL:     dan@meliza.org
 #+DATE: [2013-02-08 Fri]
 
-*arf* (the advanced recording format) is designed for storing data from neuronal
-and behavioral experiments in a portable, high-performance, archival format.
-The goal is to enable labs to share data and tools, and to allow valuable data
-to be accessed and analyzed for many years in the future.
+The Advanced Recording Format (*ARF*) is an open standard for storing data from
+neuronal and behavioral experiments in a portable, high-performance, archival
+format. The goal is to enable labs to share data and tools, and to allow
+valuable data to be accessed and analyzed for many years in the future.
 
-*arf* is built on the the [[http://www.hdfgroup.org/HDF5/][HDF5]] format, and all arf files are accessible through
-standard HDF5 tools, along with many of the interfaces to HDF5 written for other
-languages (e.g. MATLAB, Python, etc). *arf* itself consists of a set of
-specifications on how different kinds of data are stored. The organization of
-arf files is based around the concept of an /entry/, a collection of data
-channels associated with a particular point in time. An entry might contain one
-or more of the following:
+*ARF* is built on the the [[http://www.hdfgroup.org/HDF5/][HDF5]] format, and all arf files are accessible through
+standard HDF5 tools, including interfaces to HDF5 written for other languages
+(e.g. MATLAB, Python, etc). *ARF* comprises a set of specifications on how
+different kinds of data are stored. The organization of ARF files is based
+around the concept of an /entry/, a collection of data channels associated with
+a particular point in time. An entry might contain one or more of the following:
 
 + raw extracellular neural signals recorded from a multichannel probe
 + spike times extracted from neural data
@@ -29,28 +28,41 @@ uninterpretable.
 
 This repository contains:
 
-+ The [[file:doc/specification.org][specification]] for arf
++ The [[file:specification.org][specification]] for arf
 + A fast, type-safe C++ interface for reading and writing arf files
-+ A python interface for reading and writing arf files (based on [[http://code.google.com/p/h5py/][h5py]]).
++ A python interface for reading and writing arf files (based on h5py).
 + A very rudimentary MATLAB interface
 
-** Dependencies
+** Project status
 
-arf files require HDF5 >= 1.6
+ARF is currently in pre-release alpha status for version 2.0.0. There was never
+a public release of previous versions. Remaining tasks include:
 
-The C++ interface requires HDF5 >= 1.8
++ Auto-generate documentation from docstrings in c++ and python code
++ Update MATLAB interface to 2.0 spec.
++ Freeze specification
 
-The python interface requires Python >= 2.6, h5py >= 2.0
+** Contributing
 
-** Installation:
+ARF is under active development and we welcome comments and contributions from
+neuroscientists and behavioral biologist interested in using it. We're
+particularly interested in use cases that don't fit the current specification.
+Please post issues or contact Dan Meliza (dan at meliza.org) directly.
 
-+ To install the python package:
+** Installation
+
+ARF files require HDF5>=1.8 (http://www.hdfgroup.org/HDF5).
+
+The python interface requires Python>=2.6 and h5py>=2.0
+(http://code.google.com/p/h5py/). To install the module:
 
 : python setup.py install
 
-+ To install the C++ interface:
+To install the C++ interface, you need boost>=1.42 (http://boost.org). In
+addition, if writing multithreaded code, HDF5 needs to be compiled with
+=--enable-threadsafe=.
 
 : scons install
 
-+ To install the MATLAB interface, add the matlab subdirectory to MATLAB's
-  search path
+To install the MATLAB interface, add the matlab subdirectory to MATLAB's search
+path.

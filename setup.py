@@ -40,6 +40,7 @@ setup(
     long_description = long_desc,
     classifiers = [x for x in cls_txt.split("\n") if x],
     author = 'Dan Meliza',
+    author_email = '"dan" at the domain "meliza.org"',
     maintainer = 'Dan Meliza',
     maintainer_email = '"dan" at the domain "meliza.org"',
     url = "https://github.com/dmeliza/arf",

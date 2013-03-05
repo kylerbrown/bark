@@ -8,7 +8,7 @@
 
 #include <boost/uuid/random_generator.hpp>
 
-#include "types.hpp"
+#include "arf/types.hpp"
 #include "arf/h5e.hpp"
 #include "arf/h5f.hpp"
 #include "arf/h5a.hpp"

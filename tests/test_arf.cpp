@@ -24,7 +24,7 @@ int testval_int = 1;
 std::vector<int> testval_intvec(5,10);
 char const * testval_str = "blahdeblah";
 std::vector<float> testval_floatvec(nsamples);
-arf::interval testval_interval = { "label_%03d", 0.0, 123.45 };
+arf::interval testval_interval = { 0, 123, "label_%03d"};
 
 void write_entry(arf::file & f, char const * entry) {
 
@@ -64,8 +64,8 @@ void write_interval(arf::file & f, char const *entry) {
         arf::interval data = testval_interval;
         for (int i = 0; i < npackets; ++i) {
                 sprintf(data.name, testval_interval.name, i);
-                data.start += 100.2;
-                data.stop += 100.2;
+                data.start += 100;
+                data.stop += 100;
                 pt->write(&data, 1);
         }
 }

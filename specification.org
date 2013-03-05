@@ -1,0 +1,252 @@
+#-*- mode: org -*-
+#+STARTUP:    align fold hidestars oddeven
+#+TITLE:    Advanced Recording Format Specification (2.0.0)
+#+AUTHOR:    Dan Meliza
+#+EMAIL:     dan@meliza.org
+#+DATE: [2013-03-05 Tue]
+#+LANGUAGE:   en
+#+OPTIONS: ^:nil H:2
+#+STYLE:    <link rel="stylesheet" href="org.css" type="text/css" />
+
+The Advance Recording Format (ARF) is for storing electrophysiological,
+acoustic, and behavioral data along with associated metadata and derived
+quantities in a hierarchical structure. ARF is based on the [[http://www.hdfgroup.org/HDF5/][HDF5 format]].
+
+- Editor: Dan Meliza <dan at meliza.org>
+- State:  draft
+
+* Licence
+
+Copyright (c) 2010-2013 Dan Meliza.
+
+This Specification is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 3 of the License, or (at your option) any
+later version.
+
+This Specification is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, see <http://www.gnu.org/licenses>.
+
+* Change Process
+
+This Specification is a free and open standard[1] and is governed by the Digital
+Standards Organization's Consensus-Oriented Specification System (COSS)[2].
+
+Version numbering from 2.0 on must be semantic (http://semver.org). Changes that
+maintain backwards compatibility (i.e., that do not change or remove any
+required fields and attributes) result in increments to the minor version.
+Changes that break backwards compatibility must receive new major version numbers.
+
+* Language
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
+interpreted as described in RFC 2119[3].
+
+* Goals and conceptual framework
+
+Bioacoustic, electrophysiological, and behavioral data fall into two general
+types:
+
++ sampled data :: A quantitative physical property of a system (e.g. sound
+                  pressure or voltage) measured at discrete intervals. The
+                  /sampling rate/ of the data is the number of times per second
+                  the value is sampled.
++ event data :: A series of events taking place at discrete times. Event data
+                are /simple/ if the events are identical except for the time
+                they occurred (e.g., spike times). Event data are /complex/ if
+                additional information is associated with the events; for
+                example, stimulus presentation events are associated with
+                stimulus identity and whether the stimulus is starting or stopping.
+
+The goal of ARF is to provide an open, unified, and portable format for storing
+data of these types, along with sufficient metadata to reconstruct the
+conditions of the experiment for many decades in the future.
+
+In this specification, an /entry/ is defined as an abstract grouping of data
+that all start at the same time. The data may be sampled or event, may comprise
+multiple channels, and may be unequal in length. For example, an entry could
+consist of the sound pressure waveform of a bird singing and the spike times for
+several neurons recorded in the song control nucleus HVC.
+
+* Implementation
+
+ARF files shall be readable by the HDF5 library, version 1.8 or later. HDF5 is
+available on multiple platforms and supports automatic conversion of data types,
+allowing transparent access of data across many architectures. HDF5 files
+support hierarchical organization of datasets and metadata attributes. ARF
+specifies the layout used to store data within this framework.
+
+** Entries
+
+Each /entry/ shall be represented by an HDF5 group. The group shall contain all
+the data objects associated with that entry, stored as HDF5 datasets, and all
+the metadata associated with the entry, stored as HDF5 attributes. The following
+attributes are required:
+
++ timestamp ::  The start time of the entry. A two-element array with the first
+                element the number of seconds since January 1, 1970, and the
+                second the rest of the elapsed time, in microseconds. Must have
+                at least 64-bit integer precision.
++ uuid :: A universally unique ID for the entry (see [[http://tools.ietf.org/html/rfc4122.html][RFC 4122]]). Must be stored
+          as a 16-byte =H5T_STRING= with =CTYPE= of =H5T_C_S1=.
+
+In addition, the following optional attributes are defined. They do not need to
+be present in the group if not applicable, but if they are present they must
+have a datatype with class =H5T_STRING=, of any size, with =STRPAD= set to
+=H5T_STR_NULLTERM= (i.e. null-terminated), and =CTYPE= of =H5T_C_S1=. Encoding
+must be ASCII or UTF-8.
+
++ animal :: Indicates the name or ID of the animal.
++ experimenter :: Indicates the name or ID of the experimenter.
++ protocol :: Optional comment field, indicating the treatment, stimulus, or any
+              other user-specified comment.
++ recuri :: The URI of an external database where =uuid= can be looked up.
+
+** Datasets
+   :PROPERTIES:
+   :ID:       BB70AFB7-83F2-4FA6-8D03-02033BF1B7AF
+   :END:
+
+Each channel of data in an entry shall be represented by a separate HDF5
+dataset. The format of each dataset depends on the type of data it stores (see
+below), but all datasets must have the following attributes:
+
++ units ::  Units of the channel data, which should be in SI notation. May be an
+            empty string for sampled data if units are not known. Format must be
+            a =H5T_STRING=.
++ datatype ::  Indicates the source of data in the entry. Must have at least
+               unsigned integer precision great enough to include all the values
+               defined in [[id:A960F5BB-0E75-47B0-A477-380892DA7D5E][Datatypes]].
+
+The following attributes are defined, but are optional for some data types.
+
++ sampling_rate :: A nonzero number indicating the sampling rate of the data, in
+                   Hz. Required for sampled data, and for interval and event
+                   data with units of samples. May be any numerical datatype.
++ offset :: Indicates the start time of the dataset relative to the start of the
+            entry. For sampled data, the units must be samples. For event data
+            types, the units must be the same as the units of the dataset. May
+            be any numerical type. If missing, the offset shall be assumed to be
+            zero.
+
+*** Sampled data
+
+Sampled data shall be stored as an N-dimensional array of scalar values
+corresponding to the measurement at each sampling interval. The first dimension
+of the array must correspond to time. The significance of additional dimensions
+is unspecified. The =sampling_rate= attribute is required.
+
+*** Event data
+
+Event data may be stored in one of two formats. Simple event data should be
+stored in a 1D array, with each element in the array indicating the time of the
+event *relative to the start of the entry* (or dataset, if there is an offset).
+Event arrays are distinguished from sampled data arrays by the =datatype= and
+=units= attributes.
+
+Complex event data must be stored as arrays with a compound datatype (i.e., with
+multiple fields). Only one field is required, =start=, which indicates the time
+of the event and can be any numerical type.
+
+A special case of event data are intervals, which are defined by a start and
+stop time. In previous versions of the specification, this was considered a
+separate data type, with two additional required fields, =name= (a string) and
+=stop= (a time). These are not required as of version 2.0.
+
+*** Datatypes
+    :PROPERTIES:
+    :ID:       A960F5BB-0E75-47B0-A477-380892DA7D5E
+    :END:
+
+The =datatype= attribute is an integer code indicating the type of data in a
+channel. It specifies how the data should be interpreted but does not imply any
+contract as to the dataspace or storage type of the dataset. The following
+values are defined:
+
+| value | name       | meaning                                              |
+|-------+------------+------------------------------------------------------|
+|     0 | UNDEFINED  | undefined or unknown                                 |
+|     1 | ACOUSTIC   | acoustic                                             |
+|     2 | EXTRAC_HP  | extracellular, high-pass (single-unit or multi-unit) |
+|     3 | EXTRAC_LF  | extracellular, local-field                           |
+|     4 | EXTRAC_EEG | extracellular, EEG                                   |
+|     5 | INTRAC_CC  | intracellular, current-clamp                         |
+|     6 | INTRAC_VC  | intracellular, voltage-clamp                         |
+|  1000 | EVENT      | generic event times                                  |
+|  1001 | SPIKET     | spike event times                                    |
+|  1002 | BEHAVET    | behavioral event times                               |
+|  2000 | INTERVAL   | generic intervals                                    |
+|  2001 | STIMI      | stimulus presentation intervals                      |
+|  2002 | COMPONENTL | component (e.g. motif) labels                        |
+
+Values below 1000 are reserved for sampled data types.
+
+** Top-level datasets
+
+ARF files may have datasets in the root group. These are not associated with any
+entry, but may used to store structured data or metadata for the entire file.
+For example, data recording software may keep a log of events.
+
+** Extensions to the format
+
+The above specification is a required minimum for a file to be in ARF format.
+Additional attributes, groups, and datasets may be added, but must not conflict
+with any attributes specified above. Because optional attributes may be forwards
+incompatible with later versions due to namespace collision, their names should
+be prefixed with the name of the application (e.g. 'jill_sample_count').
+
+* Backwards-incompatible changes from previous versions
+
+** version 2.0
+
+The required "recid" attribute was dropped because it was unsuitable for an open
+standard, and because it depended on an external database for uniqueness.
+Instead, a "uuid" attribute was required.
+
+Event data was defined to include both "simple" and "complex" events. Interval
+data became a special case of complex event data. This was to allow data
+collection programs to store more information about events, without forcing them
+to use the strictly defined data type for intervals. The definition of a
+distinct interval data type was dropped unceremoniously. Software reading the
+INTERVAL, STIMI, and COMPONENTL should check for the existence of a 'stop'
+field.
+
+The times for event data were no longer required to be in units of seconds, and
+the format was not required to be double-precision floating point. The
+sampling_rate attribute was required for event datasets where the units are in
+samples.
+
+Root-level datasets were explicitly allowed.
+
+Semantic versioning was introduced.
+
+** version 1.1
+
+Catalogs were removed at the top level and in entries. The objects themselves
+now carry all the metadata once in the catalog as attributes.
+
+Multichannel datasets were deprecated in favor of multiple single-channel
+datasets. Channels should only be grouped into single datasets when the data are
+really inseparable (e.g. left and right channels). This greatly improved read
+performance, at some expense in file size.
+
+Entry groups were deprecated; datasets that start at different times but need to
+be grouped together can be given an offset value indicating the interval between
+the entry start time and the start of the data.
+
+The attributes required by pytables were deprecated. Some interfaces may
+continue to store them, but they were no longer required.
+
+* Footnotes
+
+[1] "Definition of a Free and Open Standard" - [[http://www.digistan.org/open-standard:definition][digistan.org]]
+[2] "Consensus Oriented Specification System" - [[http://www.digistan.org/spec:1/COSS][digistan.org]]
+[3] "Key words for use in RFCs to Indicate Requirement Levels" - [[http://tools.ietf.org/html/rfc2119][ietf.org]]
+
+

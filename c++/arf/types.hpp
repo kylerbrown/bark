@@ -53,9 +53,9 @@ enum DataType {
  * @brief Storage format for interval data
  */
 struct interval {
-        char name[64];         // could use vlen strings but that's not the spec
         boost::uint32_t start;
         boost::uint32_t stop;
+        char name[64];         // fixed length more compatible with earlier ARF specs
 };
 
 /**

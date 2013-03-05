@@ -2,3 +2,5 @@
 *.arf
 *.pyc
 *.[oa]
+/tests/test_arf
+/.sconsign.dblite

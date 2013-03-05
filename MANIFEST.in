@@ -1,4 +1,4 @@
-include README.org COPYING Makefile
+include README.org COPYING Makefile SConstruct
 recursive-include c++ *.hpp
 recursive-include matlab *.m
 recursive-include test *.py *.cpp
