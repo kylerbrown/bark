@@ -58,11 +58,12 @@ The python interface requires Python>=2.6 and h5py>=2.0
 
 : python setup.py install
 
-To install the C++ interface, you need boost>=1.42 (http://boost.org). In
-addition, if writing multithreaded code, HDF5 needs to be compiled with
-=--enable-threadsafe=.
+To use the C++ interface, you need boost>=1.42 (http://boost.org). In addition,
+if writing multithreaded code, HDF5 needs to be compiled with
+=--enable-threadsafe=. The interface is header-only and does not need to be
+compiled. To install:
 
-: scons install
+: make install
 
 To install the MATLAB interface, add the matlab subdirectory to MATLAB's search
 path.
