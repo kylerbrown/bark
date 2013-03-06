@@ -4,3 +4,4 @@
 *.[oa]
 /tests/test_arf
 /.sconsign.dblite
+/build/

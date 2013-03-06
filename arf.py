@@ -39,6 +39,10 @@ class DataTypes:
         """ generate a dict keyed by value """
         return dict((getattr(cls,attr),attr) for attr in dir(cls) if not attr.startswith('_'))
 
+    @classmethod
+    def _fromstring(cls,s):
+        """ look up datatype by string; returns None if not defined """
+        return getattr(cls,s.upper(),None)
 
 
 # Define attributes of various entities that pytables wants to see
@@ -173,13 +177,13 @@ class entry(hp.Group):
     def uuid(self):
         """ return the uuid for the entry """
         from uuid import UUID
-        return UUID(bytes=self.attrs.get('uuid',0))
+        # numpy shortens strings ending in \0
+        return UUID(bytes=self.attrs.get('uuid','').rjust(16,'\0'))
 
     def __repr__(self):
         return '%s: %d channel%s' % (self.name, self.nchannels,pluralize(self.nchannels))
 
     def __str__(self):
-        from uuid import UUID
         attrs = self.attrs
         datatypes = DataTypes._todict()
         out = "%s" % (self.name)
@@ -188,7 +192,7 @@ class entry(hp.Group):
             if k=='timestamp':
                 out += "\n  timestamp : %s" % datetime_timestamp(v).strftime("%Y-%m-%d %H:%M:%S.%f %z")
             elif k=='uuid':
-                out += "\n  uuid : %s" % UUID(bytes=v)
+                out += "\n  uuid : %s" % self.uuid
             else:
                 out += "\n  %s : %s" % (k, v)
         for name,dset in self.iteritems():
