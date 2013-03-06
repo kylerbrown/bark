@@ -115,6 +115,15 @@ def test04_create_bad_dataset():
     for dset in bad_datasets:
         yield f, e, dset
 
+def test05_null_uuid():
+    # nulls in a uuid can make various things barf
+    from uuid import UUID
+    uuid = UUID(bytes=''.rjust(16,'\0'))
+    e = fp['entry_001']
+    arf.set_uuid_attr(e, uuid)
+
+    assert e.uuid == uuid
+
 def test99_various():
     # test some functions difficult to cover otherwise
     arf.DataTypes._doc()

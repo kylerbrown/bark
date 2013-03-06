@@ -5,6 +5,7 @@ import numpy as nx
 import h5py as hp
 from h5py.version import version as h5py_version, hdf5_version
 
+spec_version = "2.0"
 __version__ = version = "2.0.0"
 
 __doc__ = \
@@ -265,7 +266,7 @@ class file(object):
     nentries: number of entries
     """
 
-    def __init__(self, name, mode='r', **kwargs):
+    def __init__(self, name, mode='r', strict_version=False, **kwargs):
         """
         Open a new or existing ARF file.
 
@@ -288,8 +289,11 @@ class file(object):
         if not self.readonly:
             set_attributes(self.h5, overwrite=False,
                            arf_version=__version__,)
-
-        self._check_version(exists)
+        try:
+            self._check_version(exists)
+        except Exception, e:
+            if strict_version: raise e
+            else: print e.message
 
     def __enter__(self):
         return self
@@ -354,8 +358,6 @@ class file(object):
         Returns: newly created entry object
         Raises: IOError for read-only file; ValueError if the entry name is taken
         """
-        from uuid import uuid4
-
         if self.readonly: raise IOError, "the file is not writable"
         ts = convert_timestamp(timestamp)
         if name in self.h5:
@@ -363,11 +365,11 @@ class file(object):
 
         grp = self.h5.create_group(name)
 
+        set_uuid_attr(grp)
         set_attributes(grp,
-                       uuid=uuid4().bytes,
                        timestamp=ts,
                        **attributes)
-        # set pytables required attributes
+
         return entry.promote(grp)
 
     def set_attributes(self, node="/", **kwargs):
@@ -390,6 +392,7 @@ class file(object):
     @property
     def nentries(self):
         """ The number of entries defined in the file """
+        # somewhat slow for large files
         return sum(1 for x in self.h5.values() if isinstance(x,hp.Group))
 
     @property
@@ -399,7 +402,8 @@ class file(object):
 
     def __repr__(self):
         nentries = self.nentries
-        return "<ARF file %s: %d entr%s>" % (self.h5.filename, nentries, pluralize(nentries,'y','ies'))
+        return "<ARF file %s at %s: %d entr%s>" % (self.h5.filename, hex(id(self)),
+                                                   nentries, pluralize(nentries,'y','ies'))
 
     def __str__(self):
         out = self.__repr__()
@@ -415,10 +419,13 @@ class file(object):
         version of this class.  Issues a warning if the class is older
         than the file.
         """
-        file_version = get_attributes(self.h5, key='arf_version') or "0.9"
-        if not check_file_compatibility(file_version):
-            print "Warning: file version (%s) may not be compatible with library (%s)" % \
-                (file_version, __version__)
+        from distutils.version import StrictVersion as Version
+        file_version = Version(get_attributes(self.h5, key='arf_version') or "0.9")
+        # 1.1 is not forwards compatible
+        if file_version < Version('1.1'):
+            raise DeprecationWarning, "ARF version %s (< 1.1) not fully supported by this library" % file_version
+        elif file_version >= Version('3.0'):
+            raise FutureWarning, "ARF version (%s) (>= 3.0) may not be backwards compatible with this library" % file_version
 
 # module-level convenience functions:
 def set_attributes(node, overwrite=True, **attributes):
@@ -541,14 +548,17 @@ def timestamp_to_float(arr):
     """ convert two-element timestamp (sec, usec) to a floating point (sec since epoch) """
     return nx.dot(arr, (1.0, 1e-6))
 
+def set_uuid_attr(node, uuid=None):
+    """ set the uuid attribute of a node. use this method to ensure correct dtype """
+    from uuid import uuid4, UUID
+    if uuid is None:
+        uuid = uuid4()
+    elif isinstance(uuid, basestring):
+        uuid = UUID(bytes=uuid)
 
-def check_file_compatibility(file_ver):
-    """ return True if the file version is compatible with the current library version """
-    from distutils.version import StrictVersion as Version
-    ver = Version(str(file_ver))
-    # 1.1 is not backwards compatible
-    return ver >= Version('1.1') and ver < Version('3.0')
-
+    if "uuid" in node.attrs:
+        del node.attrs["uuid"]
+    node.attrs.create("uuid", uuid.bytes, dtype="|S16")
 
 __all__ = ['file', 'entry', 'table', 'DataTypes']
 

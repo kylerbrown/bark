@@ -195,7 +195,7 @@ with any attributes specified above. Because optional attributes may be forwards
 incompatible with later versions due to namespace collision, their names should
 be prefixed with the name of the application (e.g. 'jill_sample_count').
 
-* Backwards-incompatible changes from previous versions
+* Changes from previous versions
 
 ** version 2.0
 
@@ -219,6 +219,9 @@ samples.
 Root-level datasets were explicitly allowed.
 
 Semantic versioning was introduced.
+
+To upgrade a file from version 1.1, add a uuid attribute to all entries, and a
+sampling_rate attribute to all event datasets that have units of samples.
 
 ** version 1.1
 

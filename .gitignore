@@ -1,6 +1,7 @@
 /.coverage
 *.arf
 *.pyc
+*flymake.py
 *.[oa]
 /tests/test_arf
 /.sconsign.dblite

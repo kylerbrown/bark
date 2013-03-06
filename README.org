@@ -33,10 +33,18 @@ This repository contains:
 + A python interface for reading and writing arf files (based on h5py).
 + A very rudimentary MATLAB interface
 
-** project status
+** version information
 
-ARF is currently in pre-release alpha status for version 2.0.0. There was never
-a public release of previous versions. Remaining tasks include:
+The specification and implementations provided in this project use semantic
+versioning (http://semver.org). The implementation versions are sychronized with
+the major and minor version of the specification. For example, any python =arf=
+package with version =2.0.x= is an implementation of the =2.0= ARF
+specification. Any =2.x= implementation must be able to read and write any
+=2.x= file.
+
+The specification and implemenations are currently in pre-release alpha status
+for version 2.0.0. There was never a public release of previous versions.
+Remaining tasks include:
 
 + Auto-generate documentation from docstrings in c++ and python code
 + Update MATLAB interface to 2.0 spec.
