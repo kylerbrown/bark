@@ -305,9 +305,17 @@ class file(object):
             else:
                 return el
         except AttributeError:
-            raise TypeError, "Wrong index type (basestring required)"
+            raise TypeError, "wrong index type (basestring required)"
         except KeyError:
-            raise KeyError, "No such entry %s" % name
+            raise KeyError, "no such entry %s" % name
+
+    def __delitem__(self, name):
+        try:
+            del self.h5[name]
+        except AttributeError:
+            raise TypeError, "wrong index type (basestring required)"
+        except KeyError:
+            raise KeyError, "no such entry %s" % name
 
     def __iter__(self):
         """ Iterate through all entries in alphabetical order """
@@ -351,7 +359,7 @@ class file(object):
         if self.readonly: raise IOError, "the file is not writable"
         ts = convert_timestamp(timestamp)
         if name in self.h5:
-            raise ValueError, "The entry %s already exists" % name
+            raise ValueError, "the entry %s already exists" % name
 
         grp = self.h5.create_group(name)
 
@@ -481,7 +489,7 @@ def convert_timestamp(obj):
         out[1]  = long(obj[1]) if obj[1] else 0
         out[0] = long(obj[0])
     else:
-        raise TypeError, "Unable to convert %s to timestamp" % obj
+        raise TypeError, "unable to convert %s to timestamp" % obj
     return out
 
 def datetime_timestamp(timestamp):
