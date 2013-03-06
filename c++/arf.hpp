@@ -100,9 +100,6 @@ public:
 	      std::vector<Type> const & timestamp)
 		: h5g::group(parent, name, true),
                   _uuid(boost::uuids::random_generator()()) {
-		write_attribute("CLASS","GROUP");
-		write_attribute("TITLE",name);
-		write_attribute("VERSION","1.0");
 		write_attribute<boost::int64_t, Type>("timestamp", timestamp);
 		write_attribute("uuid", _uuid);
 	}
@@ -112,9 +109,6 @@ public:
 		: h5g::group(parent, name, true),
                   _uuid(boost::uuids::random_generator()()) {
                 boost::int64_t ts[2] = { timestamp->tv_sec, timestamp->tv_usec };
-		write_attribute("CLASS","GROUP");
-		write_attribute("TITLE",name);
-		write_attribute("VERSION","1.0");
 		write_attribute("timestamp", ts, 2);
 		write_attribute("uuid", _uuid);
 	}
@@ -142,10 +136,6 @@ public:
 			unlink(name);
 
 		h5d::dataset::ptr_type ds = h5g::group::create_dataset(name, data, compression);
-		ds->write_attribute("CLASS","EARRAY");
-		ds->write_attribute("EXTDIM",1);
-		ds->write_attribute("VERSION","1.3");
-		ds->write_attribute("TITLE",name);
 		ds->write_attribute("datatype",static_cast<int>(datatype));
 		ds->write_attribute("units",units);
 		return ds;
@@ -183,10 +173,6 @@ public:
 			    int compression=0) {
                 h5pt::packet_table::ptr_type pt =
                         h5g::group::create_packet_table<StorageType>(name, replace, chunk_size, compression);
-		pt->write_attribute("CLASS","EARRAY");
-		pt->write_attribute("EXTDIM",1);
-		pt->write_attribute("VERSION","1.3");
-		pt->write_attribute("TITLE",name);
 		pt->write_attribute("datatype",static_cast<int>(datatype));
 		pt->write_attribute("units",units);
 		return pt;
@@ -221,13 +207,10 @@ public:
 	 */
 	file(std::string const & name, std::string const & mode)
 		: h5f::file(name, mode) {
-		// set required attributes; I'm too lazy to ensure
-		// that the file didn't already exist.
+		// set root-level attributes
+                // TODO check whether file exists and already has version information
 		if (mode=="w" || mode=="a") {
-			write_attribute("TITLE","arf file (ver " ARF_LIBRARY_VERSION ", C++)");
-			write_attribute("CLASS","GROUP");
-			write_attribute("PYTABLES_FORMAT_VERSION","2.0");
-			write_attribute("VERSION","1.0");
+                        write_attribute("arf_library_version", ARF_LIBRARY_VERSION);
 			write_attribute("arf_version", ARF_VERSION);
 		}
 	}

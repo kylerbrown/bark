@@ -109,9 +109,6 @@ must be ASCII or UTF-8.
 + recuri :: The URI of an external database where =uuid= can be looked up.
 
 ** Datasets
-   :PROPERTIES:
-   :ID:       BB70AFB7-83F2-4FA6-8D03-02033BF1B7AF
-   :END:
 
 Each channel of data in an entry shall be represented by a separate HDF5
 dataset. The format of each dataset depends on the type of data it stores (see
@@ -122,7 +119,7 @@ below), but all datasets must have the following attributes:
             a =H5T_STRING=.
 + datatype ::  Indicates the source of data in the entry. Must have at least
                unsigned integer precision great enough to include all the values
-               defined in [[id:A960F5BB-0E75-47B0-A477-380892DA7D5E][Datatypes]].
+               defined in [[Datatypes]].
 
 The following attributes are defined, but are optional for some data types.
 
@@ -160,9 +157,6 @@ separate data type, with two additional required fields, =name= (a string) and
 =stop= (a time). These are not required as of version 2.0.
 
 *** Datatypes
-    :PROPERTIES:
-    :ID:       A960F5BB-0E75-47B0-A477-380892DA7D5E
-    :END:
 
 The =datatype= attribute is an integer code indicating the type of data in a
 channel. It specifies how the data should be interpreted but does not imply any
@@ -245,8 +239,8 @@ continue to store them, but they were no longer required.
 
 * Footnotes
 
-[1] "Definition of a Free and Open Standard" - [[http://www.digistan.org/open-standard:definition][digistan.org]]
-[2] "Consensus Oriented Specification System" - [[http://www.digistan.org/spec:1/COSS][digistan.org]]
-[3] "Key words for use in RFCs to Indicate Requirement Levels" - [[http://tools.ietf.org/html/rfc2119][ietf.org]]
++ [1] "Definition of a Free and Open Standard" - [[http://www.digistan.org/open-standard:definition][digistan.org]]
++ [2] "Consensus Oriented Specification System" - [[http://www.digistan.org/spec:1/COSS][digistan.org]]
++ [3] "Key words for use in RFCs to Indicate Requirement Levels" - [[http://tools.ietf.org/html/rfc2119][ietf.org]]
 
 

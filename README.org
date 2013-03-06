@@ -28,7 +28,7 @@ uninterpretable.
 
 This repository contains:
 
-+ The [[file:specification.org][specification]] for arf
++ The specification for arf (see file:specification.org)
 + A fast, type-safe C++ interface for reading and writing arf files
 + A python interface for reading and writing arf files (based on h5py).
 + A very rudimentary MATLAB interface

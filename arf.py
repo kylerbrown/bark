@@ -45,15 +45,6 @@ class DataTypes:
         return getattr(cls,s.upper(),None)
 
 
-# Define attributes of various entities that pytables wants to see
-_pytables_attributes = \
-    dict(file=dict(TITLE='',VERSION='1.0',CLASS='GROUP',PYTABLES_FORMAT_VERSION='2.0'),
-         group=dict(TITLE='',VERSION='1.0',CLASS='GROUP'),
-         carray=dict(TITLE='',VERSION='1.0',CLASS='CARRAY'),
-         earray=dict(TITLE='',VERSION='1.3',CLASS='EARRAY',EXTDIM=1),
-         vlarray=dict(TITLE='',VERSION='1.3',CLASS='VLARRAY'),
-         table=dict(TITLE='',VERSION='2.6',CLASS='TABLE')) # also need field names
-
 _interval_dtype = nx.dtype([('name','S256'),('start','f8'),('stop','f8')])
 
 # Helper classes
@@ -230,7 +221,6 @@ class table(object):
         """
         dset = group.create_dataset(name, shape=(0,), dtype=dtype, maxshape=(None,))
         set_attributes(dset, **attributes)
-        set_attributes(dset, **_pytables_attributes["table"])
         return cls(dset)
 
     def append(self, *records):
@@ -297,8 +287,8 @@ class file(object):
             self.h5 = hp.File(name, mode=mode, **kwargs)
         if not self.readonly:
             set_attributes(self.h5, overwrite=False,
-                           arf_version=__version__,
-                           **_pytables_attributes["file"])
+                           arf_version=__version__,)
+
         self._check_version(exists)
 
     def __enter__(self):
@@ -370,7 +360,6 @@ class file(object):
                        timestamp=ts,
                        **attributes)
         # set pytables required attributes
-        set_attributes(grp, **_pytables_attributes["group"])
         return entry.promote(grp)
 
     def set_attributes(self, node="/", **kwargs):
