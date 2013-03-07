@@ -6,7 +6,7 @@ LDFLAGS=-L/opt/local/lib
 all: test
 
 %.o : %.cpp
-	$(CXX) $(CFLAGS) -c %<
+	$(CXX) $(CFLAGS) -o $@ -c $<
 
 test:	tests/test_arf.o
 	$(CXX) $(LDFLAGS) -o tests/test_arf tests/test_arf.o -lhdf5 -lhdf5_hl

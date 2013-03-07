@@ -14,6 +14,30 @@
 #include <sys/time.h>
 #include "arf.hpp"
 
+struct interval {
+        char name[64];
+        boost::uint32_t start;
+        boost::uint32_t stop;
+};
+
+namespace arf { namespace h5t { namespace detail {
+
+template<>
+struct datatype_traits<interval> {
+	static hid_t value() {
+                hid_t ret = H5Tcreate(H5T_COMPOUND, sizeof(interval));
+                hid_t str = H5Tcopy(H5T_C_S1);
+                H5Tset_size(str, 64);
+                H5Tinsert(ret, "name", HOFFSET(interval, name), str);
+                H5Tinsert(ret, "start", HOFFSET(interval, start), H5T_STD_U32LE);
+                H5Tinsert(ret, "stop", HOFFSET(interval, stop), H5T_STD_U32LE);
+                H5Tclose(str);
+                return ret;
+        }
+};
+
+}}}
+
 unsigned short seed[3] = { 0 };
 const int nsamples = 100;
 const int nentries = 64;
@@ -24,7 +48,8 @@ int testval_int = 1;
 std::vector<int> testval_intvec(5,10);
 char const * testval_str = "blahdeblah";
 std::vector<float> testval_floatvec(nsamples);
-arf::interval testval_interval = { 0, 123, "label_%03d"};
+interval testval_interval = { "label_%03d", 0, 123};
+
 
 void write_entry(arf::file & f, char const * entry) {
 
@@ -44,13 +69,13 @@ void write_entry(arf::file & f, char const * entry) {
 
 void write_sampled(arf::file & f, char const * entry) {
         arf::entry g(f, entry);
-	arf::dataset::ptr_type d = g.create_dataset<double>("dataset", testval_floatvec, "mV", arf::ACOUSTIC);
+	arf::dataset_ptr d = g.create_dataset<double>("dataset", testval_floatvec, "mV", arf::ACOUSTIC);
 	d->write_attribute("sampling_rate",1000);
 }
 
 void write_packettbl(arf::file & f, char const * entry) {
         arf::entry g(f, entry);
-	arf::packet_table::ptr_type pt =
+	arf::packet_table_ptr pt =
 		g.create_packet_table<float>("apackettable","mV",arf::ACOUSTIC);
 	pt->write_attribute("sampling_rate",1000);
         for (int i = 0; i < npackets; ++i)
@@ -59,21 +84,15 @@ void write_packettbl(arf::file & f, char const * entry) {
 
 void write_interval(arf::file & f, char const *entry) {
         arf::entry g(f, entry);
-        arf::packet_table::ptr_type pt =
-                g.create_packet_table<arf::interval>("intervals","ms",arf::STIMI);
-        arf::interval data = testval_interval;
+        arf::packet_table_ptr pt =
+                g.create_packet_table<interval>("intervals","ms",arf::STIMI);
+        interval data = testval_interval;
         for (int i = 0; i < npackets; ++i) {
                 sprintf(data.name, testval_interval.name, i);
                 data.start += 100;
                 data.stop += 100;
                 pt->write(&data, 1);
         }
-}
-
-void write_log(arf::file & f) {
-        f.log("a first log message");
-        f.log("another interesting message");
-        f.log("something extremely interesting hapenned a while back",tp.tv_sec,tp.tv_usec);
 }
 
 void read_entry(arf::h5f::file & f, char const * entry) {
@@ -116,7 +135,6 @@ main(int argc, char ** argv)
 
         {
                 arf::file f("test.arf","w");
-                write_log(f);
 
                 char ename[64];
 

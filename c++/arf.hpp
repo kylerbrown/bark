@@ -19,6 +19,7 @@
 #include <sys/time.h>
 
 namespace arf {
+
 /*
  * @namespace arf
  *
@@ -40,42 +41,6 @@ namespace arf {
  *
  *
  */
-
-using h5d::dataset;
-using h5pt::packet_table;
-
-namespace h5t { namespace detail {
-
-template<>
-struct datatype_traits<interval> {
-	static hid_t value() {
-                hid_t ret = H5Tcreate(H5T_COMPOUND, sizeof(interval));
-                hid_t str = H5Tcopy(H5T_C_S1);
-                H5Tset_size(str, 64);
-                H5Tinsert(ret, "name", HOFFSET(interval, name), str);
-                H5Tinsert(ret, "start", HOFFSET(interval, start), H5T_NATIVE_DOUBLE);
-                H5Tinsert(ret, "stop", HOFFSET(interval, stop), H5T_NATIVE_DOUBLE);
-                H5Tclose(str);
-                return ret;
-        }
-};
-
-template<>
-struct datatype_traits<message> {
-	static hid_t value() {
-                hid_t str = H5Tcopy(H5T_C_S1);
-                H5Tset_size(str, H5T_VARIABLE);
-                hid_t ret = H5Tcreate(H5T_COMPOUND, sizeof(arf::message));
-                H5Tinsert(ret, "sec", HOFFSET(arf::message, sec), H5T_STD_I64LE);
-                H5Tinsert(ret, "usec", HOFFSET(arf::message, usec), H5T_STD_I64LE);
-                H5Tinsert(ret, "message", HOFFSET(arf::message, msg), str);
-                H5Tclose(str);
-                return ret;
-        }
-};
-
-}}
-
 
 /**
  * @brief Represents an arf entry.
@@ -214,50 +179,6 @@ public:
 			write_attribute("arf_version", ARF_VERSION);
 		}
 	}
-
-        /**
-         * @brief write a message to the log dataset
-         *
-         * Adds a message to the /log dataset, storing a timestamp and a
-         * variable length string. Reading the dataset is not implemented in
-         * this interface.
-         *
-         * @param message  the message to store
-         * @param sec      the timestamp of the message (seconds since epoch)
-         * @param usec     the timestamp of the message (microseconds)
-         */
-        void log(std::string const & message, boost::int64_t sec, boost::int64_t usec=0) {
-                if (!log_dset) open_log();
-                arf::message msg = { sec, usec, message.c_str() };
-                log_dset->write(&msg, 1);
-        }
-
-        void log(std::string const & message) {
-                struct timeval tp;
-                gettimeofday(&tp,0);
-                log(message, tp.tv_sec, tp.tv_usec);
-        }
-
-
-protected:
-
-        h5pt::packet_table::ptr_type log_dset;
-
-private:
-        // generates a log dataset at the top level
-        void open_log() {
-                if (contains("log")) {
-                        try {
-                                log_dset.reset(new h5pt::packet_table(_self,"log"));
-                        }
-                        catch (Exception &e) {
-                                throw Exception("/log exists but has wrong type");
-                        }
-                }
-                else {
-                        log_dset = create_packet_table<arf::message>("log");
-                }
-        }
 
 };
 

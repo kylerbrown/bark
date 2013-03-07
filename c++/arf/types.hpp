@@ -27,6 +27,11 @@ typedef boost::shared_ptr<entry> entry_ptr;
 class file;
 typedef boost::shared_ptr<file> file_ptr;
 
+namespace h5d {
+        class dataset;
+}
+typedef boost::shared_ptr<h5d::dataset> dataset_ptr;
+
 namespace h5pt {
         class packet_table;
 }
@@ -47,24 +52,6 @@ enum DataType {
         INTERVAL = 2000,
 	STIMI = 2001,
 	COMPONENTL = 2002
-};
-
-/**
- * @brief Storage format for interval data
- */
-struct interval {
-        boost::uint32_t start;
-        boost::uint32_t stop;
-        char name[64];         // fixed length more compatible with earlier ARF specs
-};
-
-/**
- * @brief Storage format for log messages
- */
-struct message {
-        boost::int64_t sec;
-        boost::int64_t usec;
-        char const * msg;       // stored as vlen
 };
 
 }

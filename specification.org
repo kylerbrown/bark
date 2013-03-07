@@ -17,7 +17,7 @@ quantities in a hierarchical structure. ARF is based on the [[http://www.hdfgrou
 
 * Licence
 
-Copyright (c) 2010-2013 Dan Meliza.
+Copyright (c) 2010-2013 C Daniel Meliza.
 
 This Specification is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
@@ -185,7 +185,8 @@ Values below 1000 are reserved for sampled data types.
 
 ARF files may have datasets in the root group. These are not associated with any
 entry, but may used to store structured data or metadata for the entire file.
-For example, data recording software may keep a log of events.
+For example, data recording software may keep a log of events. There are no
+requirements for the datatype, dataspace, or attributes of these datasets.
 
 ** Extensions to the format
 
