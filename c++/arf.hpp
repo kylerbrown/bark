@@ -6,7 +6,11 @@
 #ifndef _ARF_HH
 #define _ARF_HH 1
 
+// don't include extra headers
+#define BOOST_UUID_NO_TYPE_TRAITS
 #include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/string_generator.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include "arf/types.hpp"
 #include "arf/h5e.hpp"
@@ -39,7 +43,6 @@ namespace arf {
  * Consequently, many of the objects cannot be copied and do not have
  * public constructors.
  *
- *
  */
 
 /**
@@ -55,8 +58,11 @@ public:
 	/** Open an existing entry object */
 	entry(h5a::node const & parent, std::string const & name)
 		: h5g::group(parent, name) {
-                if (contains("uuid"))
-                        read_attribute("uuid",_uuid);
+                if (has_attribute("uuid")) {
+                        std::string s;
+                        read_attribute("uuid",s);
+                        _uuid = boost::uuids::string_generator()(s);
+                }
         }
 
 	/** Create a new entry object */
@@ -66,7 +72,7 @@ public:
 		: h5g::group(parent, name, true),
                   _uuid(boost::uuids::random_generator()()) {
 		write_attribute<boost::int64_t, Type>("timestamp", timestamp);
-		write_attribute("uuid", _uuid);
+		write_attribute("uuid", boost::uuids::to_string(_uuid));
 	}
 
 	entry(h5a::node const & parent, std::string const & name,
@@ -75,7 +81,7 @@ public:
                   _uuid(boost::uuids::random_generator()()) {
                 boost::int64_t ts[2] = { timestamp->tv_sec, timestamp->tv_usec };
 		write_attribute("timestamp", ts, 2);
-		write_attribute("uuid", _uuid);
+		write_attribute("uuid", boost::uuids::to_string(_uuid));
 	}
 
 	/**

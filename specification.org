@@ -94,7 +94,9 @@ attributes are required:
                 second the rest of the elapsed time, in microseconds. Must have
                 at least 64-bit integer precision.
 + uuid :: A universally unique ID for the entry (see [[http://tools.ietf.org/html/rfc4122.html][RFC 4122]]). Must be stored
-          as a 16-byte =H5T_STRING= with =CTYPE= of =H5T_C_S1=.
+          as a 128-bit integer or a 36-byte =H5T_STRING= with =CTYPE= of
+          =H5T_C_S1=. The latter is preferred as 128-bit integers are not
+          supported on many platforms.
 
 In addition, the following optional attributes are defined. They do not need to
 be present in the group if not applicable, but if they are present they must

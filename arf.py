@@ -167,10 +167,12 @@ class entry(hp.Group):
 
     @property
     def uuid(self):
-        """ return the uuid for the entry """
+        """ return the uuid for the entry. If not present or can't be read, returns the null uuid """
         from uuid import UUID
-        # numpy shortens strings ending in \0
-        return UUID(bytes=self.attrs.get('uuid','').rjust(16,'\0'))
+        try:
+            return UUID(self.attrs['uuid'])
+        except:
+            return UUID(int=0)
 
     def __repr__(self):
         return '%s: %d channel%s' % (self.name, self.nchannels,pluralize(self.nchannels))
@@ -554,11 +556,14 @@ def set_uuid_attr(node, uuid=None):
     if uuid is None:
         uuid = uuid4()
     elif isinstance(uuid, basestring):
-        uuid = UUID(bytes=uuid)
+        if len(uuid)==16:
+            uuid = UUID(bytes=uuid)
+        else:
+            uuid = UUID(hex=uuid)
 
     if "uuid" in node.attrs:
         del node.attrs["uuid"]
-    node.attrs.create("uuid", uuid.bytes, dtype="|S16")
+    node.attrs.create("uuid", str(uuid), dtype="|S36")
 
 __all__ = ['file', 'entry', 'table', 'DataTypes']
 

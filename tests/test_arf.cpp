@@ -57,9 +57,8 @@ void write_entry(arf::file & f, char const * entry) {
 	arf::entry g(f,entry,&tp);
 
         // check that stored uuid matches created one
-        boost::uuids::uuid u;
-        g.read_attribute("uuid",u);
-        assert (u == g.uuid());
+        arf::entry gg(f,entry);
+        assert (gg.uuid() == g.uuid());
 
 	g.write_attribute()
                 ("intattr",testval_int)

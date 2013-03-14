@@ -89,12 +89,14 @@ struct datatype_traits<char const *> {
 	static hid_t value() { return H5Tcopy(H5T_C_S1); }
 };
 
-/** uuid's are stored as a 16-byte array */
+/**
+ * uuids can be stored directly as a 128-bit integer, but the preferred format
+ * in the specification is as a hex-encoded string.
+ */
 template<>
 struct datatype_traits<boost::uuids::uuid> {
         static hid_t value() {
-                hid_t v = H5Tcopy(H5T_C_S1);
-                // H5Tset_strpad(v, H5T_STR_NULLPAD);  // seems not to matter
+                hid_t v = H5Tcopy(H5T_NATIVE_CHAR); // 128-bit integer
                 H5Tset_size(v, 16);
                 return v;
         }
