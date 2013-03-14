@@ -135,6 +135,11 @@ class node : public handle {
 
 public:
 
+        /** Determine whether an attribute with a given name exists on the object */
+        bool has_attribute(std::string const & name) {
+                return (h5e::check_error(H5Aexists(_self, name.c_str())));
+        }
+
 	/** Set/create an attribute.
 	 *  If the attribute doesn't exist, it's created using the type of the data.
 	 *  If the attribute already exists, it's updated. If the data can't be converted
