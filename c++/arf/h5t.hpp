@@ -81,12 +81,20 @@ struct datatype_traits {
 
 template<>
 struct datatype_traits<std::string> {
-	static hid_t value() { return H5Tcopy(H5T_C_S1); }
+	static hid_t value() {
+                hid_t str = H5Tcopy(H5T_C_S1);
+                H5Tset_cset(str, H5T_CSET_UTF8);
+                return str;
+        }
 };
 
 template<>
 struct datatype_traits<char const *> {
-	static hid_t value() { return H5Tcopy(H5T_C_S1); }
+	static hid_t value() {
+                hid_t str = H5Tcopy(H5T_C_S1);
+                H5Tset_cset(str, H5T_CSET_UTF8);
+                return str;
+        }
 };
 
 /**
