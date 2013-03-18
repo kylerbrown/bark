@@ -164,6 +164,16 @@ main(int argc, char ** argv)
                 }
         }
 
+        // try some error conditions
+        bool flag = false;
+        try {
+                arf::h5f::file f("nosuchfile.arf","r");
+        }
+        catch (arf::Exception &e) {
+                flag = true;
+        }
+        assert(flag);
+
         std::cout << "Passed all tests" << std::endl;
 	return 0;
 }

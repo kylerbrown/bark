@@ -40,6 +40,8 @@ public:
 		const char * name = path.c_str();
 		h5p::proplist fapl(H5P_FILE_ACCESS);
                 h5p::proplist fcpl(H5P_FILE_CREATE);
+                H5Eset_auto(H5E_DEFAULT,0,0); // silence hdf5 error stack
+
 #ifdef H5_HAVE_PARALLEL
 		H5Pset_fapl_mpiposix(fapl.hid(), MPI_COMM_WORLD, false);
 #endif
@@ -75,7 +77,10 @@ public:
                 }
 	}
 
-	void flush() { h5e::check_error(H5Fflush(_file_id, H5F_SCOPE_GLOBAL)); }
+	void flush() {
+                if (H5Iget_type(_file_id)==H5I_FILE)
+                        H5Fflush(_file_id, H5F_SCOPE_GLOBAL);
+        }
 
 	/**
 	 * Return size of the file, in bytes

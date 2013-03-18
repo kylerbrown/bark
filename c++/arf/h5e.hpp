@@ -62,9 +62,6 @@ static herr_t auto_throw(hid_t estack, void*) {
 	return 0;
 }
 
-/* when this header is included, it shuts off the HDF5 library's error handling. */
-static herr_t _silence_errors = H5Eset_auto(0,0,0);
-
 }
 
 /**

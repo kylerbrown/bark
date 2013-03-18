@@ -33,7 +33,6 @@ struct name_iterator {
 	}
 };
 
-
 }
 
 /**
