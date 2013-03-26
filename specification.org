@@ -89,8 +89,8 @@ the data objects associated with that entry, stored as HDF5 datasets, and all
 the metadata associated with the entry, stored as HDF5 attributes. The following
 attributes are required:
 
-+ timestamp ::  The start time of the entry. A two-element array with the first
-                element the number of seconds since January 1, 1970, and the
++ timestamp :: The start time of the entry. A two-element array with the first
+                element the number of seconds since January 1, 1970 UTC, and the
                 second the rest of the elapsed time, in microseconds. Must have
                 at least 64-bit integer precision.
 + uuid :: A universally unique ID for the entry (see [[http://tools.ietf.org/html/rfc4122.html][RFC 4122]]). Must be stored

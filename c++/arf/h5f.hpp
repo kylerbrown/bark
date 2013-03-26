@@ -33,6 +33,9 @@ public:
 	 * 'a' : read-write access, creating file if necessary
 	 * 'w' : read-write access; truncates file if it exists
 	 *
+	 * @note destruction may not fully close the file, if objects in the
+	 *       file remain open
+	 *
 	 * @param name  the path of the file to open/create
 	 * @param mode  the mode to open the file
 	 */
@@ -51,11 +54,14 @@ public:
 		if(mode == "r")
 			_file_id = h5e::check_error(H5Fopen(name, H5F_ACC_RDONLY, fapl.hid()));
 		else if (mode == "a") {
-			if (H5Fis_hdf5(name) > 0)
-				_file_id = h5e::check_error(H5Fopen(name, H5F_ACC_RDWR, fapl.hid()));
-			else
+                        // test for existence (HDF5is_hdf5 may not work)
+                        FILE *fp = fopen(name,"r");
+                        fclose(fp);
+                        if (fp == 0)
 				_file_id = h5e::check_error(H5Fcreate(name, H5F_ACC_TRUNC,
 								      fcpl.hid(), fapl.hid()));
+                        else
+				_file_id = h5e::check_error(H5Fopen(name, H5F_ACC_RDWR, fapl.hid()));
 		}
 		else if (mode == "w")
 			_file_id = h5e::check_error(H5Fcreate(name, H5F_ACC_TRUNC, fcpl.hid(), fapl.hid()));
@@ -73,6 +79,9 @@ public:
 
 	~file() {
 		if (H5Iget_type(_file_id)==H5I_FILE) {
+#ifdef H5_HAVE_PARALLEL
+                        H5Fflush(_file_id, H5F_SCOPE_GLOBAL);
+#endif
 			H5Fclose(_file_id);
                 }
 	}
@@ -82,21 +91,23 @@ public:
                         H5Fflush(_file_id, H5F_SCOPE_GLOBAL);
         }
 
-	/**
-	 * Return size of the file, in bytes
-	 */
+	/** size of the file, in bytes */
 	hsize_t size() const {
 		hsize_t v;
 		h5e::check_error(H5Fget_filesize(_file_id, &v));
 		return v;
 	}
 
+        /** name of the file */
 	std::string name() const {
 		ssize_t sz = H5Fget_name(_file_id, 0, 0);
 		char name[sz+1];
 		H5Fget_name(_file_id, name, sz+1);
 		return name;
 	}
+
+        /** the identifier for the file */
+        hid_t file_id() const { return _file_id; }
 
 private:
 	hid_t _file_id;

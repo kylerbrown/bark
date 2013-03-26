@@ -148,12 +148,15 @@ main(int argc, char ** argv)
                 f.children();  // make sure iteration works
 
                 std::cout << "File size after writes:" << f.size() << std::endl;
-                f.flush();
-                std::cout << "File size after flush:" << f.size() << std::endl;
+
+                // test concurrent access
+                arf::h5f::file g("test.arf","a");
+                assert(g.children() == f.children());
         }
 
         {
                 arf::h5f::file f("test.arf","r");
+                std::cout << "File size after flush:" << f.size() << std::endl;
                 char ename[64];
 
                 for (i = 0; i < nentries; ++i) {
