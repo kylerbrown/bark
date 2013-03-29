@@ -20,7 +20,6 @@
 #include "arf/h5s.hpp"
 #include "arf/h5d.hpp"
 #include "arf/h5pt.hpp"
-#include <sys/time.h>
 
 namespace arf {
 
@@ -76,10 +75,10 @@ public:
 	}
 
 	entry(h5a::node const & parent, std::string const & name,
-	      timeval const * timestamp)
+              boost::int64_t tv_sec, boost::int64_t tv_usec=0)
 		: h5g::group(parent, name, true),
                   _uuid(boost::uuids::random_generator()()) {
-                boost::int64_t ts[2] = { timestamp->tv_sec, timestamp->tv_usec };
+                boost::int64_t ts[2] = { tv_sec, tv_usec };
 		write_attribute("timestamp", ts, 2);
 		write_attribute("uuid", boost::uuids::to_string(_uuid));
 	}

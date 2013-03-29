@@ -54,7 +54,7 @@ interval testval_interval = { "label_%03d", 0, 123};
 void write_entry(arf::file & f, char const * entry) {
 
 	gettimeofday(&tp,0);
-	arf::entry g(f,entry,&tp);
+	arf::entry g(f,entry,tp.tv_sec,tp.tv_usec);
 
         // check that stored uuid matches created one
         arf::entry gg(f,entry);
