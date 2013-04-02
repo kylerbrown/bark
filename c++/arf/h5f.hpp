@@ -56,12 +56,13 @@ public:
 		else if (mode == "a") {
                         // test for existence (HDF5is_hdf5 may not work)
                         FILE *fp = fopen(name,"r");
-                        fclose(fp);
                         if (fp == 0)
 				_file_id = h5e::check_error(H5Fcreate(name, H5F_ACC_TRUNC,
 								      fcpl.hid(), fapl.hid()));
-                        else
+                        else {
+                                fclose(fp);
 				_file_id = h5e::check_error(H5Fopen(name, H5F_ACC_RDWR, fapl.hid()));
+                        }
 		}
 		else if (mode == "w")
 			_file_id = h5e::check_error(H5Fcreate(name, H5F_ACC_TRUNC, fcpl.hid(), fapl.hid()));
