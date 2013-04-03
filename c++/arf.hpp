@@ -1,6 +1,12 @@
 /* @(#)arf.hpp
  * @brief C++ arf interface
  *
+ * Copyright (C) 2011-2013 C Daniel Meliza <dan||meliza.org>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  */
 
 #ifndef _ARF_HH
@@ -41,6 +47,14 @@ namespace arf {
  * manage and call the appropriate cleanup function on destruction.
  * Consequently, many of the objects cannot be copied and do not have
  * public constructors.
+ *
+ */
+
+/*
+ * valgrind testing notes:
+ *
+ * hdf5 needs to be compiled with --enable-using-memchecker
+ * boost::uuid causes a lot of uninitialized memory errors, but this is intentional
  *
  */
 

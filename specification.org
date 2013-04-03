@@ -2,7 +2,7 @@
 #+STARTUP:    align fold hidestars oddeven
 #+TITLE:    Advanced Recording Format Specification (2.0.0)
 #+AUTHOR:    Dan Meliza
-#+EMAIL:     dan@meliza.org
+#+EMAIL:     dan||meliza.org
 #+DATE: [2013-03-05 Tue]
 #+LANGUAGE:   en
 #+OPTIONS: ^:nil H:2

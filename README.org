@@ -1,6 +1,6 @@
 #-*- mode: org -*-
 #+AUTHOR:    Dan Meliza
-#+EMAIL:     dan@meliza.org
+#+EMAIL:     dan||meliza.org
 #+DATE: [2013-02-08 Fri]
 
 The Advanced Recording Format (*ARF*) is an open standard for storing data from

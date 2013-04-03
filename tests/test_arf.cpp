@@ -1,6 +1,6 @@
 /* @file test.cpp
  *
- * Copyright (C) 2011 C Daniel Meliza <dan@meliza.org>
+ * Copyright (C) 2011-2013 C Daniel Meliza <dan||meliza.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,8 +39,8 @@ struct datatype_traits<interval> {
 }}}
 
 unsigned short seed[3] = { 0 };
-const int nsamples = 100;
-const int nentries = 64;
+const int nsamples = 1 << 12;
+const int nentries = 1 << 8;
 const int npackets = 5;
 
 struct timeval tp;
