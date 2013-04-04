@@ -52,8 +52,7 @@ public:
 	}
 
 	~dataset() {
-                // if the file closes the handle can be invalidated
-		if (H5Iis_valid(_self)) H5Dclose(_self);
+                H5Dclose(_self);
 	}
 
 	/** Write data to the current dataset. The extent of the dataset is resized to match. */

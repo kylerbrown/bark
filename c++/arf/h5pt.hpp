@@ -49,7 +49,7 @@ public:
 	}
 
 	~packet_table() {
-		if (H5PTis_valid(_self)) H5PTclose(_self);
+                H5PTclose(_ptself);
 	}
 
 	/**

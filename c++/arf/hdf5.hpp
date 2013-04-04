@@ -31,9 +31,7 @@ struct Exception : public std::runtime_error {
 class handle : boost::noncopyable {
 public:
 	virtual ~handle() {
-#ifdef DEBUG
 		assert(H5Iis_valid(_self) == 0);
-#endif
 	}
 
 	/** Return the path of the object */
