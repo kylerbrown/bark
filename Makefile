@@ -1,4 +1,5 @@
 
+PREFIX=/usr/local
 CXX=g++
 CFLAGS=-g2 -Wall -Ic++ -I/opt/local/include
 LDFLAGS=-L/opt/local/lib
@@ -15,5 +16,7 @@ clean:
 	rm -f test.arf tests/*.o tests/test_arf tests/test.arf
 
 install:
-	find c++ -name "*.hpp" -exec install -m 644 -o root {} /usr/local/include \;
+	install -d $(PREFIX)/include/arf
+	install -m 644 -o root c++/*.hpp $(PREFIX)/include/
+	install -m 644 -o root c++/arf/*.hpp $(PREFIX)/include/arf/
 
