@@ -43,7 +43,7 @@ specification. Any =2.x= implementation must be able to read and write any
 =2.x= file.
 
 The specification and implemenations are currently in release status for version
-2.0.0. There was never a public release of previous versions. Some additional tasks
+=2.0.0=. There was never a public release of previous versions. Some additional tasks
 remain:
 
 + Auto-generate documentation from docstrings in c++ and python code
