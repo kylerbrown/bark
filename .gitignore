@@ -6,3 +6,5 @@
 /tests/test_arf
 /.sconsign.dblite
 /build/
+/MANIFEST
+/dist/

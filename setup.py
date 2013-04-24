@@ -16,7 +16,6 @@ Intended Audience :: Science/Research
 License :: OSI Approved :: GNU General Public License (GPL)
 Programming Language :: Python
 Programming Language :: C++
-Programming Language :: MATLAB
 Topic :: Scientific/Engineering
 Operating System :: Unix
 Operating System :: POSIX :: Linux
@@ -32,7 +31,8 @@ are HDF5 files used to store audio and neurophysiological recordings in a
 rational, hierarchical format. Data are organized around the concept of an
 entry, which is a set of data channels that all start at the same time.
 Supported data types include sampled data and event data (i.e. spike times).
-Requires h5py (at least 2.0) and numpy (at least 1.3). """
+Requires h5py (at least 2.0) and numpy (at least 1.3).
+"""
 
 setup(
     name = 'arf',
