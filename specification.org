@@ -13,7 +13,7 @@ acoustic, and behavioral data along with associated metadata and derived
 quantities in a hierarchical structure. ARF is based on the [[http://www.hdfgroup.org/HDF5/][HDF5 format]].
 
 - Editor: Dan Meliza <dan at meliza.org>
-- State:  draft
+- State:  released
 
 * Licence
 

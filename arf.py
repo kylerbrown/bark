@@ -184,7 +184,7 @@ class entry(hp.Group):
         for k,v in attrs.items():
             if k.isupper(): continue
             if k=='timestamp':
-                out += "\n  timestamp : %s" % datetime_timestamp(v).strftime("%Y-%m-%d %H:%M:%S.%f %z")
+                out += "\n  timestamp : %s" % datetime_timestamp(v).strftime("%Y-%m-%d %H:%M:%S.%f")
             elif k=='uuid':
                 out += "\n  uuid : %s" % self.uuid
             else:
@@ -505,13 +505,15 @@ def convert_timestamp(obj):
 def datetime_timestamp(timestamp):
     """
     Convert a timestamp array (seconds, microseconds) into a
-    datetime.datetime object.
+    datetime.datetime object (naive local time)
     """
     from datetime import datetime, timedelta
     obj = datetime.fromtimestamp(timestamp[0])
     return obj + timedelta(microseconds=int(timestamp[1]))
 
+
 def dataset_properties(dset):
+
     """
     Infer the type of data and some properties of an hdf5 dataset.
 
