@@ -495,7 +495,8 @@ def convert_timestamp(obj):
     elif isinstance(obj, (int, long)):
         out[0] = long(obj)
     elif isinstance(obj, (tuple,list)) and len(obj) >= 2:
-        out[1]  = long(obj[1]) if obj[1] else 0
+        if obj[1]: out[1]  = long(obj[1])
+        else: obj[1] = 0
         out[0] = long(obj[0])
     else:
         raise TypeError, "unable to convert %s to timestamp" % obj
