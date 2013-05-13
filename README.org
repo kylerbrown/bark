@@ -28,7 +28,7 @@ uninterpretable.
 
 This repository contains:
 
-+ The specification for arf (see file:specification.org)
++ The specification for arf (in specification.org)
 + A fast, type-safe C++ interface for reading and writing arf files
 + A python interface for reading and writing arf files (based on h5py).
 + A very rudimentary MATLAB interface
@@ -36,11 +36,11 @@ This repository contains:
 ** version information
 
 The specification and implementations provided in this project use semantic
-versioning (http://semver.org). The implementation versions are sychronized with
-the major and minor version of the specification. For example, any python =arf=
-package with version =2.0.x= is an implementation of the =2.0= ARF
-specification. Any =2.x= implementation must be able to read and write any
-=2.x= file.
+versioning (http://semver.org). The implementation versions are synchronized
+with the major and minor version of the specification. For example, any python
+=arf= package with version =2.0.x= is an implementation of the =2.0= ARF
+specification. Any =2.x= implementation must be able to read and write any =2.x=
+file.
 
 The specification and implemenations are currently in release status for version
 =2.0.0=. There was never a public release of previous versions. Some additional tasks
@@ -105,3 +105,11 @@ documentation for details on how to structure the output. For example, to
 extract sampled data to a 16-bit little-endian file (i.e., PCM format):
 
 : $ h5dump -d /test_0001/pcm -b LE -o test_0001.pcm file.arf
+
+** related projects
+
++ pandora (https://github.com/G-Node/pandora) has the most similar goals and
+  is also implemented on top of HDF5.
++ neuroshare (http://neuroshare.org) is a set of routines for reading and
+  writing data in various proprietary and open formats
+
