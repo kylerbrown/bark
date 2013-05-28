@@ -53,26 +53,40 @@ interpreted as described in RFC 2119[3].
 Bioacoustic, electrophysiological, and behavioral data fall into two general
 types:
 
-+ sampled data :: A quantitative physical property of a system (e.g. sound
-                  pressure or voltage) measured at discrete intervals. The
-                  /sampling rate/ of the data is the number of times per second
-                  the value is sampled.
-+ event data :: A series of events taking place at discrete times. Event data
-                are /simple/ if the events are identical except for the time
-                they occurred (e.g., spike times). Event data are /complex/ if
-                additional information is associated with the events; for
-                example, stimulus presentation events are associated with
-                stimulus identity and whether the stimulus is starting or stopping.
++ sampled data :: A quantitative physical property of a system (e.g., sound
+                  pressure or voltage) measured at discrete intervals (i.e., a
+                  discrete times series). The /sampling rate/ of the data is the
+                  number of times per second the value is sampled.
++ event data :: A series of events taking place at discrete times (i.e., a point
+                process). Event data are /simple/ if the events are identical
+                except for the time they occurred (e.g., spike times). Event
+                data are /complex/ if additional information is associated with
+                the events; for example, stimulus presentation events are
+                associated with stimulus identity and whether the stimulus is
+                starting or stopping.
 
 The goal of ARF is to provide an open, unified, and portable format for storing
 data of these types, along with sufficient metadata to reconstruct the
 conditions of the experiment for many decades in the future.
 
-In this specification, an /entry/ is defined as an abstract grouping of data
-that all start at the same time. The data may be sampled or event, may comprise
-multiple channels, and may be unequal in length. For example, an entry could
-consist of the sound pressure waveform of a bird singing and the spike times for
-several neurons recorded in the song control nucleus HVC.
+In this specification, an /entry/ is defined as an abstract grouping of zero or
+more /datasets/ that all start at the same time. The /datasets/ in an entry may
+be sampled or event, may be unequal in length, and may have different
+/timebases/.
+
+A /timebase/ may be /real/ or /sampled/. Real timebases are specified either a
+unit of time (e.g., seconds). In sampled timebases, the units are samples, and
+thus the sampling rate and the units of the rate (e.g., Hz) must be specified in
+order to convert to real times. Both sampled and event data may have sampled
+timebases, but only event data may have a real timebase. A timebase also
+requires an offset relative to the start of the entry, which is assumed to be
+zero.
+
+As an example, an entry could consist of the sound pressure waveform of a bird
+singing (a sampled dataset) and the spike times for several neurons recorded in
+the song control nucleus HVC (event datasets).  Another example is a set of
+EEG signals recorded at different locations on the scalp (sampled data) and the
+onset and offset of a presented stimulus (event data).
 
 * Implementation
 
@@ -89,10 +103,11 @@ the data objects associated with that entry, stored as HDF5 datasets, and all
 the metadata associated with the entry, stored as HDF5 attributes. The following
 attributes are required:
 
-+ timestamp :: The start time of the entry. A two-element array with the first
-                element the number of seconds since January 1, 1970 UTC, and the
-                second the rest of the elapsed time, in microseconds. Must have
-                at least 64-bit integer precision.
++ timestamp :: The start time of the entry. This attribute shall consist of a
+               two-element array with the first element indicating the number of
+               seconds since January 1, 1970 UTC, and the second element
+               indicating the rest of the elapsed time, in microseconds. Must
+               have at least 64-bit integer precision.
 + uuid :: A universally unique ID for the entry (see [[http://tools.ietf.org/html/rfc4122.html][RFC 4122]]). Must be stored
           as a 128-bit integer or a 36-byte =H5T_STRING= with =CTYPE= of
           =H5T_C_S1=. The latter is preferred as 128-bit integers are not
@@ -118,21 +133,23 @@ below), but all datasets must have the following attributes:
 
 + units ::  Units of the channel data, which should be in SI notation. May be an
             empty string for sampled data if units are not known. Format must be
-            a =H5T_STRING=.
+            a =H5T_STRING=.  Event data must have units of "samples" (for a
+            sampled timebase) or "s" (for a real timebase); sampled data must
+            not use these units.
 + datatype ::  Indicates the source of data in the entry. Must have at least
                unsigned integer precision great enough to include all the values
                defined in [[Datatypes]].
 
-The following attributes are defined, but are optional for some data types.
+The timebase of the dataset is defined by the following attributes:
 
 + sampling_rate :: A nonzero number indicating the sampling rate of the data, in
-                   Hz. Required for sampled data, and for interval and event
-                   data with units of samples. May be any numerical datatype.
+                   Hz. Required for all datasets with a sampled timebase. May be
+                   any numerical datatype.
 + offset :: Indicates the start time of the dataset relative to the start of the
-            entry. For sampled data, the units must be samples. For event data
-            types, the units must be the same as the units of the dataset. May
-            be any numerical type. If missing, the offset shall be assumed to be
-            zero.
+            entry, defined by the timebase of the dataset. For sampled
+            timebases, the units must be in samples; for real timebases, the
+            units must be the same as the units of the dataset. If missing, the
+            offset shall be assumed to be zero.
 
 *** Sampled data
 
@@ -145,13 +162,17 @@ is unspecified. The =sampling_rate= attribute is required.
 
 Event data may be stored in one of two formats. Simple event data should be
 stored in a 1D array, with each element in the array indicating the time of the
-event *relative to the start of the entry* (or dataset, if there is an offset).
-Event arrays are distinguished from sampled data arrays by the =datatype= and
-=units= attributes.
+event *relative to the start of the dataset*. Event datasets can be
+distinguished from sampled datasets because the =units= attribute must be
+"samples" or "s".
 
 Complex event data must be stored as arrays with a compound datatype (i.e., with
 multiple fields). Only one field is required, =start=, which indicates the time
 of the event and can be any numerical type.
+
+Spike waveforms and features extracted from raw data should be stored in
+complex event datasets, with the =start= field indicating the time of the spike
+and additional array or scalar fields storing the waveforms and features.
 
 A special case of event data are intervals, which are defined by a start and
 stop time. In previous versions of the specification, this was considered a
