@@ -66,8 +66,12 @@ bad_datasets = [ dict(name="string datatype",
                                               names=("time","state")),
                       units="s"),
                  dict(name="missing units for complex dtype",
-                  data=nx.rec.fromrecords([(1.0, 1, "stimulus"),(5.0,0,"stimulus")],
-                                          names=("start","state","name"))),
+                      data=nx.rec.fromrecords([(1.0, 1, "stimulus"),(5.0,0,"stimulus")],
+                                              names=("start","state","name"))),
+                 dict(name="wrong length units for complex dtype",
+                      data=nx.rec.fromrecords([(1.0, 1, "stimulus"),(5.0,0,"stimulus")],
+                                              names=("start","state","name")),
+                      units=("seconds",)),
                  ]
 
 def create_entry(name):

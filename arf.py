@@ -131,12 +131,14 @@ class entry(hp.Group):
                 raise ValueError("data must be in array with numeric or compound type")
         if not data.dtype.isbuiltin:
             if 'start' not in data.dtype.names:
-                raise ValueError("complex event type is missing required start field")
+                raise ValueError("complex event data requires 'start' field")
+            if units == '' or (not isinstance(units, basestring) and len(units) != len(data.dtype.names)):
+                raise ValueError("complex event data requires array of units, one per field")
         if units == '':
             if not data.dtype.isbuiltin:
                 raise ValueError("event data requires units")
             if not isinstance(attributes.get('sampling_rate', None), Number):
-                raise ValueError("missing sampling_rate attribute")
+                raise ValueError("unitless data assumed time series and requires sampling_rate attribute")
         elif units == 'samples' and not isinstance(attributes.get('sampling_rate', None), Number):
             raise ValueError("data with units of 'samples' requires sampling_rate attribute")
         # NB: can't really catch case where sampled data has units but doesn't
