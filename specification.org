@@ -1,16 +1,18 @@
 #-*- mode: org -*-
 #+STARTUP:    align fold hidestars oddeven
-#+TITLE:    Advanced Recording Format Specification (2.0.0)
+#+TITLE:    Advanced Recording Format Specification (2.0)
 #+AUTHOR:    Dan Meliza
 #+EMAIL:     dan||meliza.org
 #+DATE: [2013-03-05 Tue]
 #+LANGUAGE:   en
 #+OPTIONS: ^:nil H:2
-#+STYLE:    <link rel="stylesheet" href="org.css" type="text/css" />
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="org.css" />
 
-The Advance Recording Format (ARF) is for storing electrophysiological,
+The Advanced Recording Format (ARF) is for storing electrophysiological,
 acoustic, and behavioral data along with associated metadata and derived
-quantities in a hierarchical structure. ARF is based on the [[http://www.hdfgroup.org/HDF5/][HDF5 format]].
+quantities in a hierarchical structure. ARF is based on the [[http://www.hdfgroup.org/HDF5/][HDF5 format]],
+allowing files to be accessed on a wide range of operating systems and
+architectures.
 
 - Editor: Dan Meliza <dan at meliza.org>
 - State:  released
@@ -40,7 +42,10 @@ Standards Organization's Consensus-Oriented Specification System (COSS)[2].
 Version numbering from 2.0 on must be semantic (http://semver.org). Changes that
 maintain backwards compatibility (i.e., that do not change or remove any
 required fields and attributes) result in increments to the minor version.
-Changes that break backwards compatibility must receive new major version numbers.
+Changes that break backwards compatibility must receive new major version
+numbers. Changes that significantly alter the goals of the specification must
+result in a new identifier, preferably with a reference to the version of this
+document at the time of the fork.
 
 * Language
 
@@ -50,58 +55,69 @@ interpreted as described in RFC 2119[3].
 
 * Goals and conceptual framework
 
-Bioacoustic, electrophysiological, and behavioral data fall into two general
-types:
+The goal of ARF is to provide an open, unified, flexible, and portable format
+for storing time-varying data, along with sufficient metadata to reconstruct
+the conditions of how the data were recorded for many decades in the future.
 
-+ sampled data :: A quantitative physical property of a system (e.g., sound
-                  pressure or voltage) measured at discrete intervals (i.e., a
-                  discrete times series). The /sampling rate/ of the data is the
-                  number of times per second the value is sampled.
-+ event data :: A series of events taking place at discrete times (i.e., a point
-                process). Event data are /simple/ if the events are identical
-                except for the time they occurred (e.g., spike times). Event
-                data are /complex/ if additional information is associated with
-                the events; for example, stimulus presentation events are
-                associated with stimulus identity and whether the stimulus is
-                starting or stopping.
+Time-varying data can be represented in two ways [4]:
 
-The goal of ARF is to provide an open, unified, and portable format for storing
-data of these types, along with sufficient metadata to reconstruct the
-conditions of the experiment for many decades in the future.
+- time series :: A quantitative physical property of a system (e.g., sound
+                 pressure or voltage) measured as a function of time. In digital
+                 computers, time series data are always sampled at discrete
+                 moments in time, usually at fixed intervals. The /sampling
+                 rate/ of the data is the number of times per second the value
+                 is sampled.
+- point process :: A sequence of events taking place at discrete times. In a
+                   simple point process, events are defined only by the times
+                   of occurrence. In a /marked/ point process, additional
+                   information is associated with the events.
 
-In this specification, an /entry/ is defined as an abstract grouping of zero or
-more /datasets/ that all start at the same time. The /datasets/ in an entry may
-be sampled or event, may be unequal in length, and may have different
-/timebases/.
+Bioacoustic, electrophysiological, and behavioral data can all be represented
+in this framework. Some examples:
 
-A /timebase/ may be /real/ or /sampled/. Real timebases are specified either a
-unit of time (e.g., seconds). In sampled timebases, the units are samples, and
-thus the sampling rate and the units of the rate (e.g., Hz) must be specified in
-order to convert to real times. Both sampled and event data may have sampled
-timebases, but only event data may have a real timebase. A timebase also
-requires an offset relative to the start of the entry, which is assumed to be
-zero.
++ an acoustic recording is a time series of the sound pressure level detected
+  by a microphone
++ an extracellular neural recording is a time series of the voltage measured by
+  an electrode
++ a spike train is an unmarked point process defined by the times of the action
+  potentials. A spike train could also be marked by the waveforms of the spikes.
++ stimuli presentations are a marked point process, with times indicating the
+  onsets and offsets and marks indicating the identity of the presented stimulus
++ a series of behavioral events can be represented by a point process,
+  optionally marked by measurable features of the event (location, intensity,
+  etc)
 
-As an example, an entry could consist of the sound pressure waveform of a bird
-singing (a sampled dataset) and the spike times for several neurons recorded in
-the song control nucleus HVC (event datasets).  Another example is a set of
-EEG signals recorded at different locations on the scalp (sampled data) and the
-onset and offset of a presented stimulus (event data).
+Clearly all these types of data can be represented in computers as arrays. The
+challenge is to organize and annotate the data in such a way that it can
+
+1. be unambiguously identified,
+2. be aligned with data from different sources,
+3. support a broad range of experimental designs, and
+4. be accessed with generic and widely available software
+
+A major design goal of *ARF* is to be minimal. Only the attributes and
+structural specifications needed to ensure that any type of data can be stored
+are included. The rest is up to the user. This goal sets *ARF* apart from many
+similar projects that attempt to explicitly deal with many use cases or that are
+specialized for one or a few applications.
 
 * Implementation
 
-ARF files shall be readable by the HDF5 library, version 1.8 or later. HDF5 is
-available on multiple platforms and supports automatic conversion of data types,
-allowing transparent access of data across many architectures. HDF5 files
-support hierarchical organization of datasets and metadata attributes. ARF
-specifies the layout used to store data within this framework.
+ARF files shall be in the HDF5 format, version 1.8 or later. HDF5 is critical to
+providing flexibility and portability. It is available on multiple platforms and
+supports automatic conversion of data types, allowing transparent access of data
+across many architectures. HDF5 files support hierarchical organization of
+datasets and metadata attributes. ARF specifies the layout used to store data
+within this framework, while allowing the user to add metadata specific to an
+application.
 
 ** Entries
 
-Each /entry/ shall be represented by an HDF5 group. The group shall contain all
-the data objects associated with that entry, stored as HDF5 datasets, and all
-the metadata associated with the entry, stored as HDF5 attributes. The following
-attributes are required:
+An /entry/ is defined as an abstract grouping of zero or more /datasets/ that
+all share a common start time. Each /entry/ shall be represented by an HDF5
+group. The group shall contain all the data objects associated with that entry,
+stored as HDF5 datasets, and all the metadata associated with the entry, stored
+as HDF5 attributes. The following attributes are required:
 
 + timestamp :: The start time of the entry. This attribute shall consist of a
                two-element array with the first element indicating the number of
@@ -115,41 +131,37 @@ attributes are required:
 
 In addition, the following optional attributes are defined. They do not need to
 be present in the group if not applicable, but if they are present they must
-have a datatype with class =H5T_STRING=, of any size, with =STRPAD= set to
-=H5T_STR_NULLTERM= (i.e. null-terminated), and =CTYPE= of =H5T_C_S1=. Encoding
-must be ASCII or UTF-8.
+have a datatype with class =H5T_STRING= and =CTYPE= of =H5T_C_S1=. Encoding
+must be ASCII or UTF-8 and match the value of =CSET=.
 
 + animal :: Indicates the name or ID of the animal.
 + experimenter :: Indicates the name or ID of the experimenter.
-+ protocol :: Optional comment field, indicating the treatment, stimulus, or any
-              other user-specified comment.
++ protocol :: Comment field indicating the treatment, stimulus, or any other
+              user-specified data.
 + recuri :: The URI of an external database where =uuid= can be looked up.
 
 ** Datasets
 
+A /dataset/ is defined as a concrete time series or point process.  Multiple
+datasets may be stored in an entry, and may be unequal in length or have
+different /timebases/.
+
+A /timebase/ is defined by two quantities (with units), one of which is optional
+under some circumstances. The required quantity is the /offset/ of the data.
+All time values in a dataset are relative to this time.  The default offset of
+a dataset is the timestamp of the entry.  Individual datasets may have their
+own offsets, which are calculated relative to the entry timestamp.
+
+The second quantity in a timebase is the /sampling rate/, which allows discrete
+times to be converted to real times. It is required if the data are sampled (as
+in a time series) or if time values in a point process are in units of samples.
+Only point proceses with real-valued units of time may omit the sampling rate.
+
+Real-valued times must be in units of seconds. Discrete-valued times must be in
+units of samples.
+
 Each channel of data in an entry shall be represented by a separate HDF5
-dataset. The format of each dataset depends on the type of data it stores (see
-below), but all datasets must have the following attributes:
-
-+ units ::  Units of the channel data, which should be in SI notation. May be an
-            empty string for sampled data if units are not known. Format must be
-            a =H5T_STRING=.  Event data must have units of "samples" (for a
-            sampled timebase) or "s" (for a real timebase); sampled data must
-            not use these units.
-+ datatype ::  Indicates the source of data in the entry. Must have at least
-               unsigned integer precision great enough to include all the values
-               defined in [[Datatypes]].
-
-The timebase of the dataset is defined by the following attributes:
-
-+ sampling_rate :: A nonzero number indicating the sampling rate of the data, in
-                   Hz. Required for all datasets with a sampled timebase. May be
-                   any numerical datatype.
-+ offset :: Indicates the start time of the dataset relative to the start of the
-            entry, defined by the timebase of the dataset. For sampled
-            timebases, the units must be in samples; for real timebases, the
-            units must be the same as the units of the dataset. If missing, the
-            offset shall be assumed to be zero.
+dataset. The format of each dataset depends on the type of data it stores.
 
 *** Sampled data
 
@@ -163,7 +175,7 @@ is unspecified. The =sampling_rate= attribute is required.
 Event data may be stored in one of two formats. Simple event data should be
 stored in a 1D array, with each element in the array indicating the time of the
 event *relative to the start of the dataset*. Event datasets can be
-distinguished from sampled datasets because the =units= attribute must be
+distinguished from 1D sampled datasets because the =units= attribute must be
 "samples" or "s".
 
 Complex event data must be stored as arrays with a compound datatype (i.e., with
@@ -175,16 +187,46 @@ complex event datasets, with the =start= field indicating the time of the spike
 and additional array or scalar fields storing the waveforms and features.
 
 A special case of event data are intervals, which are defined by a start and
-stop time. In previous versions of the specification, this was considered a
+stop time. In previous versions of the specification, intervals were considered a
 separate data type, with two additional required fields, =name= (a string) and
-=stop= (a time). These are not required as of version 2.0.
+=stop= (a time).  This format is permitted in version 2.0, but intervals may
+also be stored as separate start and stop events.
+
+*** Dataset attributes
+
+All datasets must have the following attributes.
+
++ units ::  A string giving the units of the channel data, which should be in SI
+            notation. May be an empty string for sampled data if units are not
+            known. Event data must have units of "samples" (for a discrete
+            timebase) or "s" (for a continuous timebase); sampled data must not
+            use these units. For complex event data, this attribute must be an
+            array, with each element of the array indicating the units of the
+            associated field in the data.
++ datatype ::  Indicates the source of data in the entry. Must have at least
+               unsigned integer precision great enough to include all the values
+               defined in [[Datatypes]].
+
+The following attribute is only required for datasets with a discrete timebase:
+
++ sampling_rate :: A nonzero number indicating the sampling rate of the data, in
+                   samples per second (Hz). Required for all datasets with a
+                   sampled timebase. May be any numerical datatype.
+
+The following attribute is entirely optional:
+
++ offset :: Indicates the start time of the dataset relative to the start of the
+            entry, defined by the timebase of the dataset. For discrete
+            timebases, the units must be in samples; for continuous timebases,
+            the units must be the same as the units of the dataset. If this
+            attribute is missing, the offset shall be assumed to be zero.
 
 *** Datatypes
 
 The =datatype= attribute is an integer code indicating the type of data in a
-channel. It specifies how the data should be interpreted but does not imply any
-contract as to the dataspace or storage type of the dataset. The following
-values are defined:
+channel. This field is purely advisory: it specifies how the data should be
+interpreted but does not imply any contract as to the dataspace or storage type
+of the dataset. The following values are defined:
 
 | value | name       | meaning                                              |
 |-------+------------+------------------------------------------------------|
@@ -204,12 +246,21 @@ values are defined:
 
 Values below 1000 are reserved for sampled data types.
 
-** Top-level datasets
+** General structural rules
 
-ARF files may have datasets in the root group. These are not associated with any
-entry, but may used to store structured data or metadata for the entire file.
-For example, data recording software may keep a log of events. There are no
-requirements for the datatype, dataspace, or attributes of these datasets.
+*** Top-level datasets
+
+ARF files may have datasets in the root group. These must not associated with
+any entry, but may be used to store structured data or metadata for the entire
+file. For example, data recording software may keep a log of events. There are
+no requirements for the datatype, dataspace, or attributes of these datasets.
+
+*** Multiple linkages
+
+Datasets must not be linked to more than one entry, as this would make the time
+of the data undefined.  Entries must not be multiply linked to the root HDF5
+group.  Entries may contain other entries, but their contents are not
+considered part of the ARF data hierarchy.
 
 ** Extensions to the format
 
@@ -269,5 +320,6 @@ continue to store them, but they were no longer required.
 + [1] "Definition of a Free and Open Standard" - [[http://www.digistan.org/open-standard:definition][digistan.org]]
 + [2] "Consensus Oriented Specification System" - [[http://www.digistan.org/spec:1/COSS][digistan.org]]
 + [3] "Key words for use in RFCs to Indicate Requirement Levels" - [[http://tools.ietf.org/html/rfc2119][ietf.org]]
-
++ [4] Brillinger, D. (1994) Time Series, Point Processes, and Hybrids. The
+  Canadian Journal of Statistics. doi:10.2307/3315583
 
