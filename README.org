@@ -43,11 +43,7 @@ specification. Any =2.x= implementation must be able to read and write any =2.x=
 file.
 
 The specification and implemenations are currently in release status for version
-=2.0.0=. There was never a public release of previous versions. Some additional tasks
-remain:
-
-+ Auto-generate documentation from docstrings in c++ and python code
-+ Update MATLAB interface to 2.0 spec.
+=2.0.0=. There was never a public release of previous versions.
 
 ** contributing
 
@@ -73,9 +69,9 @@ compiled. To install:
 : make install
 
 To install the MATLAB interface, add the matlab subdirectory to MATLAB's search
-path.
+path. The MATLAB interface is not yet up to the =2.0= specification.
 
-** accessing ARF files with HDF5 tools
+** access ARF files with HDF5 tools
 
 This section describes how to inspect ARF files using standard tools, in the
 event that the interfaces described here cease to function.
@@ -109,7 +105,8 @@ extract sampled data to a 16-bit little-endian file (i.e., PCM format):
 ** related projects
 
 + pandora (https://github.com/G-Node/pandora) has the most similar goals and
-  is also implemented on top of HDF5.
+  is also implemented on top of HDF5. The data schema is considerably more complex.
 + neuroshare (http://neuroshare.org) is a set of routines for reading and
-  writing data in various proprietary and open formats
+  writing data in various proprietary and open formats.
+
 

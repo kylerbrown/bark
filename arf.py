@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # -*- mode: python -*-
 import os
+import logging
 import numpy as nx
 import h5py as hp
 from h5py.version import version as h5py_version, hdf5_version
@@ -8,8 +9,7 @@ from h5py.version import version as h5py_version, hdf5_version
 spec_version = "2.0"
 __version__ = version = "2.0.0"
 
-__doc__ = \
-"""
+__doc__ = """
 This is ARF, a python library for storing and accessing audio and ephys data in
 HDF5 containers.
 
@@ -19,34 +19,39 @@ Versions:
  HDF5: %s
 """ % (version, h5py_version, hdf5_version)
 
+_logger = logging.getLogger('arf')
+_logger.addHandler(logging.NullHandler())
+
+
 # some constants and enumerations
 class DataTypes:
     """
     Available data types, by name and integer code:
     """
-    UNDEFINED, ACOUSTIC, EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG, INTRAC_CC, INTRAC_VC = range(0,7)
-    EVENT,SPIKET,BEHAVET = range(1000,1003)
-    INTERVAL,STIMI,COMPONENTL = range(2000,2003)
+    UNDEFINED, ACOUSTIC, EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG, INTRAC_CC, INTRAC_VC = range(0, 7)
+    EVENT, SPIKET, BEHAVET = range(1000, 1003)
+    INTERVAL, STIMI, COMPONENTL = range(2000, 2003)
 
     @classmethod
     def _doc(cls):
         out = str(cls.__doc__)
-        for v,k in sorted(cls._todict().items()):
-            out += '\n%s:%d' % (k,v)
+        for v, k in sorted(cls._todict().items()):
+            out += '\n%s:%d' % (k, v)
         return out
 
     @classmethod
     def _todict(cls):
         """ generate a dict keyed by value """
-        return dict((getattr(cls,attr),attr) for attr in dir(cls) if not attr.startswith('_'))
+        return dict((getattr(cls, attr), attr) for attr in dir(cls) if not attr.startswith('_'))
 
     @classmethod
-    def _fromstring(cls,s):
+    def _fromstring(cls, s):
         """ look up datatype by string; returns None if not defined """
-        return getattr(cls,s.upper(),None)
+        return getattr(cls, s.upper(), None)
 
 
-_interval_dtype = nx.dtype([('name','S256'),('start','f8'),('stop','f8')])
+_interval_dtype = nx.dtype([('name', 'S256'), ('start', 'f8'), ('stop', 'f8')])
+
 
 # Helper classes
 class entry(hp.Group):
@@ -117,23 +122,23 @@ class entry(hp.Group):
         """
         from numbers import Number
 
-        if self.file.mode=='r': raise IOError, "the file is not writable"
+        if self.file.mode == 'r': raise IOError("the file is not writable")
 
         # check data validity before deleting anything
-        if not hasattr(data,'dtype'):
+        if not hasattr(data, 'dtype'):
             data = nx.asarray(data)
-            if data.dtype.kind in ('S','O'):
-                raise ValueError, "data must be in array with numeric or compound type"
+            if data.dtype.kind in ('S', 'O'):
+                raise ValueError("data must be in array with numeric or compound type")
         if not data.dtype.isbuiltin:
             if 'start' not in data.dtype.names:
-                raise ValueError, "complex event type is missing required start field"
+                raise ValueError("complex event type is missing required start field")
         if units == '':
             if not data.dtype.isbuiltin:
-                raise ValueError, "event data requires units"
-            if not isinstance(attributes.get('sampling_rate',None),Number):
-                raise ValueError, "missing sampling_rate attribute"
-        elif units == 'samples' and not isinstance(attributes.get('sampling_rate',None),Number):
-            raise ValueError, "data with units of 'samples' requires sampling_rate attribute"
+                raise ValueError("event data requires units")
+            if not isinstance(attributes.get('sampling_rate', None), Number):
+                raise ValueError("missing sampling_rate attribute")
+        elif units == 'samples' and not isinstance(attributes.get('sampling_rate', None), Number):
+            raise ValueError("data with units of 'samples' requires sampling_rate attribute")
         # NB: can't really catch case where sampled data has units but doesn't
         # have sampling_rate attribute
 
@@ -175,23 +180,23 @@ class entry(hp.Group):
             return UUID(int=0)
 
     def __repr__(self):
-        return '%s: %d channel%s' % (self.name, self.nchannels,pluralize(self.nchannels))
+        return '%s: %d channel%s' % (self.name, self.nchannels, pluralize(self.nchannels))
 
     def __str__(self):
         attrs = self.attrs
         datatypes = DataTypes._todict()
         out = "%s" % (self.name)
-        for k,v in attrs.items():
+        for k, v in attrs.items():
             if k.isupper(): continue
-            if k=='timestamp':
+            if k == 'timestamp':
                 out += "\n  timestamp : %s" % datetime_timestamp(v).strftime("%Y-%m-%d %H:%M:%S.%f")
-            elif k=='uuid':
+            elif k == 'uuid':
                 out += "\n  uuid : %s" % self.uuid
             else:
                 out += "\n  %s : %s" % (k, v)
-        for name,dset in self.iteritems():
+        for name, dset in self.iteritems():
             out += "\n  /%s :" % name
-            if isinstance(dset.id.get_type(),hp.h5t.TypeVlenID):
+            if isinstance(dset.id.get_type(), hp.h5t.TypeVlenID):
                 out += " vlarray"
             else:
                 out += " array %s" % (dset.shape,)
@@ -200,8 +205,8 @@ class entry(hp.Group):
                 if dset.dtype.names is not None:
                     out += " (compound type)"
 
-            out += ", type %s"  % datatypes[dset.attrs.get('datatype',DataTypes.UNDEFINED)]
-            if dset.compression: out += " [%s%d]" % (dset.compression,dset.compression_opts)
+            out += ", type %s"  % datatypes[dset.attrs.get('datatype', DataTypes.UNDEFINED)]
+            if dset.compression: out += " [%s%d]" % (dset.compression, dset.compression_opts)
         return out
 
 
@@ -232,9 +237,9 @@ class table(object):
         """
         nrows = self.dataset.shape[0]
         nrec  = len(records)
-        self.dataset.resize(nrows+nrec,axis=0)
-        for i,rec in enumerate(records):
-            self.dataset[nrows+i] = rec
+        self.dataset.resize(nrows + nrec, axis=0)
+        for i, rec in enumerate(records):
+            self.dataset[nrows + i] = rec
 
 
 # main interface
@@ -295,7 +300,7 @@ class file(object):
             self._check_version(exists)
         except Exception, e:
             if strict_version: raise e
-            else: print e.message
+            else: _logger.warning(e.what())
 
     def __enter__(self):
         return self
@@ -306,26 +311,26 @@ class file(object):
     def __getitem__(self, name):
         try:
             el = self.h5.__getitem__(name)
-            if isinstance(el,hp.Group):
+            if isinstance(el, hp.Group):
                 return entry.promote(self.h5.__getitem__(name))
             else:
                 return el
         except AttributeError:
-            raise TypeError, "wrong index type (basestring required)"
+            raise TypeError("wrong index type (basestring required)")
         except KeyError:
-            raise KeyError, "no such entry %s" % name
+            raise KeyError("no such entry %s" % name)
 
     def __delitem__(self, name):
         try:
             del self.h5[name]
         except AttributeError:
-            raise TypeError, "wrong index type (basestring required)"
+            raise TypeError("wrong index type (basestring required)")
         except KeyError:
-            raise KeyError, "no such entry %s" % name
+            raise KeyError("no such entry %s" % name)
 
     def __iter__(self):
         """ Iterate through all entries in alphabetical order """
-        return (k for k in self.h5.iterkeys() if self.h5.get(k,getclass=True)==hp.Group)
+        return (k for k in self.h5.iterkeys() if self.h5.get(k, getclass=True) == hp.Group)
 
     def items(self, key=None):
         """
@@ -335,17 +340,17 @@ class file(object):
         the entry object and returns the key to be used for sorting
         """
         from itertools import ifilter
-        it = ifilter(lambda ke: isinstance(ke[1],hp.Group), self.h5.iteritems())
+        it = ifilter(lambda ke: isinstance(ke[1], hp.Group), self.h5.iteritems())
 
         if key is None:
-            return ((k,entry.promote(e)) for k,e in it)
+            return ((k, entry.promote(e)) for k, e in it)
         elif key == 'timestamp':
             keyfun = lambda ke: timestamp_to_float(ke[1].attrs['timestamp'])
         elif isinstance(key, basestring):
-            keyfun = lambda ke: ke[1].attrs.get(key,None)
+            keyfun = lambda ke: ke[1].attrs.get(key, None)
         else:
             keyfun = lambda ke: key(ke[1])
-        return ((k,entry.promote(e)) for k,e in sorted(it, key=keyfun))
+        return ((k, entry.promote(e)) for k, e in sorted(it, key=keyfun))
 
     def create_entry(self, name, timestamp, **attributes):
         """
@@ -360,10 +365,10 @@ class file(object):
         Returns: newly created entry object
         Raises: IOError for read-only file; ValueError if the entry name is taken
         """
-        if self.readonly: raise IOError, "the file is not writable"
+        if self.readonly: raise IOError("the file is not writable")
         ts = convert_timestamp(timestamp)
         if name in self.h5:
-            raise ValueError, "the entry %s already exists" % name
+            raise ValueError("the entry %s already exists" % name)
 
         grp = self.h5.create_group(name)
 
@@ -375,13 +380,12 @@ class file(object):
         return entry.promote(grp)
 
     def set_attributes(self, node="/", **kwargs):
-        if isinstance(node,basestring): node = self.h5[node]
+        if isinstance(node, basestring): node = self.h5[node]
         set_attributes(node, **kwargs)
 
     def get_attributes(self, node="/", *args, **kwargs):
-        if isinstance(node,basestring): node = self.h5[node]
+        if isinstance(node, basestring): node = self.h5[node]
         return get_attributes(node, *args, **kwargs)
-
 
     @property
     def entries(self):
@@ -395,24 +399,23 @@ class file(object):
     def nentries(self):
         """ The number of entries defined in the file """
         # somewhat slow for large files
-        return sum(1 for x in self.h5.values() if isinstance(x,hp.Group))
+        return sum(1 for x in self.h5.values() if isinstance(x, hp.Group))
 
     @property
     def readonly(self):
         """ Whether the file is writable """
-        return self.h5.mode=='r'
+        return self.h5.mode == 'r'
 
     def __repr__(self):
         nentries = self.nentries
         return "<ARF file %s at %s: %d entr%s>" % (self.h5.filename, hex(id(self)),
-                                                   nentries, pluralize(nentries,'y','ies'))
+                                                   nentries, pluralize(nentries, 'y', 'ies'))
 
     def __str__(self):
         out = self.__repr__()
-        for i,entry in enumerate(self):
+        for i, entry in enumerate(self):
             out += '\n' + self[entry].__repr__()
             if i > 20: return out + '\n(list truncated)'
-
         return out
 
     def _check_version(self, exists=True):
@@ -425,9 +428,12 @@ class file(object):
         file_version = Version(get_attributes(self.h5, key='arf_version') or "0.9")
         # 1.1 is not forwards compatible
         if file_version < Version('1.1'):
-            raise DeprecationWarning, "ARF version %s (< 1.1) not fully supported by this library" % file_version
+            raise DeprecationWarning(
+                "ARF library {} has limited support for file version {} (< 1.1)".format(version, file_version))
         elif file_version >= Version('3.0'):
-            raise FutureWarning, "ARF version (%s) (>= 3.0) may not be backwards compatible with this library" % file_version
+            raise FutureWarning(
+                "ARF library {} may be incompatible with file version {} (>= 3.0)".format(version, file_version))
+
 
 # module-level convenience functions:
 def set_attributes(node, overwrite=True, **attributes):
@@ -438,12 +444,13 @@ def set_attributes(node, overwrite=True, **attributes):
     value for a key is None or '', the attribute is deleted.
     """
     aset = node.attrs
-    for k,v in attributes.items():
+    for k, v in attributes.items():
         if not overwrite and k in aset: continue
         if v == None or v == '':
             if k.lower() in aset: del aset[k.lower()]
         else:
             aset[k.lower()] = nx.asarray(v)
+
 
 def get_attributes(node, key=None):
     """
@@ -453,19 +460,18 @@ def get_attributes(node, key=None):
     """
     aset = node.attrs
     if key is not None:
-        if hasattr(key,'__iter__'):
-            return tuple(aset.get(k,None) for k in key)
+        if hasattr(key, '__iter__'):
+            return tuple(aset.get(k, None) for k in key)
         else:
             return aset.get(key, None)
     else:
         return aset
 
 
-
 def nodes_by_creation(group):
     """ Iterate through nodes in a group in order of creation """
     def f(x):
-        if x.find('/')<0: yield x
+        if x.find('/') < 0: yield x
     # no iterate function
     group._id.links.visit(f, idx_type=hp.h5.INDEX_CRT_ORDER, order=hp.h5.ITER_DEC)
 
@@ -483,7 +489,7 @@ def convert_timestamp(obj):
     """
     from datetime import datetime
     from time import mktime, struct_time
-    out = nx.zeros(2,dtype='int64')
+    out = nx.zeros(2, dtype='int64')
     if isinstance(obj, datetime):
         out[0] = long(mktime(obj.timetuple()))
         out[1]  = obj.microsecond
@@ -494,13 +500,14 @@ def convert_timestamp(obj):
         out[0] = long(obj)
     elif isinstance(obj, (int, long)):
         out[0] = long(obj)
-    elif isinstance(obj, (tuple,list)) and len(obj) >= 2:
+    elif isinstance(obj, (tuple, list)) and len(obj) >= 2:
         if obj[1]: out[1]  = long(obj[1])
         else: obj[1] = 0
         out[0] = long(obj[0])
     else:
-        raise TypeError, "unable to convert %s to timestamp" % obj
+        raise TypeError("unable to convert %s to timestamp" % obj)
     return out
+
 
 def datetime_timestamp(timestamp):
     """
@@ -513,7 +520,6 @@ def datetime_timestamp(timestamp):
 
 
 def dataset_properties(dset):
-
     """
     Infer the type of data and some properties of an hdf5 dataset.
 
@@ -521,30 +527,30 @@ def dataset_properties(dset):
     """
     dtype = dset.id.get_type()
 
-    if isinstance(dtype,hp.h5t.TypeVlenID):
-        return 'event','vlarray',dset.id.shape[0]
+    if isinstance(dtype, hp.h5t.TypeVlenID):
+        return 'event', 'vlarray', dset.id.shape[0]
 
-    if isinstance(dtype,hp.h5t.TypeCompoundID):
+    if isinstance(dtype, hp.h5t.TypeCompoundID):
         # table types; do a check on the dtype for backwards compat with 1.0
-        names,ncol = dtype.dtype.names, dtype.get_nmembers()
+        names, ncol = dtype.dtype.names, dtype.get_nmembers()
         if 'start' not in names:
             contents = 'unknown'
         elif any(k not in names for k in _interval_dtype.names):
             contents = 'event'
         else:
             contents = 'interval'
-        return contents,'table',ncol
+        return contents, 'table', ncol
 
-    dtt = dset.attrs.get('datatype',0)
-    ncols = len(dset.shape)<2 and 1 or dset.shape[1]
+    dtt = dset.attrs.get('datatype', 0)
+    ncols = len(dset.shape) < 2 and 1 or dset.shape[1]
     if dtt < DataTypes.EVENT:
         # assume UNKNOWN is sampled
-        return 'sampled','array',ncols
+        return 'sampled', 'array', ncols
     else:
-        return 'event','array',ncols
+        return 'event', 'array', ncols
 
 
-def pluralize(n,sing='',plurl='s'):
+def pluralize(n, sing='', plurl='s'):
     if n == 1: return sing
     else: return plurl
 
@@ -553,13 +559,14 @@ def timestamp_to_float(arr):
     """ convert two-element timestamp (sec, usec) to a floating point (sec since epoch) """
     return nx.dot(arr, (1.0, 1e-6))
 
+
 def set_uuid_attr(node, uuid=None):
     """ set the uuid attribute of a node. use this method to ensure correct dtype """
     from uuid import uuid4, UUID
     if uuid is None:
         uuid = uuid4()
     elif isinstance(uuid, basestring):
-        if len(uuid)==16:
+        if len(uuid) == 16:
             uuid = UUID(bytes=uuid)
         else:
             uuid = UUID(hex=uuid)
