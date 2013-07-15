@@ -7,13 +7,14 @@
 from nose.tools import *
 from nose.plugins.skip import SkipTest
 
+import numpy as nx
+import h5py
 import arf
 import time
-import numpy as nx
 from numpy.random import randn, randint, rand
 
 test_file = 'tests/test.arf'
-fp = arf.file(test_file,'w')
+fp = h5py.File(test_file,'w')
 entry_base = "entry_%03d"
 tstamp = time.mktime(time.localtime())
 entry_attributes = { 'intattr' : 1,
@@ -74,44 +75,46 @@ bad_datasets = [ dict(name="string datatype",
                       units=("seconds",)),
                  ]
 
-def create_entry(name):
-    g = fp.create_entry(name,tstamp,**entry_attributes)
-    assert isinstance(g, arf.entry)
-    assert name in fp
-    assert g.timestamp > 0
-    for k in entry_attributes:
-        assert k in g.attrs
 
-def create_dataset(g,dset):
-    d = g.add_data(**dset)
-    assert d.shape==dset['data'].shape
+def create_entry(name):
+    g = arf.create_entry(fp, name, tstamp, **entry_attributes)
+    assert_true(name in fp)
+    assert_greater(arf.timestamp_to_float(g.attrs['timestamp']), 0)
+    for k in entry_attributes:
+        assert_true(k in g.attrs)
+
+
+def create_dataset(g, dset):
+    d = arf.create_dataset(g, **dset)
+    assert_equal(d.shape, dset['data'].shape)
+
 
 def test00_create_entries():
-    assert not fp.readonly
     for i in range(25):
         yield create_entry, entry_base % i
+    assert_equal(len(fp), 25)
 
-    assert fp.nentries == 25
-    assert len(fp.entries) == 25
 
 @raises(ValueError)
 def test01_create_existing_entry():
-    fp.create_entry(entry_base % 0,tstamp,**entry_attributes)
+    arf.create_entry(fp, entry_base % 0,tstamp,**entry_attributes)
+
 
 def test02_create_datasets():
-    for name, entry in fp.items('timestamp'):
+    for name in arf.contents_by_creation(fp):
+        entry = fp[name]
         for dset in datasets:
             yield create_dataset, entry, dset
-        assert entry.nchannels == len(datasets)
-        assert set(entry.channels)==set(dset['name'] for dset in datasets)
-        assert str(entry)
-        assert repr(entry)
+        assert_equal(len(entry), len(datasets))
+        assert_items_equal(entry.keys(), (dset['name'] for dset in datasets))
+
 
 def test03_set_attributes():
     # tests the set_attributes convenience method
-    fp.set_attributes("entry_001/spikes", mystr="myvalue", myint=5000)
-    assert fp.get_attributes("entry_001/spikes","myint")==5000
-    assert "myint" in fp.get_attributes("entry_001/spikes")
+    arf.set_attributes(fp["entry_001/spikes"], mystr="myvalue", myint=5000)
+    assert_equal(arf.get_attributes(fp["entry_001/spikes"], "myint"), 5000)
+    assert_true("myint" in arf.get_attributes(fp["entry_001/spikes"]))
+
 
 def test04_create_bad_dataset():
     f = raises(ValueError)(create_dataset)
@@ -119,22 +122,20 @@ def test04_create_bad_dataset():
     for dset in bad_datasets:
         yield f, e, dset
 
+
 def test05_null_uuid():
     # nulls in a uuid can make various things barf
     from uuid import UUID
     uuid = UUID(bytes=''.rjust(16,'\0'))
     e = fp['entry_001']
-    arf.set_uuid_attr(e, uuid)
+    arf.set_uuid(e, uuid)
 
-    assert e.uuid == uuid
+    assert_equal(arf.get_uuid(e), uuid)
 
 def test99_various():
     # test some functions difficult to cover otherwise
     arf.DataTypes._doc()
     arf.DataTypes._todict()
-
-    assert repr(fp)
-    assert str(fp)
 
 
 # Variables:
