@@ -6,13 +6,13 @@ import h5py as hp
 from h5py.version import version as h5py_version, hdf5_version
 
 spec_version = "2.0"
-__version__ = version = "2.0.0"
+__version__ = version = "2.1.0"
 
 __doc__ = """
 This is ARF, a python library for storing and accessing audio and ephys data in
 HDF5 containers.
 
-Versions:
+Library versions:
  arf: %s
  h5py: %s
  HDF5: %s
@@ -20,7 +20,6 @@ Versions:
 
 _logger = logging.getLogger('arf')
 _logger.addHandler(logging.NullHandler())
-
 
 # some constants and enumerations
 _interval_dtype = nx.dtype([('name', 'S256'), ('start', 'f8'), ('stop', 'f8')])
@@ -52,7 +51,28 @@ class DataTypes:
         return getattr(cls, s.upper(), None)
 
 
+def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **kwargs):
+    """Open an ARF file, creating as necessary.
+
+    Use this instead of h5py.File to ensure that root-level attributes and group
+    creation property lists are set correctly.
+
+    """
+    from h5py import h5p
+    from h5py._hl import files
+
+    fcpl = h5p.create(h5p.FILE_CREATE)
+    fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
+    fapl = files.make_fapl(driver, libver, **kwargs)
+    fp = files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
+    try:
+        check_file_version(fp)
+    except Warning, w:
+        _logger.warn("%s", w)
+    return fp
+
 def create_entry(obj, name, timestamp, **attributes):
+
     """Create a new ARF entry under obj, setting required attributes.
 
     An entry is an abstract collection of data which all refer to the same time
@@ -71,8 +91,15 @@ def create_entry(obj, name, timestamp, **attributes):
     Returns: newly created entry object
 
     """
-    grp = obj.create_group(name)
-    set_uuid(grp)
+    # create group using low-level interface to store creation order
+    from h5py import h5p, h5g, _hl
+    try:
+        gcpl = h5p.create(h5p.GROUP_CREATE)
+        gcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
+        grp = _hl.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
+    except AttributeError:
+        grp = obj.create_group(name)
+    set_uuid(grp, attributes.pop("uuid", None))
     set_attributes(grp,
                    timestamp=convert_timestamp(timestamp),
                    **attributes)
@@ -163,22 +190,32 @@ def append_to_table(dset, *records):
         dset[nrows + i] = rec
 
 
-def check_file_version(file, warn_compatibility=True):
-    """Get the ARF version of a file, optionally warning about incompatibilities
+def check_file_version(file):
+    """Check the ARF version attribute of a file for compatibility.
 
-    If warn_compatibility is True, raises DeprecationWarning for
-    backwards-incompatible files and FutureWarning for (potentially
-    forwards-incompatible files).
+    Raises DeprecationWarning for backwards-incompatible files, FutureWarning
+    for (potentially) forwards-incompatible files, and UserWarning for files
+    that may not have been created an ARF library.
 
     Returns the version for the file
 
     """
     from distutils.version import StrictVersion as Version
-    file_version = Version(get_attributes(file, key='arf_version') or "0.9")
-    # 1.1 is not forwards compatible
+    try:
+        file_version = Version(file.attrs.get('arf_library_version', file.attrs['arf_version']))
+    except KeyError:
+        # attribute doesn't exist - may be a new file
+        if file.mode == 'r+':
+            file_version = Version(spec_version)
+            set_attributes(file, arf_library_version=spec_version, arf_version=__version__)
+            return file_version
+        else:
+            raise UserWarning(
+                "Unable to determine ARF version for {0.filename}; created by another program?".format(file))
+    # should be backwards compatible after 1.1
     if file_version < Version('1.1'):
         raise DeprecationWarning(
-            "ARF library {} has limited support for file version {} (< 1.1)".format(version, file_version))
+            "ARF library {} may have trouble reading file version {} (< 1.1)".format(version, file_version))
     elif file_version >= Version('3.0'):
         raise FutureWarning(
             "ARF library {} may be incompatible with file version {} (>= 3.0)".format(version, file_version))
@@ -219,10 +256,14 @@ def get_attributes(node, key=None):
         return aset
 
 
-def contents_by_creation(group):
-    """Returns a list of children in group in order of creation"""
+def keys_by_creation(group):
+    """Returns a list of links in group in order of creation.
+
+    Raises an error if the group was not set to track creation order.
+
+    """
     out = []
-    group._id.links.visit(out.append, idx_type=hp.h5.INDEX_CRT_ORDER, order=hp.h5.ITER_DEC)
+    group._id.links.iterate(out.append, idx_type=hp.h5.INDEX_CRT_ORDER, order=hp.h5.ITER_INC)
     return out
 
 
@@ -269,7 +310,7 @@ def timestamp_to_datetime(timestamp):
 
 def timestamp_to_float(timestamp):
     """Convert an ARF timestamp to a floating point (sec since epoch) """
-    return nx.dot(timestamp, (1.0, 1e-6))
+    return nx.dot(timestamp, (1.0, 1e-6)) if timestamp is not None else None
 
 
 def dataset_properties(dset):

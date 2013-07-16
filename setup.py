@@ -30,7 +30,7 @@ are HDF5 files used to store audio and neurophysiological recordings in a
 rational, hierarchical format. Data are organized around the concept of an
 entry, which is a set of data channels that all start at the same time.
 Supported data types include sampled data and event data (i.e. spike times).
-Requires h5py (at least 2.0) and numpy (at least 1.3).
+Requires h5py (at least 2.2) and numpy (at least 1.3).
 """
 
 setup(
@@ -46,7 +46,7 @@ setup(
     url="https://github.com/dmeliza/arf",
 
     py_modules=['arf'],
-    requires=["h5py (>=2.0)", "numpy (>=1.3)"],
+    requires=["h5py (>=2.2)", "numpy (>=1.3)"],
 )
 # Variables:
 # End:

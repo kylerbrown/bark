@@ -14,7 +14,7 @@ import time
 from numpy.random import randn, randint, rand
 
 test_file = 'tests/test.arf'
-fp = h5py.File(test_file,'w')
+fp = arf.open_file(test_file,'w')
 entry_base = "entry_%03d"
 tstamp = time.mktime(time.localtime())
 entry_attributes = { 'intattr' : 1,
@@ -101,7 +101,7 @@ def test01_create_existing_entry():
 
 
 def test02_create_datasets():
-    for name in arf.contents_by_creation(fp):
+    for name in arf.keys_by_creation(fp):
         entry = fp[name]
         for dset in datasets:
             yield create_dataset, entry, dset
@@ -131,6 +131,16 @@ def test05_null_uuid():
     arf.set_uuid(e, uuid)
 
     assert_equal(arf.get_uuid(e), uuid)
+
+def test98_creation_iter():
+    fp = arf.open_file("test_mem", mode="a", driver="core", backing_store=False)
+    entry_names = ('z','y','a','q','zzyfij')
+    for name in entry_names:
+        g = arf.create_entry(fp, name, 0)
+        arf.create_dataset(g, "dset", (), sampling_rate=1)
+
+    assert_sequence_equal(arf.keys_by_creation(fp), entry_names)
+
 
 def test99_various():
     # test some functions difficult to cover otherwise
