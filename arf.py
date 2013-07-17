@@ -2,7 +2,6 @@
 # -*- mode: python -*-
 import logging
 import numpy as nx
-import h5py as hp
 from h5py.version import version as h5py_version, hdf5_version
 
 spec_version = "2.0"
@@ -105,8 +104,9 @@ def create_entry(obj, name, timestamp, **attributes):
                    **attributes)
     return grp
 
+
 def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
-                   replace=False, chunks=True, maxshape=None, compression=None,
+                   chunks=True, maxshape=None, compression=None,
                    **attributes):
     """Create an ARF dataset under obj, setting required attributes
 
@@ -124,26 +124,23 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
     datatype --      a code defining the nature of the data in the channel
     units --         channel units (optional for sampled data, otherwise required)
     sampling_rate -- required for sampled data and event data with units=='samples'
-    replace --       if True and the node exists, delete it first. Otherwise
-                     duplicate names will raise errors
 
     Arguments passed to h5py:
     maxshape --    make the node resizable up to this shape. Use None for axes that
-                   need to be unlimited. Ignored for label and event data, which are
-                   always expandable
+                   need to be unlimited.
     chunks --      specify the chunk size. The optimal chunk size depends on the
                    intended use of the data. For single-channel sampled data the
-                   default is probably best.
+                   auto-chunking (True) is probably best.
     compression -- compression strategy. Can be 'gzip', 'szip', 'lzf' or an integer
                    in range(10) specifying gzip(N).  Only gzip is really portable.
 
-    Additional arguments are set as attributes on the created table/array
+    Additional arguments are set as attributes on the created dataset
 
     Returns the created dataset
     """
     from numbers import Number
 
-    # check data validity before deleting anything
+    # check data validity before doing anything
     if not hasattr(data, 'dtype'):
         data = nx.asarray(data)
         if data.dtype.kind in ('S', 'O'):
@@ -163,14 +160,8 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
     # NB: can't really catch case where sampled data has units but doesn't
     # have sampling_rate attribute
 
-    if maxshape is None:
-        maxshape = data.shape
-
     dset = obj.create_dataset(name, data=data, maxshape=maxshape, chunks=chunks, compression=compression)
-
-    # set user attributes
     set_attributes(dset, units=units, datatype=datatype, **attributes)
-
     return dset
 
 
@@ -181,13 +172,15 @@ def create_table(group, name, dtype, **attributes):
     return dset
 
 
-def append_to_table(dset, *records):
-    """Append new record(s) to a dataset with compound datatype"""
-    nrows = dset.shape[0]
-    nrec  = len(records)
-    dset.resize(nrows + nrec, axis=0)
-    for i, rec in enumerate(records):
-        dset[nrows + i] = rec
+def append_data(dset, data):
+    """Append new data to a dataset along axis 0"""
+    assert all(x==y for x, y in zip(dset.shape[1:], data.shape[1:]))
+    if dset.dtype.fields is not None:
+        assert dset.dtype == data.dtype
+    oldlen = dset.shape[0]
+    newlen = oldlen + data.shape[0]
+    dset.resize(newlen, axis=0)
+    dset[oldlen:] = data
 
 
 def check_file_version(file):
@@ -207,7 +200,10 @@ def check_file_version(file):
         # attribute doesn't exist - may be a new file
         if file.mode == 'r+':
             file_version = Version(spec_version)
-            set_attributes(file, arf_library_version=spec_version, arf_version=__version__)
+            set_attributes(file,
+                           arf_library='python',
+                           arf_library_version=__version__,
+                           arf_version=spec_version)
             return file_version
         else:
             raise UserWarning(
@@ -239,31 +235,15 @@ def set_attributes(node, overwrite=True, **attributes):
             aset[k.lower()] = nx.asarray(v)
 
 
-def get_attributes(node, key=None):
-    """Get attributes on a node.
-
-    If key is none, returns the AttributeSet proxy object; otherwise attempts to
-    look up the key(s), returning None if it does not exist.
-
-    """
-    aset = node.attrs
-    if key is not None:
-        if hasattr(key, '__iter__'):
-            return tuple(aset.get(k, None) for k in key)
-        else:
-            return aset.get(key, None)
-    else:
-        return aset
-
-
 def keys_by_creation(group):
     """Returns a list of links in group in order of creation.
 
     Raises an error if the group was not set to track creation order.
 
     """
+    from h5py import h5
     out = []
-    group._id.links.iterate(out.append, idx_type=hp.h5.INDEX_CRT_ORDER, order=hp.h5.ITER_INC)
+    group._id.links.iterate(out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
     return out
 
 
@@ -292,12 +272,11 @@ def convert_timestamp(obj):
         out[0] = long(obj)
     elif isinstance(obj, (int, long)):
         out[0] = long(obj)
-    elif isinstance(obj, (tuple, list)) and len(obj) >= 2:
-        if obj[1]: out[1]  = long(obj[1])
-        else: obj[1] = 0
-        out[0] = long(obj[0])
     else:
-        raise TypeError("unable to convert %s to timestamp" % obj)
+        try:
+            out[:2] = obj[:2]
+        except:
+            raise TypeError("unable to convert %s to timestamp" % obj)
     return out
 
 
@@ -318,12 +297,13 @@ def dataset_properties(dset):
 
     Returns tuple: (sampled|event|interval|unknown), (array|table|vlarry), ncol
     """
+    from h5py import h5t
     dtype = dset.id.get_type()
 
-    if isinstance(dtype, hp.h5t.TypeVlenID):
+    if isinstance(dtype, h5t.TypeVlenID):
         return 'event', 'vlarray', dset.id.shape[0]
 
-    if isinstance(dtype, hp.h5t.TypeCompoundID):
+    if isinstance(dtype, h5t.TypeCompoundID):
         # table types; do a check on the dtype for backwards compat with 1.0
         names, ncol = dtype.dtype.names, dtype.get_nmembers()
         if 'start' not in names:

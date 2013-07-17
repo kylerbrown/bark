@@ -8,13 +8,11 @@ from nose.tools import *
 from nose.plugins.skip import SkipTest
 
 import numpy as nx
-import h5py
 import arf
 import time
-from numpy.random import randn, randint, rand
+from numpy.random import randn, randint
 
-test_file = 'tests/test.arf'
-fp = arf.open_file(test_file,'w')
+fp = arf.open_file("test", 'w', driver="core", backing_store=False)
 entry_base = "entry_%03d"
 tstamp = time.mktime(time.localtime())
 entry_attributes = { 'intattr' : 1,
@@ -90,9 +88,10 @@ def create_dataset(g, dset):
 
 
 def test00_create_entries():
-    for i in range(25):
+    N = 5
+    for i in range(N):
         yield create_entry, entry_base % i
-    assert_equal(len(fp), 25)
+    assert_equal(len(fp), N)
 
 
 @raises(ValueError)
@@ -110,10 +109,9 @@ def test02_create_datasets():
 
 
 def test03_set_attributes():
-    # tests the set_attributes convenience method
+    # tests the set_attributes convenience function
     arf.set_attributes(fp["entry_001/spikes"], mystr="myvalue", myint=5000)
-    assert_equal(arf.get_attributes(fp["entry_001/spikes"], "myint"), 5000)
-    assert_true("myint" in arf.get_attributes(fp["entry_001/spikes"]))
+    assert_equal(fp["entry_001/spikes"].attrs['myint'], 5000)
 
 
 def test04_create_bad_dataset():
@@ -132,7 +130,8 @@ def test05_null_uuid():
 
     assert_equal(arf.get_uuid(e), uuid)
 
-def test98_creation_iter():
+
+def test06_creation_iter():
     fp = arf.open_file("test_mem", mode="a", driver="core", backing_store=False)
     entry_names = ('z','y','a','q','zzyfij')
     for name in entry_names:

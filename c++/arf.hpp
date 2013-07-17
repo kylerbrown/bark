@@ -195,6 +195,7 @@ public:
                 // TODO check whether file exists and already has version information
 		if (mode=="w" || mode=="a") {
                         write_attribute("arf_library_version", ARF_LIBRARY_VERSION);
+                        write_attribute("arf_library", "c++");
 			write_attribute("arf_version", ARF_VERSION);
 		}
 	}
