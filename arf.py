@@ -286,7 +286,15 @@ def timestamp_to_datetime(timestamp):
 
 def timestamp_to_float(timestamp):
     """Convert an ARF timestamp to a floating point (sec since epoch) """
-    return nx.dot(timestamp, (1.0, 1e-6)) if timestamp is not None else None
+    return nx.dot(timestamp, (1.0, 1e-6))
+
+
+def entry_time(entry):
+    """Get timestamp of an entry in floating point format, or None if not set"""
+    try:
+        return timestamp_to_float(entry.attrs['timestamp'])
+    except KeyError:
+        return None
 
 
 def dataset_properties(dset):
