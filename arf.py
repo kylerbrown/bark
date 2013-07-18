@@ -218,21 +218,18 @@ def check_file_version(file):
     return file_version
 
 
-def set_attributes(node, overwrite=True, **attributes):
+def set_attributes(node, **attributes):
     """Set multiple attributes on an HDF5 object.
 
-    Attribute names are coerced to lowercase strings. Values are coerced to
-    numpy arrays, mostly to ensure strings are stored correctly. If the value
-    for a key is None or '', the attribute is deleted.
+    If the value for a key is None, the attribute is deleted.
 
     """
     aset = node.attrs
     for k, v in attributes.items():
-        if not overwrite and k in aset: continue
-        if v == None or v == '':
-            if k.lower() in aset: del aset[k.lower()]
+        if v is None:
+            if k in aset: del aset[k]
         else:
-            aset[k.lower()] = nx.asarray(v)
+            aset[k] = v
 
 
 def keys_by_creation(group):
