@@ -138,8 +138,7 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
 
     Returns the created dataset
     """
-    from numbers import Number
-
+    srate = attributes.get('sampling_rate', None)
     # check data validity before doing anything
     if not hasattr(data, 'dtype'):
         data = nx.asarray(data)
@@ -153,10 +152,11 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
     if units == '':
         if not data.dtype.isbuiltin:
             raise ValueError("event data requires units")
-        if not isinstance(attributes.get('sampling_rate', None), Number):
+        if srate is None or not srate > 0:
             raise ValueError("unitless data assumed time series and requires sampling_rate attribute")
-    elif units == 'samples' and not isinstance(attributes.get('sampling_rate', None), Number):
-        raise ValueError("data with units of 'samples' requires sampling_rate attribute")
+    elif units == 'samples':
+        if srate is None or not srate > 0:
+            raise ValueError("data with units of 'samples' requires sampling_rate attribute")
     # NB: can't really catch case where sampled data has units but doesn't
     # have sampling_rate attribute
 
@@ -177,6 +177,8 @@ def append_data(dset, data):
     assert all(x==y for x, y in zip(dset.shape[1:], data.shape[1:]))
     if dset.dtype.fields is not None:
         assert dset.dtype == data.dtype
+    if data.size == 0:
+        return
     oldlen = dset.shape[0]
     newlen = oldlen + data.shape[0]
     dset.resize(newlen, axis=0)
