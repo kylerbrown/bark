@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # -*- mode: python -*-
-import logging
 import numpy as nx
 from h5py.version import version as h5py_version, hdf5_version
 
@@ -16,9 +15,6 @@ Library versions:
  h5py: %s
  HDF5: %s
 """ % (version, h5py_version, hdf5_version)
-
-_logger = logging.getLogger('arf')
-_logger.addHandler(logging.NullHandler())
 
 # some constants and enumerations
 _interval_dtype = nx.dtype([('name', 'S256'), ('start', 'f8'), ('stop', 'f8')])
@@ -63,12 +59,9 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
     fcpl = h5p.create(h5p.FILE_CREATE)
     fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
     fapl = files.make_fapl(driver, libver, **kwargs)
-    fp = files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
-    try:
-        check_file_version(fp)
-    except Warning, w:
-        _logger.warn("%s", w)
+    return files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
     return fp
+
 
 def create_entry(obj, name, timestamp, **attributes):
 
