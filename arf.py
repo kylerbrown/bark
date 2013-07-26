@@ -287,14 +287,6 @@ def timestamp_to_float(timestamp):
     return nx.dot(timestamp, (1.0, 1e-6))
 
 
-def entry_time(entry):
-    """Get timestamp of an entry in floating point format, or None if not set"""
-    try:
-        return timestamp_to_float(entry.attrs['timestamp'])
-    except KeyError:
-        return None
-
-
 def dataset_properties(dset):
     """Infer the type of data and some properties of an hdf5 dataset.
 
