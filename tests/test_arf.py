@@ -15,63 +15,68 @@ from numpy.random import randn, randint
 fp = arf.open_file("test", 'w', driver="core", backing_store=False)
 entry_base = "entry_%03d"
 tstamp = time.mktime(time.localtime())
-entry_attributes = { 'intattr' : 1,
-                     'vecattr' : [1, 2, 3],
-                     'arrattr' : randn(5),
-                     'strattr' : "an attribute",
-                     }
-datasets = [ dict(name="acoustic",
-                  data=randn(100000),
-                  sampling_rate=20000,
-                  datatype=arf.DataTypes.ACOUSTIC,
-                  maxshape=(None,),
-                  microphone="DK-1234",
-                  compression=0),
-             dict(name="neural",
-                  data=(randn(100000)*2**16).astype('h'),
-                  sampling_rate=20000,
-                  datatype=arf.DataTypes.EXTRAC_HP,
-                  compression=9),
-             dict(name="spikes",
-                  data=randint(0,100000,100),
-                  datatype=arf.DataTypes.SPIKET,
-                  units="samples",
-                  sampling_rate=20000,  # required
-                  ),
-             dict(name="empty-spikes",
-                  data=nx.array([],dtype='f'),
-                  datatype=arf.DataTypes.SPIKET,
-                  method="broken",
-                  units="s",
-                  ),
-             dict(name="events",
-                  data=nx.rec.fromrecords([(1.0, 1, "stimulus"),(5.0,0,"stimulus")],
-                                          names=("start","state","name")), # 'start' required
-                  datatype=arf.DataTypes.EVENT,
-                  units="s")
-             ]
+entry_attributes = {'intattr': 1,
+                    'vecattr': [1, 2, 3],
+                    'arrattr': randn(5),
+                    'strattr': "an attribute",
+                    }
+datasets = [dict(name="acoustic",
+                 data=randn(100000),
+                 sampling_rate=20000,
+                 datatype=arf.DataTypes.ACOUSTIC,
+                 maxshape=(None,),
+                 microphone="DK-1234",
+                 compression=0),
+            dict(name="neural",
+                 data=(randn(100000) * 2 ** 16).astype('h'),
+                 sampling_rate=20000,
+                 datatype=arf.DataTypes.EXTRAC_HP,
+                 compression=9),
+            dict(name="spikes",
+                 data=randint(0, 100000, 100),
+                 datatype=arf.DataTypes.SPIKET,
+                 units="samples",
+                 sampling_rate=20000,  # required
+                 ),
+            dict(name="empty-spikes",
+                 data=nx.array([], dtype='f'),
+                 datatype=arf.DataTypes.SPIKET,
+                 method="broken",
+                 units="s",
+                 ),
+            dict(name="events",
+                 data=nx.rec.fromrecords(
+                 [(1.0, 1, "stimulus"), (5.0, 0, "stimulus")],
+                 names=("start", "state", "name")),  # 'start' required
+                 datatype=arf.DataTypes.EVENT,
+                 units="s")
+            ]
 
-bad_datasets = [ dict(name="string datatype",
-                      data="a string"),
-                 dict(name="object datatype",
-                      data=basestring),
-                 dict(name="missing samplerate/units",
-                      data=randn(1000)),
-                 dict(name="missing samplerate for units=samples",
-                      data=randn(1000),
-                      units="samples"),
-                 dict(name="missing start field",
-                      data=nx.rec.fromrecords([(1.0,1),(2.0,2)],
-                                              names=("time","state")),
-                      units="s"),
-                 dict(name="missing units for complex dtype",
-                      data=nx.rec.fromrecords([(1.0, 1, "stimulus"),(5.0,0,"stimulus")],
-                                              names=("start","state","name"))),
-                 dict(name="wrong length units for complex dtype",
-                      data=nx.rec.fromrecords([(1.0, 1, "stimulus"),(5.0,0,"stimulus")],
-                                              names=("start","state","name")),
-                      units=("seconds",)),
-                 ]
+bad_datasets = [dict(name="string datatype",
+                     data="a string"),
+                dict(name="object datatype",
+                     data=basestring),
+                dict(name="missing samplerate/units",
+                     data=randn(1000)),
+                dict(name="missing samplerate for units=samples",
+                     data=randn(1000),
+                     units="samples"),
+                dict(name="missing start field",
+                     data=nx.rec.fromrecords([(1.0, 1), (2.0, 2)],
+                                             names=("time", "state")),
+                     units="s"),
+                dict(name="missing units for complex dtype",
+                     data=nx.rec.fromrecords(
+                     [(1.0, 1, "stimulus"), (5.0, 0, "stimulus")],
+                     names=(
+                     "start", "state", "name"))),
+                dict(name="wrong length units for complex dtype",
+                     data=nx.rec.fromrecords(
+                     [(1.0, 1, "stimulus"), (5.0, 0, "stimulus")],
+                     names=(
+                     "start", "state", "name")),
+                     units=("seconds",)),
+                ]
 
 
 def create_entry(name):
@@ -96,7 +101,7 @@ def test00_create_entries():
 
 @raises(ValueError)
 def test01_create_existing_entry():
-    arf.create_entry(fp, entry_base % 0,tstamp,**entry_attributes)
+    arf.create_entry(fp, entry_base % 0, tstamp, **entry_attributes)
 
 
 def test02_create_datasets():
@@ -124,7 +129,7 @@ def test04_create_bad_dataset():
 def test05_null_uuid():
     # nulls in a uuid can make various things barf
     from uuid import UUID
-    uuid = UUID(bytes=''.rjust(16,'\0'))
+    uuid = UUID(bytes=''.rjust(16, '\0'))
     e = fp['entry_001']
     arf.set_uuid(e, uuid)
 
@@ -132,8 +137,9 @@ def test05_null_uuid():
 
 
 def test06_creation_iter():
-    fp = arf.open_file("test_mem", mode="a", driver="core", backing_store=False)
-    entry_names = ('z','y','a','q','zzyfij')
+    fp = arf.open_file(
+        "test_mem", mode="a", driver="core", backing_store=False)
+    entry_names = ('z', 'y', 'a', 'q', 'zzyfij')
     for name in entry_names:
         g = arf.create_entry(fp, name, 0)
         arf.create_dataset(g, "dset", (), sampling_rate=1)

@@ -21,10 +21,12 @@ _interval_dtype = nx.dtype([('name', 'S256'), ('start', 'f8'), ('stop', 'f8')])
 
 
 class DataTypes:
+
     """
     Available data types, by name and integer code:
     """
-    UNDEFINED, ACOUSTIC, EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG, INTRAC_CC, INTRAC_VC = range(0, 7)
+    UNDEFINED, ACOUSTIC, EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG, INTRAC_CC, INTRAC_VC = range(
+        0, 7)
     EVENT, SPIKET, BEHAVET = range(1000, 1003)
     INTERVAL, STIMI, COMPONENTL = range(2000, 2003)
 
@@ -64,7 +66,6 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
 
 
 def create_entry(obj, name, timestamp, **attributes):
-
     """Create a new ARF entry under obj, setting required attributes.
 
     An entry is an abstract collection of data which all refer to the same time
@@ -87,7 +88,8 @@ def create_entry(obj, name, timestamp, **attributes):
     from h5py import h5p, h5g, _hl
     try:
         gcpl = h5p.create(h5p.GROUP_CREATE)
-        gcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
+        gcpl.set_link_creation_order(
+            h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
         grp = _hl.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
     except AttributeError:
         grp = obj.create_group(name)
@@ -136,38 +138,44 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
     if not hasattr(data, 'dtype'):
         data = nx.asarray(data)
         if data.dtype.kind in ('S', 'O'):
-            raise ValueError("data must be in array with numeric or compound type")
+            raise ValueError(
+                "data must be in array with numeric or compound type")
     if not data.dtype.isbuiltin:
         if 'start' not in data.dtype.names:
             raise ValueError("complex event data requires 'start' field")
         if units == '' or (not isinstance(units, basestring) and len(units) != len(data.dtype.names)):
-            raise ValueError("complex event data requires array of units, one per field")
+            raise ValueError(
+                "complex event data requires array of units, one per field")
     if units == '':
         if not data.dtype.isbuiltin:
             raise ValueError("event data requires units")
         if srate is None or not srate > 0:
-            raise ValueError("unitless data assumed time series and requires sampling_rate attribute")
+            raise ValueError(
+                "unitless data assumed time series and requires sampling_rate attribute")
     elif units == 'samples':
         if srate is None or not srate > 0:
-            raise ValueError("data with units of 'samples' requires sampling_rate attribute")
+            raise ValueError(
+                "data with units of 'samples' requires sampling_rate attribute")
     # NB: can't really catch case where sampled data has units but doesn't
     # have sampling_rate attribute
 
-    dset = obj.create_dataset(name, data=data, maxshape=maxshape, chunks=chunks, compression=compression)
+    dset = obj.create_dataset(
+        name, data=data, maxshape=maxshape, chunks=chunks, compression=compression)
     set_attributes(dset, units=units, datatype=datatype, **attributes)
     return dset
 
 
 def create_table(group, name, dtype, **attributes):
     """Create a new array dataset with compound datatype and maxshape=(None,)"""
-    dset = group.create_dataset(name, shape=(0,), dtype=dtype, maxshape=(None,))
+    dset = group.create_dataset(
+        name, shape=(0,), dtype=dtype, maxshape=(None,))
     set_attributes(dset, **attributes)
     return dset
 
 
 def append_data(dset, data):
     """Append new data to a dataset along axis 0"""
-    assert all(x==y for x, y in zip(dset.shape[1:], data.shape[1:]))
+    assert all(x == y for x, y in zip(dset.shape[1:], data.shape[1:]))
     if dset.dtype.fields is not None:
         assert dset.dtype == data.dtype
     if data.size == 0:
@@ -190,7 +198,8 @@ def check_file_version(file):
     """
     from distutils.version import StrictVersion as Version
     try:
-        file_version = Version(file.attrs.get('arf_library_version', file.attrs['arf_version']))
+        file_version = Version(
+            file.attrs.get('arf_library_version', file.attrs['arf_version']))
     except KeyError:
         # attribute doesn't exist - may be a new file
         if file.mode == 'r+':
@@ -225,7 +234,8 @@ def set_attributes(node, overwrite=True, **attributes):
         if not overwrite and k in aset:
             pass
         elif v is None:
-            if k in aset: del aset[k]
+            if k in aset:
+                del aset[k]
         else:
             aset[k] = v
 
@@ -238,7 +248,8 @@ def keys_by_creation(group):
     """
     from h5py import h5
     out = []
-    group._id.links.iterate(out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
+    group._id.links.iterate(
+        out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
     return out
 
 
@@ -259,11 +270,11 @@ def convert_timestamp(obj):
     out = nx.zeros(2, dtype='int64')
     if isinstance(obj, datetime):
         out[0] = long(mktime(obj.timetuple()))
-        out[1]  = obj.microsecond
+        out[1] = obj.microsecond
     elif isinstance(obj, struct_time):
         out[0] = long(mktime(obj))
     elif isinstance(obj, float):
-        out[1]  = long((obj - long(obj)) * 1e6)
+        out[1] = long((obj - long(obj)) * 1e6)
         out[0] = long(obj)
     elif isinstance(obj, (int, long)):
         out[0] = long(obj)
@@ -320,8 +331,10 @@ def dataset_properties(dset):
 
 def pluralize(n, sing='', plurl='s'):
     """Return 'sing' if n == 1; otherwise append 'plurl'"""
-    if n == 1: return sing
-    else: return plurl
+    if n == 1:
+        return sing
+    else:
+        return plurl
 
 
 def set_uuid(obj, uuid=None):
