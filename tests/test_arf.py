@@ -152,9 +152,9 @@ if version.StrictVersion(arf.h5py_version) < '2.2':
 def test07_append_to_table():
     fp = arf.open_file("test07", mode="a", driver="core", backing_store=False)
     dset = arf.create_table(fp, 'test', dtype=nx.dtype([('f1', nx.uint), ('f2', nx.int32)]))
-    assert_equal(dset.size, 0)
+    assert_equal(dset.shape[0], 0)
     arf.append_data(dset, (5, 10))
-    assert_equal(dset.size, 1)
+    assert_equal(dset.shape[0], 1)
 
 
 def test99_various():
