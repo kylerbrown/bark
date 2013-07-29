@@ -62,7 +62,6 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
     fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
     fapl = files.make_fapl(driver, libver, **kwargs)
     return files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
-    return fp
 
 
 def create_entry(obj, name, timestamp, **attributes):
@@ -175,13 +174,11 @@ def create_table(group, name, dtype, **attributes):
 
 def append_data(dset, data):
     """Append new data to a dataset along axis 0"""
-    assert all(x == y for x, y in zip(dset.shape[1:], data.shape[1:]))
-    if dset.dtype.fields is not None:
-        assert dset.dtype == data.dtype
-    if data.size == 0:
+    N = data.shape[0] if hasattr(data, 'shape') else 1
+    if N == 0:
         return
     oldlen = dset.shape[0]
-    newlen = oldlen + data.shape[0]
+    newlen = oldlen + N
     dset.resize(newlen, axis=0)
     dset[oldlen:] = data
 
@@ -360,6 +357,16 @@ def get_uuid(obj):
         return UUID(obj.attrs['uuid'])
     except:
         return UUID(int=0)
+
+
+def count_children(obj, type=None):
+    """Count the children of a node, optionally restricting by class"""
+    if type is None:
+        return len(obj)
+    else:
+        # there doesn't appear to be any hdf5 function for getting this
+        # information without inspecting each child, which makes this somewhat slow
+        return sum(1 for x in obj if obj.get(x, getclass=True) is type)
 
 # Variables:
 # End:

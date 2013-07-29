@@ -137,14 +137,21 @@ def test05_null_uuid():
 
 
 def test06_creation_iter():
-    fp = arf.open_file(
-        "test_mem", mode="a", driver="core", backing_store=False)
+    fp = arf.open_file("test06", mode="a", driver="core", backing_store=False)
     entry_names = ('z', 'y', 'a', 'q', 'zzyfij')
     for name in entry_names:
         g = arf.create_entry(fp, name, 0)
         arf.create_dataset(g, "dset", (), sampling_rate=1)
 
     assert_sequence_equal(arf.keys_by_creation(fp), entry_names)
+
+
+def test07_append_to_table():
+    fp = arf.open_file("test07", mode="a", driver="core", backing_store=False)
+    dset = arf.create_table(fp, 'test', dtype=nx.dtype([('f1', nx.uint), ('f2', nx.int32)]))
+    assert_equal(dset.size, 0)
+    arf.append_data(dset, (5, 10))
+    assert_equal(dset.size, 1)
 
 
 def test99_various():
