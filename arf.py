@@ -89,7 +89,8 @@ def create_entry(obj, name, timestamp, **attributes):
 
     """
     # create group using low-level interface to store creation order
-    from h5py import h5p, h5g, _hl
+    from h5py import h5p, h5g
+    from h5py._hl import group
     try:
         gcpl = h5p.create(h5p.GROUP_CREATE)
         gcpl.set_link_creation_order(
@@ -97,7 +98,7 @@ def create_entry(obj, name, timestamp, **attributes):
     except AttributeError:
         grp = obj.create_group(name)
     else:
-        grp = _hl.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
+        grp = group.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
     set_uuid(grp, attributes.pop("uuid", None))
     set_attributes(grp,
                    timestamp=convert_timestamp(timestamp),
