@@ -58,10 +58,15 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
     from h5py import h5p
     from h5py._hl import files
 
-    fcpl = h5p.create(h5p.FILE_CREATE)
-    fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
-    fapl = files.make_fapl(driver, libver, **kwargs)
-    return files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
+    try:
+        fcpl = h5p.create(h5p.FILE_CREATE)
+        fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
+    except AttributeError:
+        # older version of h5py
+        return files.File(name, mode=mode, driver=driver, libver=libver, **kwargs)
+    else:
+        fapl = files.make_fapl(driver, libver, **kwargs)
+        return files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
 
 
 def create_entry(obj, name, timestamp, **attributes):
@@ -89,9 +94,10 @@ def create_entry(obj, name, timestamp, **attributes):
         gcpl = h5p.create(h5p.GROUP_CREATE)
         gcpl.set_link_creation_order(
             h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
-        grp = _hl.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
     except AttributeError:
         grp = obj.create_group(name)
+    else:
+        grp = _hl.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
     set_uuid(grp, attributes.pop("uuid", None))
     set_attributes(grp,
                    timestamp=convert_timestamp(timestamp),
@@ -245,8 +251,14 @@ def keys_by_creation(group):
     """
     from h5py import h5
     out = []
-    group._id.links.iterate(
-        out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
+    try:
+        group._id.links.iterate(out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
+    except AttributeError:
+        # pre 2.2 shim
+        def f(name):
+            if name[1:].find('/') == -1:
+                out.append(name)
+        group._id.links.visit(f, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
     return out
 
 

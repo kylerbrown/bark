@@ -6,6 +6,7 @@
 
 from nose.tools import *
 from nose.plugins.skip import SkipTest
+from distutils import version
 
 import numpy as nx
 import arf
@@ -142,8 +143,10 @@ def test06_creation_iter():
     for name in entry_names:
         g = arf.create_entry(fp, name, 0)
         arf.create_dataset(g, "dset", (), sampling_rate=1)
-
     assert_sequence_equal(arf.keys_by_creation(fp), entry_names)
+
+if version.StrictVersion(arf.h5py_version) < '2.2':
+    test06_creation_iter = SkipTest(test06_creation_iter)
 
 
 def test07_append_to_table():
