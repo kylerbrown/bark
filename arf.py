@@ -55,18 +55,27 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
     creation property lists are set correctly.
 
     """
+    import os
     from h5py import h5p
     from h5py._hl import files
 
+    exists = os.path.exists(name)
     try:
         fcpl = h5p.create(h5p.FILE_CREATE)
         fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
     except AttributeError:
         # older version of h5py
-        return files.File(name, mode=mode, driver=driver, libver=libver, **kwargs)
+        fp = files.File(name, mode=mode, driver=driver, libver=libver, **kwargs)
     else:
         fapl = files.make_fapl(driver, libver, **kwargs)
-        return files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
+        fp = files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
+
+    if not exists and fp.mode == 'r+':
+        set_attributes(fp,
+                       arf_library='python',
+                       arf_library_version=__version__,
+                       arf_version=spec_version)
+    return fp
 
 
 def create_entry(obj, name, timestamp, **attributes):
@@ -195,7 +204,7 @@ def check_file_version(file):
 
     Raises DeprecationWarning for backwards-incompatible files, FutureWarning
     for (potentially) forwards-incompatible files, and UserWarning for files
-    that may not have been created an ARF library.
+    that may not have been created by an ARF library.
 
     Returns the version for the file
 
@@ -203,19 +212,10 @@ def check_file_version(file):
     from distutils.version import StrictVersion as Version
     try:
         file_version = Version(
-            file.attrs.get('arf_library_version', file.attrs['arf_version']))
+            file.attrs.get('arf_version', file.attrs['arf_library_version']))
     except KeyError:
-        # attribute doesn't exist - may be a new file
-        if file.mode == 'r+':
-            file_version = Version(spec_version)
-            set_attributes(file,
-                           arf_library='python',
-                           arf_library_version=__version__,
-                           arf_version=spec_version)
-            return file_version
-        else:
-            raise UserWarning(
-                "Unable to determine ARF version for {0.filename}; created by another program?".format(file))
+        raise UserWarning(
+            "Unable to determine ARF version for {0.filename}; created by another program?".format(file))
     # should be backwards compatible after 1.1
     if file_version < Version('1.1'):
         raise DeprecationWarning(
