@@ -134,6 +134,7 @@ main(int argc, char ** argv)
 
         {
                 arf::file f("test.arf","w");
+                assert (f.name() == "test.arf");
 
                 char ename[64];
 

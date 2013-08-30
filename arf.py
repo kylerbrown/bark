@@ -211,12 +211,14 @@ def check_file_version(file):
     """
     from distutils.version import StrictVersion as Version
     try:
-        file_version = Version(
-            file.attrs.get('arf_version', file.attrs['arf_library_version']))
+        ver = file.attrs.get('arf_version', None)
+        if ver is None:
+            ver = file.attrs['arf_library_version']
     except KeyError:
         raise UserWarning(
             "Unable to determine ARF version for {0.filename}; created by another program?".format(file))
     # should be backwards compatible after 1.1
+    file_version = Version(ver)
     if file_version < Version('1.1'):
         raise DeprecationWarning(
             "ARF library {} may have trouble reading file version {} (< 1.1)".format(version, file_version))

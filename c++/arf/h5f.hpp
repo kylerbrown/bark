@@ -99,9 +99,10 @@ public:
 		return v;
 	}
 
-        /** name of the file */
+        /** name of the file, or an empty string if handl is invalid */
 	std::string name() const {
 		ssize_t sz = H5Fget_name(_file_id, 0, 0);
+                if (sz < 0) return "";
 		char name[sz+1];
 		H5Fget_name(_file_id, name, sz+1);
 		return name;
