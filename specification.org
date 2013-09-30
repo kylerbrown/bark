@@ -237,6 +237,7 @@ of the dataset. The following values are defined:
 |     4 | EXTRAC_EEG | extracellular, EEG                                   |
 |     5 | INTRAC_CC  | intracellular, current-clamp                         |
 |     6 | INTRAC_VC  | intracellular, voltage-clamp                         |
+|    23 | EXTRAC_RAW | extracellular, wide-band                             |
 |  1000 | EVENT      | generic event times                                  |
 |  1001 | SPIKET     | spike event times                                    |
 |  1002 | BEHAVET    | behavioral event times                               |
