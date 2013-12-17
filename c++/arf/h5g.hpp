@@ -62,7 +62,9 @@ public:
 	}
 
 	~group() {
-		H5Gclose(_self);
+                if (H5Iis_valid(_self) > 0) {
+                        H5Gclose(_self);
+                }
 	}
 
 	/** Link an existing node under this group. */

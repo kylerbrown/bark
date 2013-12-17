@@ -1,7 +1,7 @@
 
 PREFIX=/usr/local
 CXX ?= g++
-CFLAGS = -g2 -Wall -Ic++ -I/opt/local/include
+CFLAGS = -g -Wall -Ic++ -I/opt/local/include
 LDFLAGS = -L/opt/local/lib
 
 all: test

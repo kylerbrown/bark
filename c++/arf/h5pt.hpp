@@ -49,7 +49,9 @@ public:
 	}
 
 	~packet_table() {
-                H5PTclose(_ptself);
+                if (H5PTis_valid(_ptself) > 0) {
+                        H5PTclose(_ptself);
+                }
 	}
 
 	/**

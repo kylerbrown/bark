@@ -175,7 +175,7 @@ public:
 		return h5e::check_error(H5Tequal(_self, other.hid()) <= 0);
 	}
 
-	hsize_t size() const { return h5e::check_error(H5Tget_size(_self)); }
+	hsize_t size() const { return H5Tget_size(_self); }
 
 	void set_size(hsize_t size) { h5e::check_error(H5Tset_size(_self, size)); }
 };

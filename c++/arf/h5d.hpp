@@ -52,7 +52,9 @@ public:
 	}
 
 	~dataset() {
-                H5Dclose(_self);
+                if (H5Iis_valid(_self) > 0) {
+                        H5Dclose(_self);
+                }
 	}
 
 	/** Write data to the current dataset. The extent of the dataset is resized to match. */
