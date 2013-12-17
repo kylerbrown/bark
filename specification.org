@@ -1,6 +1,6 @@
 #-*- mode: org -*-
 #+STARTUP:    align fold hidestars oddeven
-#+TITLE:    Advanced Recording Format Specification (2.0)
+#+TITLE:    Advanced Recording Format Specification (2.1)
 #+AUTHOR:    Dan Meliza
 #+EMAIL:     dan||meliza.org
 #+DATE: [2013-03-05 Tue]
@@ -15,7 +15,7 @@ allowing files to be accessed on a wide range of operating systems and
 architectures.
 
 - Editor: Dan Meliza <dan at meliza.org>
-- State:  released
+- State:  draft
 
 * Licence
 
@@ -213,13 +213,19 @@ The following attribute is only required for datasets with a discrete timebase:
                    samples per second (Hz). Required for all datasets with a
                    sampled timebase. May be any numerical datatype.
 
-The following attribute is entirely optional:
+The following attributes are optional:
 
 + offset :: Indicates the start time of the dataset relative to the start of the
             entry, defined by the timebase of the dataset. For discrete
             timebases, the units must be in samples; for continuous timebases,
             the units must be the same as the units of the dataset. If this
             attribute is missing, the offset shall be assumed to be zero.
++ uuid :: A universally unique ID for the dataset (see [[http://tools.ietf.org/html/rfc4122.html][RFC 4122]]). Multiple
+          datasets in different entries of the same file may have the same uuid,
+          indicating that they were obtained from the same source and
+          experimental conditions. Must be stored as a 128-bit integer or a
+          36-byte =H5T_STRING= with =CTYPE= of =H5T_C_S1=. The latter is
+          preferred as 128-bit integers are not supported on many platforms.
 
 *** Datatypes
 
@@ -272,6 +278,12 @@ incompatible with later versions due to namespace collision, their names should
 be prefixed with the name of the application (e.g. 'jill_sample_count').
 
 * Changes from previous versions
+
+** version 2.1
+
+An optional "uuid" attribute was added to the dataset specification. This
+allows channels to be unambiguously identified as data sources for subsequent
+analysis steps.
 
 ** version 2.0
 

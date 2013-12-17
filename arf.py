@@ -189,7 +189,8 @@ def create_table(group, name, dtype, **attributes):
 
 
 def append_data(dset, data):
-    """Append new data to a dataset along axis 0"""
+    """Appends new data to a dataset along axis 0. Data must be a single element or
+    a 1D array of the same type as the dataset (including compound datatypes)."""
     N = data.shape[0] if hasattr(data, 'shape') else 1
     if N == 0:
         return
@@ -256,7 +257,7 @@ def keys_by_creation(group):
     out = []
     try:
         group._id.links.iterate(out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
-    except AttributeError:
+    except (AttributeError, RuntimeError):
         # pre 2.2 shim
         def f(name):
             if name[1:].find('/') == -1:
