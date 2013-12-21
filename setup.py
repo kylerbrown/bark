@@ -7,7 +7,7 @@ from distutils.core import setup
 if sys.hexversion < 0x02060000:
     raise RuntimeError("Python 2.6 or higher required")
 
-VERSION = '2.1.0'
+VERSION = '2.2.0-SNAPSHOT'
 
 cls_txt = """
 Development Status :: 5 - Production/Stable

@@ -3,8 +3,8 @@
 import numpy as nx
 from h5py.version import version as h5py_version, hdf5_version
 
-spec_version = "2.0"
-__version__ = version = "2.1.0"
+spec_version = "2.1"
+__version__ = version = "2.2.0-SNAPSHOT"
 
 __doc__ = """
 This is ARF, a python library for storing and accessing audio and ephys data in
@@ -16,14 +16,8 @@ Library versions:
  HDF5: %s
 """ % (version, h5py_version, hdf5_version)
 
-# some constants and enumerations
-_interval_dtype = nx.dtype([('name', 'S256'), ('start', 'f8'), ('stop', 'f8')])
-
-
 class DataTypes:
-
-    """
-    Available data types, by name and integer code:
+    """Available data types, by name and integer code:
     """
     UNDEFINED, ACOUSTIC, EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG, INTRAC_CC, INTRAC_VC = range(
         0, 7)
@@ -49,7 +43,7 @@ class DataTypes:
 
 
 def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **kwargs):
-    """Open an ARF file, creating as necessary.
+    """Opens an ARF file, creating as necessary.
 
     Use this instead of h5py.File to ensure that root-level attributes and group
     creation property lists are set correctly.
@@ -78,8 +72,8 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
     return fp
 
 
-def create_entry(obj, name, timestamp, **attributes):
-    """Create a new ARF entry under obj, setting required attributes.
+def create_entry(group, name, timestamp, **attributes):
+    """Creates a new ARF entry under group, setting required attributes.
 
     An entry is an abstract collection of data which all refer to the same time
     frame. Data can include physiological recordings, sound recordings, and
@@ -98,16 +92,15 @@ def create_entry(obj, name, timestamp, **attributes):
 
     """
     # create group using low-level interface to store creation order
-    from h5py import h5p, h5g
-    from h5py._hl import group
+    from h5py import h5p, h5g, _hl
     try:
         gcpl = h5p.create(h5p.GROUP_CREATE)
         gcpl.set_link_creation_order(
             h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
     except AttributeError:
-        grp = obj.create_group(name)
+        grp = group.create_group(name)
     else:
-        grp = group.Group(h5g.create(obj.id, name, lcpl=None, gcpl=gcpl))
+        grp = _hl.group.Group(h5g.create(group.id, name, lcpl=None, gcpl=gcpl))
     set_uuid(grp, attributes.pop("uuid", None))
     set_attributes(grp,
                    timestamp=convert_timestamp(timestamp),
@@ -115,14 +108,14 @@ def create_entry(obj, name, timestamp, **attributes):
     return grp
 
 
-def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
+def create_dataset(group, name, data, units='', datatype=DataTypes.UNDEFINED,
                    chunks=True, maxshape=None, compression=None,
                    **attributes):
-    """Create an ARF dataset under obj, setting required attributes
+    """Creates an ARF dataset under group, setting required attributes
 
     Required arguments:
     name --   the name of dataset in which to store the data
-    data --   the data to store, as one of the types described above. convert to numpy array first!
+    data --   the data to store
 
     Data can be of the following types:
 
@@ -158,7 +151,8 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
     if not data.dtype.isbuiltin:
         if 'start' not in data.dtype.names:
             raise ValueError("complex event data requires 'start' field")
-        if units == '' or (not isinstance(units, basestring) and len(units) != len(data.dtype.names)):
+        if units == '' or (not isinstance(units, basestring) and
+                           len(units) != len(data.dtype.names)):
             raise ValueError(
                 "complex event data requires array of units, one per field")
     if units == '':
@@ -174,14 +168,14 @@ def create_dataset(obj, name, data, units='', datatype=DataTypes.UNDEFINED,
     # NB: can't really catch case where sampled data has units but doesn't
     # have sampling_rate attribute
 
-    dset = obj.create_dataset(
+    dset = group.create_dataset(
         name, data=data, maxshape=maxshape, chunks=chunks, compression=compression)
     set_attributes(dset, units=units, datatype=datatype, **attributes)
     return dset
 
 
 def create_table(group, name, dtype, **attributes):
-    """Create a new array dataset with compound datatype and maxshape=(None,)"""
+    """Creates a new array dataset under group with compound datatype and maxshape=(None,)"""
     dset = group.create_dataset(
         name, shape=(0,), dtype=dtype, maxshape=(None,))
     set_attributes(dset, **attributes)
@@ -189,7 +183,7 @@ def create_table(group, name, dtype, **attributes):
 
 
 def append_data(dset, data):
-    """Appends new data to a dataset along axis 0. Data must be a single element or
+    """Appends data to dset along axis 0. Data must be a single element or
     a 1D array of the same type as the dataset (including compound datatypes)."""
     N = data.shape[0] if hasattr(data, 'shape') else 1
     if N == 0:
@@ -201,7 +195,7 @@ def append_data(dset, data):
 
 
 def check_file_version(file):
-    """Check the ARF version attribute of a file for compatibility.
+    """Checks the ARF version attribute of file for compatibility.
 
     Raises DeprecationWarning for backwards-incompatible files, FutureWarning
     for (potentially) forwards-incompatible files, and UserWarning for files
@@ -217,20 +211,23 @@ def check_file_version(file):
             ver = file.attrs['arf_library_version']
     except KeyError:
         raise UserWarning(
-            "Unable to determine ARF version for {0.filename}; created by another program?".format(file))
+            "Unable to determine ARF version for {0.filename};"
+            "created by another program?".format(file))
     # should be backwards compatible after 1.1
     file_version = Version(ver)
     if file_version < Version('1.1'):
         raise DeprecationWarning(
-            "ARF library {} may have trouble reading file version {} (< 1.1)".format(version, file_version))
+            "ARF library {} may have trouble reading file "
+            "version {} (< 1.1)".format(version, file_version))
     elif file_version >= Version('3.0'):
         raise FutureWarning(
-            "ARF library {} may be incompatible with file version {} (>= 3.0)".format(version, file_version))
+            "ARF library {} may be incompatible with file "
+            "version {} (>= 3.0)".format(version, file_version))
     return file_version
 
 
 def set_attributes(node, overwrite=True, **attributes):
-    """Set multiple attributes on an HDF5 object.
+    """Sets multiple attributes on node.
 
     If overwrite is False, and the attribute already exists, does nothing. If
     the value for a key is None, the attribute is deleted.
@@ -267,7 +264,7 @@ def keys_by_creation(group):
 
 
 def convert_timestamp(obj):
-    """Make an ARF timestamp from various types.
+    """Makes an ARF timestamp from an object.
 
     Argument can be a datetime.datetime object, a time.struct_time, an integer,
     a float, or a tuple of integers. The returned value is a numpy array with
@@ -300,23 +297,24 @@ def convert_timestamp(obj):
 
 
 def timestamp_to_datetime(timestamp):
-    """Convert an ARF timestamp a datetime.datetime object (naive local time)"""
+    """Converts an ARF timestamp a datetime.datetime object (naive local time)"""
     from datetime import datetime, timedelta
     obj = datetime.fromtimestamp(timestamp[0])
     return obj + timedelta(microseconds=int(timestamp[1]))
 
 
 def timestamp_to_float(timestamp):
-    """Convert an ARF timestamp to a floating point (sec since epoch) """
+    """Converts an ARF timestamp to a floating point (sec since epoch) """
     return nx.dot(timestamp, (1.0, 1e-6))
 
 
 def dataset_properties(dset):
-    """Infer the type of data and some properties of an hdf5 dataset.
+    """Infers the type of data and some properties of an hdf5 dataset.
 
     Returns tuple: (sampled|event|interval|unknown), (array|table|vlarry), ncol
     """
     from h5py import h5t
+    interval_dtype_names = ('name', 'start', 'stop')
     dtype = dset.id.get_type()
 
     if isinstance(dtype, h5t.TypeVlenID):
@@ -327,7 +325,7 @@ def dataset_properties(dset):
         names, ncol = dtype.dtype.names, dtype.get_nmembers()
         if 'start' not in names:
             contents = 'unknown'
-        elif any(k not in names for k in _interval_dtype.names):
+        elif any(k not in names for k in interval_dtype_names):
             contents = 'event'
         else:
             contents = 'interval'
@@ -343,7 +341,7 @@ def dataset_properties(dset):
 
 
 def pluralize(n, sing='', plurl='s'):
-    """Return 'sing' if n == 1; otherwise append 'plurl'"""
+    """Returns 'sing' if n == 1, else 'plurl'"""
     if n == 1:
         return sing
     else:
@@ -351,7 +349,9 @@ def pluralize(n, sing='', plurl='s'):
 
 
 def set_uuid(obj, uuid=None):
-    """Set the uuid attribute of an HDF5 object. Use this method to ensure correct dtype """
+    """Sets the uuid attribute of an HDF5 object.
+
+    Use this method to ensure correct dtype """
     from uuid import uuid4, UUID
     if uuid is None:
         uuid = uuid4()
@@ -367,7 +367,7 @@ def set_uuid(obj, uuid=None):
 
 
 def get_uuid(obj):
-    """Return the uuid for an entry or other HDF5 object, or null uuid if none is set"""
+    """Returns the uuid for obj, or null uuid if none is set"""
     from uuid import UUID
     try:
         return UUID(obj.attrs['uuid'])
@@ -376,7 +376,7 @@ def get_uuid(obj):
 
 
 def count_children(obj, type=None):
-    """Count the children of a node, optionally restricting by class"""
+    """Returns the number of children of obj, optionally restricting by class"""
     if type is None:
         return len(obj)
     else:
