@@ -3,6 +3,8 @@
 
 # test harness for arf interface. assumes the underlying hdf5 and h5py libraries
 # are working.
+from __future__ import division
+from __future__ import unicode_literals
 
 from nose.tools import *
 from nose.plugins.skip import SkipTest
@@ -47,16 +49,16 @@ datasets = [dict(name="acoustic",
                  ),
             dict(name="events",
                  data=nx.rec.fromrecords(
-                 [(1.0, 1, "stimulus"), (5.0, 0, "stimulus")],
+                 [(1.0, 1, b"stimulus"), (5.0, 0, b"stimulus")],
                  names=("start", "state", "name")),  # 'start' required
                  datatype=arf.DataTypes.EVENT,
-                 units="s")
+                 units=(b"s",b"",b"")) # only bytes supported by h5py
             ]
 
 bad_datasets = [dict(name="string datatype",
                      data="a string"),
                 dict(name="object datatype",
-                     data=basestring),
+                     data=bytes),
                 dict(name="missing samplerate/units",
                      data=randn(1000)),
                 dict(name="missing samplerate for units=samples",
@@ -68,12 +70,12 @@ bad_datasets = [dict(name="string datatype",
                      units="s"),
                 dict(name="missing units for complex dtype",
                      data=nx.rec.fromrecords(
-                     [(1.0, 1, "stimulus"), (5.0, 0, "stimulus")],
+                     [(1.0, 1, b"stimulus"), (5.0, 0, b"stimulus")],
                      names=(
                      "start", "state", "name"))),
                 dict(name="wrong length units for complex dtype",
                      data=nx.rec.fromrecords(
-                     [(1.0, 1, "stimulus"), (5.0, 0, "stimulus")],
+                     [(1.0, 1, b"stimulus"), (5.0, 0, b"stimulus")],
                      names=(
                      "start", "state", "name")),
                      units=("seconds",)),
@@ -111,7 +113,7 @@ def test02_create_datasets():
         for dset in datasets:
             yield create_dataset, entry, dset
         assert_equal(len(entry), len(datasets))
-        assert_items_equal(entry.keys(), (dset['name'] for dset in datasets))
+        assert_set_equal(set(entry.keys()), set(dset['name'] for dset in datasets))
 
 
 def test03_set_attributes():
@@ -130,7 +132,7 @@ def test04_create_bad_dataset():
 def test05_null_uuid():
     # nulls in a uuid can make various things barf
     from uuid import UUID
-    uuid = UUID(bytes=''.rjust(16, '\0'))
+    uuid = UUID(bytes=b''.rjust(16, b'\0'))
     e = fp['entry_001']
     arf.set_uuid(e, uuid)
 
@@ -143,15 +145,16 @@ def test06_creation_iter():
     for name in entry_names:
         g = arf.create_entry(fp, name, 0)
         arf.create_dataset(g, "dset", (), sampling_rate=1)
-    assert_sequence_equal(arf.keys_by_creation(fp), entry_names)
+    assert_sequence_equal(list(arf.keys_by_creation(fp)), entry_names)
 
-if version.StrictVersion(arf.h5py_version) < '2.2':
+if version.StrictVersion(arf.h5py_version) < version.StrictVersion("2.2"):
     test06_creation_iter = SkipTest(test06_creation_iter)
 
 
 def test07_append_to_table():
     fp = arf.open_file("test07", mode="a", driver="core", backing_store=False)
-    dset = arf.create_table(fp, 'test', dtype=nx.dtype([('f1', nx.uint), ('f2', nx.int32)]))
+    dtype = nx.dtype({'names': ("f1","f2"), 'formats': [nx.uint, nx.int32]})
+    dset = arf.create_table(fp, 'test', dtype=dtype)
     assert_equal(dset.shape[0], 0)
     arf.append_data(dset, (5, 10))
     assert_equal(dset.shape[0], 1)

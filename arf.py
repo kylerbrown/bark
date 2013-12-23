@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # -*- mode: python -*-
+from __future__ import division
+from __future__ import unicode_literals
 import numpy as nx
 from h5py.version import version as h5py_version, hdf5_version
 
@@ -16,7 +18,9 @@ Library versions:
  HDF5: %s
 """ % (version, h5py_version, hdf5_version)
 
+
 class DataTypes:
+
     """Available data types, by name and integer code:
     """
     UNDEFINED, ACOUSTIC, EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG, INTRAC_CC, INTRAC_VC = range(
@@ -49,17 +53,27 @@ def open_file(name, mode=None, driver=None, libver=None, userblock_size=None, **
     creation property lists are set correctly.
 
     """
+    import sys
     import os
     from h5py import h5p
     from h5py._hl import files
 
+    try:
+        # If the byte string doesn't match the default
+        # encoding, just pass it on as-is.  Note Unicode
+        # objects can always be encoded.
+        name = name.encode(sys.getfilesystemencoding())
+    except (UnicodeError, LookupError):
+        pass
     exists = os.path.exists(name)
     try:
         fcpl = h5p.create(h5p.FILE_CREATE)
-        fcpl.set_link_creation_order(h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
+        fcpl.set_link_creation_order(
+            h5p.CRT_ORDER_TRACKED | h5p.CRT_ORDER_INDEXED)
     except AttributeError:
         # older version of h5py
-        fp = files.File(name, mode=mode, driver=driver, libver=libver, **kwargs)
+        fp = files.File(name, mode=mode, driver=driver,
+                        libver=libver, **kwargs)
     else:
         fapl = files.make_fapl(driver, libver, **kwargs)
         fp = files.File(files.make_fid(name, mode, userblock_size, fapl, fcpl))
@@ -100,7 +114,8 @@ def create_entry(group, name, timestamp, **attributes):
     except AttributeError:
         grp = group.create_group(name)
     else:
-        grp = _hl.group.Group(h5g.create(group.id, name, lcpl=None, gcpl=gcpl))
+        name, lcpl = group._e(name, lcpl=True)
+        grp = _hl.group.Group(h5g.create(group.id, name, lcpl=lcpl, gcpl=gcpl))
     set_uuid(grp, attributes.pop("uuid", None))
     set_attributes(grp,
                    timestamp=convert_timestamp(timestamp),
@@ -145,16 +160,16 @@ def create_dataset(group, name, data, units='', datatype=DataTypes.UNDEFINED,
     # check data validity before doing anything
     if not hasattr(data, 'dtype'):
         data = nx.asarray(data)
-        if data.dtype.kind in ('S', 'O'):
+        if data.dtype.kind in ('S', 'O', 'U'):
             raise ValueError(
                 "data must be in array with numeric or compound type")
-    if not data.dtype.isbuiltin:
+    if data.dtype.kind == 'V':
         if 'start' not in data.dtype.names:
             raise ValueError("complex event data requires 'start' field")
-        if units == '' or (not isinstance(units, basestring) and
-                           len(units) != len(data.dtype.names)):
-            raise ValueError(
-                "complex event data requires array of units, one per field")
+        if not isinstance(units, (list, tuple)):
+            raise ValueError("complex event data requires sequence of units")
+        if not len(units) == len(data.dtype.names):
+            raise ValueError("number of units doesn't match number of fields")
     if units == '':
         if not data.dtype.isbuiltin:
             raise ValueError("event data requires units")
@@ -245,7 +260,7 @@ def set_attributes(node, overwrite=True, **attributes):
 
 
 def keys_by_creation(group):
-    """Returns a list of links in group in order of creation.
+    """Returns a sequence of links in group in order of creation.
 
     Raises an error if the group was not set to track creation order.
 
@@ -253,14 +268,16 @@ def keys_by_creation(group):
     from h5py import h5
     out = []
     try:
-        group._id.links.iterate(out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
+        group._id.links.iterate(
+            out.append, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
     except (AttributeError, RuntimeError):
         # pre 2.2 shim
         def f(name):
             if name[1:].find('/') == -1:
                 out.append(name)
-        group._id.links.visit(f, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
-    return out
+        group._id.links.visit(
+            f, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
+    return map(group._d, out)
 
 
 def convert_timestamp(obj):
@@ -275,19 +292,21 @@ def convert_timestamp(obj):
     between float and integer tuple may not be reversible.
 
     """
+    import numbers
     from datetime import datetime
     from time import mktime, struct_time
+
     out = nx.zeros(2, dtype='int64')
     if isinstance(obj, datetime):
-        out[0] = long(mktime(obj.timetuple()))
+        out[0] = mktime(obj.timetuple())
         out[1] = obj.microsecond
     elif isinstance(obj, struct_time):
-        out[0] = long(mktime(obj))
-    elif isinstance(obj, float):
-        out[1] = long((obj - long(obj)) * 1e6)
-        out[0] = long(obj)
-    elif isinstance(obj, (int, long)):
-        out[0] = long(obj)
+        out[0] = mktime(obj)
+    elif isinstance(obj, numbers.Integral):
+        out[0] = obj
+    elif isinstance(obj, numbers.Real):
+        out[0] = obj
+        out[1] = (obj - out[0]) * 1e6
     else:
         try:
             out[:2] = obj[:2]
@@ -355,7 +374,7 @@ def set_uuid(obj, uuid=None):
     from uuid import uuid4, UUID
     if uuid is None:
         uuid = uuid4()
-    elif isinstance(uuid, basestring):
+    elif isinstance(uuid, bytes):
         if len(uuid) == 16:
             uuid = UUID(bytes=uuid)
         else:
@@ -381,7 +400,8 @@ def count_children(obj, type=None):
         return len(obj)
     else:
         # there doesn't appear to be any hdf5 function for getting this
-        # information without inspecting each child, which makes this somewhat slow
+        # information without inspecting each child, which makes this somewhat
+        # slow
         return sum(1 for x in obj if obj.get(x, getclass=True) is type)
 
 # Variables:
