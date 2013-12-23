@@ -171,8 +171,6 @@ def create_dataset(group, name, data, units='', datatype=DataTypes.UNDEFINED,
         if not len(units) == len(data.dtype.names):
             raise ValueError("number of units doesn't match number of fields")
     if units == '':
-        if not data.dtype.isbuiltin:
-            raise ValueError("event data requires units")
         if srate is None or not srate > 0:
             raise ValueError(
                 "unitless data assumed time series and requires sampling_rate attribute")
@@ -325,46 +323,6 @@ def timestamp_to_datetime(timestamp):
 def timestamp_to_float(timestamp):
     """Converts an ARF timestamp to a floating point (sec since epoch) """
     return nx.dot(timestamp, (1.0, 1e-6))
-
-
-def dataset_properties(dset):
-    """Infers the type of data and some properties of an hdf5 dataset.
-
-    Returns tuple: (sampled|event|interval|unknown), (array|table|vlarry), ncol
-    """
-    from h5py import h5t
-    interval_dtype_names = ('name', 'start', 'stop')
-    dtype = dset.id.get_type()
-
-    if isinstance(dtype, h5t.TypeVlenID):
-        return 'event', 'vlarray', dset.id.shape[0]
-
-    if isinstance(dtype, h5t.TypeCompoundID):
-        # table types; do a check on the dtype for backwards compat with 1.0
-        names, ncol = dtype.dtype.names, dtype.get_nmembers()
-        if 'start' not in names:
-            contents = 'unknown'
-        elif any(k not in names for k in interval_dtype_names):
-            contents = 'event'
-        else:
-            contents = 'interval'
-        return contents, 'table', ncol
-
-    dtt = dset.attrs.get('datatype', 0)
-    ncols = len(dset.shape) < 2 and 1 or dset.shape[1]
-    if dtt < DataTypes.EVENT:
-        # assume UNKNOWN is sampled
-        return 'sampled', 'array', ncols
-    else:
-        return 'event', 'array', ncols
-
-
-def pluralize(n, sing='', plurl='s'):
-    """Returns 'sing' if n == 1, else 'plurl'"""
-    if n == 1:
-        return sing
-    else:
-        return plurl
 
 
 def set_uuid(obj, uuid=None):

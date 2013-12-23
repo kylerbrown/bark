@@ -120,6 +120,9 @@ def test03_set_attributes():
     # tests the set_attributes convenience function
     arf.set_attributes(fp["entry_001/spikes"], mystr="myvalue", myint=5000)
     assert_equal(fp["entry_001/spikes"].attrs['myint'], 5000)
+    assert_equal(fp["entry_001/spikes"].attrs['mystr'], "myvalue")
+    arf.set_attributes(fp["entry_001/spikes"], mystr=None)
+    assert_false("mystr" in fp["entry_001/spikes"].attrs)
 
 
 def test04_create_bad_dataset():
@@ -158,6 +161,23 @@ def test07_append_to_table():
     assert_equal(dset.shape[0], 0)
     arf.append_data(dset, (5, 10))
     assert_equal(dset.shape[0], 1)
+
+
+def test08_check_file_version():
+    fp = arf.open_file("test08", mode="a", driver="core", backing_store=False)
+    arf.check_file_version(fp)
+
+
+def test09_timestamp_conversion():
+    from datetime import datetime
+
+    dt = datetime.now()
+    ts = arf.convert_timestamp(dt)
+    assert_equal(arf.timestamp_to_datetime(ts), dt)
+    assert_true(all(arf.convert_timestamp(ts) == ts))
+
+    ts = arf.convert_timestamp(1000)
+    assert_equal(int(arf.timestamp_to_float(ts)), 1000)
 
 
 def test99_various():
