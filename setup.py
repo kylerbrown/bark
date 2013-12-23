@@ -14,6 +14,7 @@ Development Status :: 5 - Production/Stable
 Intended Audience :: Science/Research
 License :: OSI Approved :: GNU General Public License (GPL)
 Programming Language :: Python
+Programming Language :: Python :: 3
 Programming Language :: C++
 Topic :: Scientific/Engineering
 Operating System :: Unix
