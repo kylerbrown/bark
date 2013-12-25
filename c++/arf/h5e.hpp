@@ -52,7 +52,7 @@ static herr_t auto_throw(hid_t estack, void*) {
 	if (H5Eget_num(estack)<=0)
 		return 0;
 
-	if (H5Ewalk(estack, H5E_WALK_DOWNWARD, walk_cb, &err) < 0)
+	if (H5Ewalk2(estack, H5E_WALK_DOWNWARD, walk_cb, &err) < 0)
 		throw Exception("Failed to walk error stack");
 
 	if (err.desc)

@@ -151,7 +151,7 @@ protected:
 	dataset() {}
 
 	void open_dataset(hid_t parent, std::string const & name) {
-		_self = h5e::check_error(H5Dopen(parent, name.c_str(), H5P_DEFAULT));
+		_self = h5e::check_error(H5Dopen2(parent, name.c_str(), H5P_DEFAULT));
 	}
 
 private:
@@ -166,7 +166,7 @@ private:
 		if (compress > -1)
 			h5e::check_error(H5Pset_deflate(dcpl.hid(), compress));
 
-		_self = h5e::check_error(H5Dcreate(parent, name.c_str(), dtype.hid(),
+		_self = h5e::check_error(H5Dcreate2(parent, name.c_str(), dtype.hid(),
 						   dspace.hid(), H5P_DEFAULT,
 						   dcpl.hid(), H5P_DEFAULT));
 	}

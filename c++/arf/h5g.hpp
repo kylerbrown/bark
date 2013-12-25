@@ -57,7 +57,7 @@ public:
 		h5p::proplist gcpl(H5P_GROUP_CREATE);
 		h5e::check_error(H5Pset_link_creation_order(gcpl.hid(),
 							    H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
-		_self = h5e::check_error(H5Gcreate(parent.hid(), path.c_str(), H5P_DEFAULT,
+		_self = h5e::check_error(H5Gcreate2(parent.hid(), path.c_str(), H5P_DEFAULT,
 						   gcpl.hid(), H5P_DEFAULT));
 	}
 
@@ -193,7 +193,7 @@ protected:
 
 private:
 	void open_group(h5a::node const & parent, std::string const & path) {
-		_self = h5e::check_error(H5Gopen(parent.hid(), path.c_str(), H5P_DEFAULT));
+		_self = h5e::check_error(H5Gopen2(parent.hid(), path.c_str(), H5P_DEFAULT));
 	}
 
 };

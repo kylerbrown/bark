@@ -43,7 +43,7 @@ public:
 		const char * name = path.c_str();
 		h5p::proplist fapl(H5P_FILE_ACCESS);
                 h5p::proplist fcpl(H5P_FILE_CREATE);
-                H5Eset_auto(H5E_DEFAULT,0,0); // silence hdf5 error stack
+                H5Eset_auto2(H5E_DEFAULT,0,0); // silence hdf5 error stack
 
 #ifdef H5_HAVE_PARALLEL
 		H5Pset_fapl_mpiposix(fapl.hid(), MPI_COMM_WORLD, false);
@@ -69,13 +69,13 @@ public:
 		else
 			throw Exception("Invalid mode");
 
-		_self = h5e::check_error(H5Gopen(_file_id, "/", H5P_DEFAULT));
+		_self = h5e::check_error(H5Gopen2(_file_id, "/", H5P_DEFAULT));
 	}
 
 	/** Wrap file hid_t object. Takes ownership of handle */
 	file(hid_t file_id) {
 		_file_id = file_id;
-		_self = h5e::check_error(H5Gopen(_file_id, "/", H5P_DEFAULT));
+		_self = h5e::check_error(H5Gopen2(_file_id, "/", H5P_DEFAULT));
 	}
 
 	~file() {
