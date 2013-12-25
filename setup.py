@@ -52,7 +52,8 @@ setup(
     author_email='"dan" at the domain "meliza.org"',
     maintainer='Dan Meliza',
     maintainer_email='"dan" at the domain "meliza.org"',
-    url="https://github.com/dmeliza/arf",
+    url="https://github.com/melizalab/arf",
+    download_url="https://github.com/melizalab/arf/downloads",
 
     py_modules=['arf'],
     test_suite='nose.collector'

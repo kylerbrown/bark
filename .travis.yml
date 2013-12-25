@@ -9,6 +9,7 @@ compiler:
   - gcc
 # command to install dependencies
 install:
+  - apt-get install hdf5-dev
   - pip install -r requirements.txt
 # command to run tests
 script:
