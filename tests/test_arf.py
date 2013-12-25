@@ -86,7 +86,7 @@ bad_datasets = [dict(name="string datatype",
 def create_entry(name):
     g = arf.create_entry(fp, name, tstamp, **entry_attributes)
     assert_true(name in fp)
-    assert_greater(arf.timestamp_to_float(g.attrs['timestamp']), 0)
+    assert_true(arf.timestamp_to_float(g.attrs['timestamp']) > 0)
     for k in entry_attributes:
         assert_true(k in g.attrs)
 
@@ -114,7 +114,7 @@ def test02_create_datasets():
         for dset in datasets:
             yield create_dataset, entry, dset
         assert_equal(len(entry), len(datasets))
-        assert_set_equal(set(entry.keys()), set(dset['name'] for dset in datasets))
+        assert_equal(set(entry.keys()) == set(dset['name'] for dset in datasets))
 
 
 def test03_set_attributes():
@@ -145,11 +145,11 @@ def test05_null_uuid():
 
 def test06_creation_iter():
     fp = arf.open_file("test06", mode="a", driver="core", backing_store=False)
-    entry_names = ('z', 'y', 'a', 'q', 'zzyfij')
+    entry_names = ['z', 'y', 'a', 'q', 'zzyfij']
     for name in entry_names:
         g = arf.create_entry(fp, name, 0)
         arf.create_dataset(g, "dset", (1,), sampling_rate=1)
-    assert_sequence_equal(list(arf.keys_by_creation(fp)), entry_names)
+    assert_equal(list(arf.keys_by_creation(fp)), entry_names)
 
 if version.StrictVersion(arf.h5py_version) < version.StrictVersion("2.2"):
     test06_creation_iter = SkipTest(test06_creation_iter)
