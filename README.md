@@ -42,7 +42,7 @@ Please post issues or contact Dan Meliza (dan at meliza.org) directly.
 
 ARF files require HDF5>=1.8 (<http://www.hdfgroup.org/HDF5>).
 
-The python interface requires Python>=2.6, numpy>=1.6, and h5py>=2.0
+The python interface requires Python 2.6+ or 3.2+, numpy 1.6+, and h5py 2.0+
 (<http://code.google.com/p/h5py/>). To install the module:
 
 ```bash
@@ -120,3 +120,5 @@ h5dump -d /test_0001/pcm -b LE -o test_0001.pcm file.arf
     is also implemented on top of HDF5. The data schema is considerably more complex.
 -   neuroshare (<http://neuroshare.org>) is a set of routines for reading and
     writing data in various proprietary and open formats.
+
+[![Build Status](https://travis-ci.org/melizalab/arf.png?branch=master)](https://travis-ci.org/melizalab/arf)

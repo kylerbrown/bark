@@ -114,7 +114,7 @@ def test02_create_datasets():
         for dset in datasets:
             yield create_dataset, entry, dset
         assert_equal(len(entry), len(datasets))
-        assert_equal(set(entry.keys()) == set(dset['name'] for dset in datasets))
+        assert_equal(set(entry.keys()), set(dset['name'] for dset in datasets))
 
 
 def test03_set_attributes():
