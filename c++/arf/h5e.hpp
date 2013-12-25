@@ -34,9 +34,9 @@ namespace detail {
 
 
 /** The error callback just stores the last error on the stack */
-static herr_t walk_cb(unsigned int n, H5E_error_t const * desc, void *data)
+static int walk_cb(unsigned int n, H5E_error2_t const * desc, void *data)
 {
-	H5E_error_t *e = static_cast<H5E_error_t*>(data);
+	H5E_error2_t *e = static_cast<H5E_error2_t*>(data);
 	*e = *desc;
 	return 0;
 }

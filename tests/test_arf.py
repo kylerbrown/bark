@@ -45,6 +45,7 @@ datasets = [dict(name="acoustic",
                  data=nx.array([], dtype='f'),
                  datatype=arf.DataTypes.SPIKET,
                  method="broken",
+                 maxshape=(None,),
                  units="s",
                  ),
             dict(name="events",
@@ -147,7 +148,7 @@ def test06_creation_iter():
     entry_names = ('z', 'y', 'a', 'q', 'zzyfij')
     for name in entry_names:
         g = arf.create_entry(fp, name, 0)
-        arf.create_dataset(g, "dset", (), sampling_rate=1)
+        arf.create_dataset(g, "dset", (1,), sampling_rate=1)
     assert_sequence_equal(list(arf.keys_by_creation(fp)), entry_names)
 
 if version.StrictVersion(arf.h5py_version) < version.StrictVersion("2.2"):

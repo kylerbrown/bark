@@ -42,8 +42,9 @@ public:
 		if (H5Aexists(parent, name.c_str()) > 0)
 			_self = h5e::check_error(H5Aopen(parent, name.c_str(), H5P_DEFAULT));
 		else {
-			_self = h5e::check_error(H5Acreate(parent, name.c_str(), type.hid(), dspace.hid(),
-							   H5P_DEFAULT, H5P_DEFAULT));
+			_self = h5e::check_error(H5Acreate2(parent, name.c_str(),
+                                                            type.hid(), dspace.hid(),
+                                                            H5P_DEFAULT, H5P_DEFAULT));
 		}
 	}
 
