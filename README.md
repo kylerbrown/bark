@@ -103,7 +103,7 @@ $ h5ls file.arf/test_0001
 pcm                      Dataset {609914}
 ```
 
-This shows that the data in `test_0001` is stored in a single node, =pcm}, with
+This shows that the data in `test_0001` is stored in a single node, `pcm`}, with
 609914 data points. Typically each channel will have its own dataset.
 
 The `h5dump` command can be used to output data in binary format. See the HDF5
