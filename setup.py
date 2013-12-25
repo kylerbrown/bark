@@ -2,12 +2,20 @@
 # -*- coding: utf-8 -*-
 # -*- mode: python -*-
 import sys
-from distutils.core import setup
 
 if sys.hexversion < 0x02060000:
     raise RuntimeError("Python 2.6 or higher required")
 
-VERSION = '2.2.0-SNAPSHOT'
+# setuptools 0.7+ doesn't play nice with distribute, so try to use existing
+# package if possible
+try:
+    from setuptools import setup
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
+
+VERSION = '2.1.1-SNAPSHOT'
 
 cls_txt = """
 Development Status :: 5 - Production/Stable
@@ -47,7 +55,7 @@ setup(
     url="https://github.com/dmeliza/arf",
 
     py_modules=['arf'],
-    requires=["h5py (>=2.2)", "numpy (>=1.3)"],
+    test_suite='nose.collector'
 )
 # Variables:
 # End:

@@ -3,8 +3,8 @@
 *.pyc
 *flymake.py
 *.[oa]
+/arf.egg-info
 /tests/test_arf
-/.sconsign.dblite
-/build/
+/build
 /MANIFEST
-/dist/
+/dist
