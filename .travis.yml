@@ -6,7 +6,7 @@ compiler:
 # command to install dependencies
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libhdf5-serial-dev libhdf5-dev libhdf5-7 libboost-dev
+  - sudo apt-get install libhdf5-serial-dev libboost-dev
 install:
   - pip install -r requirements.txt
 # command to run tests
