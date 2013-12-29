@@ -226,6 +226,11 @@ def check_file_version(file):
         raise UserWarning(
             "Unable to determine ARF version for {0.filename};"
             "created by another program?".format(file))
+    try:
+        # if the attribute is stored as a string, it's ascii-encoded
+        ver = ver.decode("ascii")
+    except (LookupError, AttributeError):
+        pass
     # should be backwards compatible after 1.1
     file_version = Version(ver)
     if file_version < Version('1.1'):
@@ -340,16 +345,23 @@ def set_uuid(obj, uuid=None):
 
     if "uuid" in obj.attrs:
         del obj.attrs["uuid"]
-    obj.attrs.create("uuid", str(uuid), dtype="|S36")
+    obj.attrs.create("uuid", str(uuid).encode('ascii'), dtype="|S36")
 
 
 def get_uuid(obj):
     """Returns the uuid for obj, or null uuid if none is set"""
+    # TODO: deprecate null uuid ret val
     from uuid import UUID
     try:
-        return UUID(obj.attrs['uuid'])
-    except:
+        uuid = obj.attrs['uuid']
+    except KeyError:
         return UUID(int=0)
+    # convert to unicode for python 3
+    try:
+        uuid = uuid.decode('ascii')
+    except (LookupError, AttributeError):
+        pass
+    return UUID(uuid)
 
 
 def count_children(obj, type=None):
