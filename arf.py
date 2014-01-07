@@ -374,5 +374,10 @@ def count_children(obj, type=None):
         # slow
         return sum(1 for x in obj if obj.get(x, getclass=True) is type)
 
+
+def is_marked_pointproc(dset):
+    """Returns True if dset is a marked point process (a complex dtype with 'start' field)"""
+    return dset.dtype.names is not None and 'start' in dset.dtype.names
+
 # Variables:
 # End:
