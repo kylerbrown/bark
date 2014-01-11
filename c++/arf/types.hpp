@@ -16,8 +16,8 @@
 #include <boost/shared_ptr.hpp>
 #include <hdf5.h>
 
-#define ARF_VERSION "2.0"
-#define ARF_LIBRARY_VERSION "2.0.0"
+#define ARF_VERSION "2.1"
+#define ARF_LIBRARY_VERSION "2.2.0"
 
 namespace arf {
 
@@ -46,6 +46,7 @@ enum DataType {
 	EXTRAC_EEG = 4,
 	INTRAC_CC = 5,
 	INTRAC_VC = 7,
+        EXTRAC_RAW = 23,
         EVENT = 1000,
 	SPIKET = 1001,
 	BEHAVET = 1002,

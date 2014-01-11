@@ -15,7 +15,7 @@ allowing files to be accessed on a wide range of operating systems and
 architectures.
 
 - Editor: Dan Meliza <dan at meliza.org>
-- State:  draft
+- State:  released
 
 * Licence
 

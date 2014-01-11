@@ -29,7 +29,6 @@ This repository contains:
 -   The specification for arf (in specification.org)
 -   A fast, type-safe C++ interface for reading and writing arf files
 -   A python interface for reading and writing arf files (based on h5py).
--   A very rudimentary MATLAB interface
 
 ### contributing
 
@@ -37,6 +36,8 @@ ARF is under active development and we welcome comments and contributions from
 neuroscientists and behavioral biologists interested in using it. We're
 particularly interested in use cases that don't fit the current specification.
 Please post issues or contact Dan Meliza (dan at meliza.org) directly.
+
+The MATLAB interface is out of data and could use some work.
 
 ### installation
 
@@ -66,16 +67,12 @@ path. The MATLAB interface is not yet up to the `2.0` specification.
 The specification and implementations provided in this project use a form of
 semantic versioning (<http://semver.org>). Specifications receive a major and
 minor version number. Changes to minor version numbers must be backwards
-compatible. The current released version of the ARF specification is `2.0`.
+compatible (i.e., only added requirements). The current released version of the
+ARF specification is `2.1`.
 
-Implementation versions are synchronized with the major version of the specification.
-For example, the python `arf` package version `2.1.0` is compatible with any ARF
-version `2.x`.
-
-Because of this synchronization, minor version number increments to
-implementations may break API backwards compatibility, but retain compatibility
-with the underlying file format.  These backwards incompatibilities will be
-clearly noted.
+Implementation versions are synchronized with the major version of the
+specification but otherwise evolve independently. For example, the python `arf`
+package version `2.1.0` is compatible with any ARF version `2.x`.
 
 There was no public release of ARF prior to `2.0`.
 
