@@ -375,6 +375,13 @@ def count_children(obj, type=None):
         return sum(1 for x in obj if obj.get(x, getclass=True) is type)
 
 
+def is_time_series(dset):
+    """Returns True if dset is a sampled time series (units are not time)"""
+    return (not is_marked_pointproc(dset)
+            and 'sampling_rate' in dset.attrs
+            and dset.attrs['units'] not in ('s', 'samples'))
+
+
 def is_marked_pointproc(dset):
     """Returns True if dset is a marked point process (a complex dtype with 'start' field)"""
     return dset.dtype.names is not None and 'start' in dset.dtype.names
