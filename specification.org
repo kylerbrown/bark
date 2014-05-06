@@ -16,6 +16,7 @@ architectures.
 
 - Editor: Dan Meliza <dan at meliza.org>
 - State:  released
+- URL: http://meliza.org/specifications/arf
 
 * Licence
 
@@ -330,9 +331,9 @@ continue to store them, but they were no longer required.
 
 * Footnotes
 
-+ [1] "Definition of a Free and Open Standard" - [[http://www.digistan.org/open-standard:definition][digistan.org]]
-+ [2] "Consensus Oriented Specification System" - [[http://www.digistan.org/spec:1/COSS][digistan.org]]
-+ [3] "Key words for use in RFCs to Indicate Requirement Levels" - [[http://tools.ietf.org/html/rfc2119][ietf.org]]
-+ [4] Brillinger, D. (1994) Time Series, Point Processes, and Hybrids. The
+[1] "Definition of a Free and Open Standard" - [[http://www.digistan.org/open-standard:definition][digistan.org]]
+[2] "Consensus Oriented Specification System" - [[http://www.digistan.org/spec:1/COSS][digistan.org]]
+[3] "Key words for use in RFCs to Indicate Requirement Levels" - [[http://tools.ietf.org/html/rfc2119][ietf.org]]
+[4] Brillinger, D. (1994) Time Series, Point Processes, and Hybrids. The
   Canadian Journal of Statistics. doi:10.2307/3315583
 
