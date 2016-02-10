@@ -15,7 +15,7 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
 
-VERSION = '2.2.0'
+VERSION = '2.2.1'
 
 cls_txt = """
 Development Status :: 5 - Production/Stable

@@ -1,3 +1,7 @@
+---
+title: pproc-json specification
+---
+
 The Advanced Recording Format (ARF) is a specification for storing
 electrophysiological, acoustic, and behavioral data along with associated
 metadata and derived quantities in a hierarchical structure. ARF is based on the
@@ -28,8 +32,8 @@ this program; if not, see <http://www.gnu.org/licenses>.
 
 ## Change Process
 
-This Specification is a free and [open standard]([http://www.digistan.org/open-standard:definition) and is governed by the Digital
-Standards Organization's Consensus-Oriented Specification System ([COSS]([http://www.digistan.org/spec:1/COSS)).
+This Specification is a free and [open standard](http://www.digistan.org/open-standard:definition) and is governed by the Digital
+Standards Organization's Consensus-Oriented Specification System ([COSS](http://www.digistan.org/spec:1/COSS)).
 
 Version numbering from 2.0 on must be [semantic](http://semver.org). Changes that
 maintain backwards compatibility (i.e., that do not change or remove any
@@ -52,7 +56,7 @@ for storing time-varying data, along with sufficient metadata to reconstruct
 the conditions of how the data were recorded for many decades in the future.
 
 Time-varying data can be represented in two ways
-[1](http://dx.doi.org/10.2307/3315583):
+([Brillinger 2008](http://dx.doi.org/10.2307/3315583)):
 
 -   **time series:** A quantitative physical property of a system (e.g., sound
     pressure or voltage) measured as a function of time. In digital
@@ -111,6 +115,7 @@ all share a common start time. Each *entry* shall be represented by an HDF5
 group. The group shall contain all the data objects associated with that entry,
 stored as HDF5 datasets, and all the metadata associated with the entry, stored
 as HDF5 attributes. The following attributes are required:
+
 -   **timestamp:** The start time of the entry. This attribute shall consist of a
     two-element array with the first element indicating the number of
     seconds since January 1, 1970 UTC, and the second element
@@ -318,4 +323,3 @@ the entry start time and the start of the data.
 
 The attributes required by pytables were deprecated. Some interfaces may
 continue to store them, but they were no longer required.
-

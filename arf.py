@@ -6,7 +6,7 @@ import numpy as nx
 from h5py.version import version as h5py_version, hdf5_version
 
 spec_version = "2.1"
-__version__ = version = "2.2.0"
+__version__ = version = "2.2.1"
 
 __doc__ = """
 This is ARF, a python library for storing and accessing audio and ephys data in
@@ -276,7 +276,7 @@ def keys_by_creation(group):
     except (AttributeError, RuntimeError):
         # pre 2.2 shim
         def f(name):
-            if name[1:].find('/') == -1:
+            if name.find(b'/', 1) == -1:
                 out.append(name)
         group._id.links.visit(
             f, idx_type=h5.INDEX_CRT_ORDER, order=h5.ITER_INC)
