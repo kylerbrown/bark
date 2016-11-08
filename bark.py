@@ -12,8 +12,8 @@ import pandas as pd
 
 BUFFER_SIZE = 10000
 
-spec_version = "1.0"
-__version__ = version = "1.0"
+spec_version = "0.1"
+__version__ = version = "0.1"
 
 __doc__ = """
 This is BARK, a python library for storing and accessing audio and ephys data in
