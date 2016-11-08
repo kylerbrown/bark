@@ -2,20 +2,60 @@
 title: pproc-json specification
 ---
 
-The Advanced Recording Format (ARF) is a specification for storing
+The BARK format is a specification for storing
 electrophysiological, acoustic, and behavioral data along with associated
-metadata and derived quantities in a hierarchical structure. ARF is based on the
-[HDF5 format](http://www.hdfgroup.org/HDF5/), allowing files to be accessed on a
-wide range of operating systems and architectures.
+metadata and derived quantities in a hierarchical structure. BARK is essentially  
+[ARF](https://github.com/melizalab/arf), but does not use HDF5 format, instead leveraging 
+on the fundamentally heirarchical nature of the filesystem and three common data formats:
 
--   Editor: Dan Meliza (dan at meliza.org)
--   Version: 2.1
++ comma separated vectors (CSV)
++ YAML 
++ Raw binary arrays
+
+Conversion between ARF and BARK files should be easy as they have an identical high-level description,
+only the implementation is different.
+
+The advantages of BARK over ARF:
+
++ filesystem directories and plaintext files are easier than HDF5 files to explore and modify. 
+BARK is compatible with standard UNIX tools such as `find`, `grep`, `cp` etc. And the data should be easy to load and manipulate in any programming language.
++ raw binary files are the closest thing to a "standard" in electrophysiology. BARK datasets
+can be opened by a variety of common open-source and proprietary neuroscience utilities.
++ robustness to corruption -- corrupt HDF5 files cannot be read or recovered. If a single
+BARK dataset is corrupted, all the data is still readable.
++ minimal requirements: HDF5 is not required.
+
+Disadvantages:
+
++ Because a BARK file isn't a file (it's a directory), data must be rolled into an archive format if a single
+file is desired (.zip or .tar).
+
+An example BARK "file":
+
+    experiment.bark/
+        meta                <- top level YAML metadata
+        day1/               <- first entry, all datasets within have the same timebase
+            emg.dat         <- an EMG dataset
+            emg.dat.meta    <- the metadata (attributes of emg.dat in YAML format)
+            mic.dat         <- a second dataset
+            mic.dat.meta
+            song.label      <- a third dataset, in CSV format
+            song.label.meta     <- meta data for the third dataset
+        
+        day2_session2/      <- second entry
+            emg.dat         <- a dataset in the second entry
+            emg.dat.meta    
+        ... etc ...
+
+
+-   Editor: Kyler Brown (kylerjbrown at gmail.com)
+-   Version: 1
 -   State:  released
--   URL: <http://meliza.org/specifications/arf>
 
 ## Licence
 
 Copyright (c) 2010-2013 C Daniel Meliza.
+Copyright (c) 2016 Kyler Brown
 
 This Specification is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the Free
@@ -51,7 +91,7 @@ interpreted as described in [RFC 2119](http://tools.ietf.org/html/rfc2119).
 
 ## Goals and conceptual framework
 
-The goal of ARF is to provide an open, unified, flexible, and portable format
+The goal of BARK is to provide an open, unified, flexible, and portable format
 for storing time-varying data, along with sufficient metadata to reconstruct
 the conditions of how the data were recorded for many decades in the future.
 
@@ -92,29 +132,34 @@ challenge is to organize and annotate the data in such a way that it can
 3.  support a broad range of experimental designs, and
 4.  be accessed with generic and widely available software
 
-A major design goal of **ARF** is to be minimal. Only the attributes and
+A major design goal of **BARK** is to be minimal. Only the attributes and
 structural specifications needed to ensure that any type of data can be stored
-are included. The rest is up to the user. This goal sets **ARF** apart from many
+are included. The rest is up to the user. This goal sets **BARK** apart from many
 similar projects that attempt to explicitly deal with many use cases or that are
 specialized for one or a few applications.
 
 ## Implementation
 
-ARF files shall be in the HDF5 format, version 1.8 or later. HDF5 is critical to
-providing flexibility and portability. It is available on multiple platforms and
-supports automatic conversion of data types, allowing transparent access of data
-across many architectures. HDF5 files support hierarchical organization of
-datasets and metadata attributes. ARF specifies the layout used to store data
+BARK files consist of four elemets:
+
++ Standard filesystem directories
++ Raw binary files containing numerical data
++ comma sepparated (csv) plain text files with a header line
++ strictly named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, with a specific structure and naming format.
+
+These basic elements make BARK files available on *ALL* multiple platforms
+and architectures. Standard filesystem directories support hierarchical organization of
+datasets and plaintext YAML files provide metadata attributes. BARK specifies the layout used to store data
 within this framework, while allowing the user to add metadata specific to an
 application.
 
 ### Entries
 
 An *entry* is defined as an abstract grouping of zero or more *datasets* that
-all share a common start time. Each *entry* shall be represented by an HDF5
-group. The group shall contain all the data objects associated with that entry,
-stored as HDF5 datasets, and all the metadata associated with the entry, stored
-as HDF5 attributes. The following attributes are required:
+all share a common start time. Each *entry* shall be represented by a directory.
+The directory shall contain all the data objects associated with that entry, 
+and all the metadata associated with the entry, stored
+as YAML key-value pairs in a file named `meta`. The following attributes are required:
 
 -   **timestamp:** The start time of the entry. This attribute shall consist of a
     two-element array with the first element indicating the number of
@@ -127,9 +172,7 @@ as HDF5 attributes. The following attributes are required:
     supported on many platforms.
 
 In addition, the following optional attributes are defined. They do not need to
-be present in the group if not applicable, but if they are present they must
-have a datatype with class `H5T_STRING` and `CTYPE` of `H5T_C_S1`. Encoding
-must be ASCII or UTF-8 and match the value of `CSET`.
+be present in the group if not applicable.
 
 -   **animal:** Indicates the name or ID of the animal.
 -   **experimenter:** Indicates the name or ID of the experimenter.
@@ -142,6 +185,8 @@ must be ASCII or UTF-8 and match the value of `CSET`.
 A *dataset* is defined as a concrete time series or point process.  Multiple
 datasets may be stored in an entry, and may be unequal in length or have
 different *timebases*.
+
+Attributes are stored in a YAML file with `.meta` appended to the dataset name.
 
 A *timebase* is defined by two quantities (with units), one of which is optional
 under some circumstances. The required quantity is the *offset* of the data.
@@ -157,37 +202,47 @@ Only point proceses with real-valued units of time may omit the sampling rate.
 Real-valued times must be in units of seconds. Discrete-valued times must be in
 units of samples.
 
-Each channel of data in an entry shall be represented by a separate HDF5
-dataset. The format of each dataset depends on the type of data it stores.
-
 #### Sampled data
+
+Sampled data are stored in raw binary files as outlined 
+[here](http://neurosuite.sourceforge.net/formats.html).
+
+For multi-channel files, samples are interleaved. A raw binary file with N channels and M samples looks like this:
+
+    c1s1, c2s1, c3s1, ..., cNs1, c1s2, c2s2, c3s2, ..., c1sM, c2sM, c3sM,...,cNsM 
+
+
+There is no required extension, however `.dat` or `.pcm` are common choices.
 
 Sampled data shall be stored as an N-dimensional array of scalar values
 corresponding to the measurement at each sampling interval. The first dimension
-of the array must correspond to time. The significance of additional dimensions
-is unspecified. The `sampling_rate` attribute is required.
+of the array must correspond to time. The second dimension corresponds to channels.
+The `sampling_rate` attribute is required.
+
+The disadvantage of simple raw binary files is that no metadata are stored within the file itself. At a minimum three values a required to read a raw binary file:
+
+- sampling rate, such as 30000
+- numeric type, such as 16 bit integer or 32 bit float
+- number of channels, such as 32
+
+For all sampled data files, the endianness is *MUST* be little-endian. 
+This is the default for Intel x86 and the vast majority of modern systems.
 
 #### Event data
 
-Event data may be stored in one of two formats. Simple event data should be
-stored in a 1D array, with each element in the array indicating the time of the
-event **relative to the start of the dataset**. Event datasets can be
-distinguished from 1D sampled datasets because the `units` attribute must be
+Event data are stored in CSV files. Simple event data should be
+stored in a single column CSV, with each element in the array indicating the time of the
+event **relative to the start of the dataset**. The first line of the file must be `start,`,
+indicating that the data is a single column with the column name `start`. Event datasets can be
+distinguished from sampled datasets because the file is a plaintext CSV and `units` attribute must be
 "samples" or "s".
 
-Complex event data must be stored as arrays with a compound datatype (i.e., with
-multiple fields). Only one field is required, `start`, which indicates the time
-of the event and can be any numerical type.
-
-Spike waveforms and features extracted from raw data should be stored in complex
-event datasets, with the `start` field indicating the time of the spike and
-additional array or scalar fields storing the waveforms and features.
+Complex event data must be stored as arrays with multiple columns. Only one field is required, `start`, which indicates the time of the event and can be any numerical type.
 
 A special case of event data are intervals, which are defined by a start and
 stop time. In previous versions of the specification, intervals were considered
-a separate data type, with two additional required fields, `name` (a string) and
-`stop` (a time). This format is permitted in version 2.0, but intervals may also
-be stored as separate start and stop events.
+a separate data type, with two additional required fields, `label` (a string) and
+`stop` (a time). 
 
 #### Dataset attributes
 
@@ -211,6 +266,9 @@ The following attribute is only required for datasets with a discrete timebase:
 
 The following attributes are optional:
 
+- **unit\_scale** A multiplier to scale the raw data to match the **units**. Useful
+  when raw integer data must be converted to a floating point number to match the correct units.
+  If **units** is an array, **unit\_scale** must be an array of the same shape.
 - **offset:** Indicates the start time of the dataset relative to the start of
   the entry, defined by the timebase of the dataset. For discrete timebases, the
   units must be in samples; for continuous timebases, the units must be the same
@@ -249,77 +307,12 @@ of the dataset. The following values are defined:
 
 Values below 1000 are reserved for sampled data types.
 
-### General structural rules
-
-#### Top-level datasets
-
-ARF files may have datasets in the root group. These must not associated with
-any entry, but may be used to store structured data or metadata for the entire
-file. For example, data recording software may keep a log of events. There are
-no requirements for the datatype, dataspace, or attributes of these datasets.
-
-#### Multiple linkages
-
-Datasets must not be linked to more than one entry, as this would make the time
-of the data undefined. Entries must not be multiply linked to the root HDF5
-group. Entries may contain other entries, but their contents are not considered
-part of the ARF data hierarchy.
-
 ### Extensions to the format
 
-The above specification is a required minimum for a file to be in ARF format.
+The above specification is a required minimum for a file to be in BARK format.
 Additional attributes, groups, and datasets may be added, but must not conflict
 with any attributes specified above. Because optional attributes may be forwards
 incompatible with later versions due to namespace collision, their names should
 be prefixed with the name of the application (e.g. 'jill\_sample\_count').
 
-## Changes from previous versions
 
-### version 2.1
-
-An optional "uuid" attribute was added to the dataset specification. This
-allows channels to be unambiguously identified as data sources for subsequent
-analysis steps.
-
-### version 2.0
-
-The required "recid" attribute was dropped because it was unsuitable for an open
-standard, and because it depended on an external database for uniqueness.
-Instead, a "uuid" attribute was required.
-
-Event data was defined to include both "simple" and "complex" events. Interval
-data became a special case of complex event data. This was to allow data
-collection programs to store more information about events, without forcing them
-to use the strictly defined data type for intervals. The definition of a
-distinct interval data type was dropped unceremoniously. Software reading the
-INTERVAL, STIMI, and COMPONENTL should check for the existence of a 'stop'
-field.
-
-The times for event data were no longer required to be in units of seconds, and
-the format was not required to be double-precision floating point. The
-sampling\_rate attribute was required for event datasets where the units are in
-samples.
-
-Root-level datasets were explicitly allowed.
-
-Semantic versioning was introduced.
-
-To upgrade a file from version 1.1, add a uuid attribute to all entries, and a
-sampling\_rate attribute to all event datasets that have units of samples.
-
-### version 1.1
-
-Catalogs were removed at the top level and in entries. The objects themselves
-now carry all the metadata once in the catalog as attributes.
-
-Multichannel datasets were deprecated in favor of multiple single-channel
-datasets. Channels should only be grouped into single datasets when the data are
-really inseparable (e.g. left and right channels). This greatly improved read
-performance, at some expense in file size.
-
-Entry groups were deprecated; datasets that start at different times but need to
-be grouped together can be given an offset value indicating the interval between
-the entry start time and the start of the data.
-
-The attributes required by pytables were deprecated. Some interfaces may
-continue to store them, but they were no longer required.
