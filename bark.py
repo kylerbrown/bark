@@ -4,6 +4,8 @@ from __future__ import division, print_function, absolute_import, \
         unicode_literals
 import sys
 import os.path
+from os import listdir
+from glob import glob
 from collections import namedtuple
 from uuid import uuid4
 import yaml
@@ -24,68 +26,60 @@ Library versions:
 """ % (version)
 
 # heirarchical classes
-Toplevel = namedtuple('Toplevel', ['entries', 'path', 'attrs'])
+Root = namedtuple('Root', ['entries', 'path', 'attrs'])
 Entry = namedtuple('Entry', ['datasets', 'path', 'attrs'])
 SampledData = namedtuple('SampledData', ['data', 'path', 'attrs'])
 EventData = namedtuple('EventData', ['data', 'path', 'attrs'])
 
-def create_toplevel(name, **attrs):
-    os.makedirs(name)
-    write_metadata(os.path.join(name, "meta"), **attrs)
-    return Toplevel([], name)
 
-
-def create_entry(name, toplevel, **attrs):
-    path = os.path.join(toplevel.path, name)
-    os.makedirs(path)
-    write_metadata(os.path.join(name, "meta"), **attrs)
-    topleve.entries[name] = Entry([], path, attrs)
-
-
-def create_events(labelfile, data, **params):
-    assert "units" in params and params["units"] in ["s" or "samples"]
-    data.to_csv(eventsfile, index=False)
-    write_metadata(eventsfile+".meta", **params)
-
-
-def create_sampled(datfile, data=None, **params):
+def write_sampled(datfile, data=None, **params):
     if data is not None:
-        shape = data.shape
-        params["n_samples"] = shape[0]
         if len(data.shape) == 1:
             params["n_channels"] = 1 
         else: 
             params["n_channels"] = shape[1]
-    elif "n_samples" in params and "n_channels" in params:
-        shape = (params["n_samples"], params["n_channels"])
-    else:
-        shape = None
     mdata = np.memmap(datfile,
                      dtype=params["dtype"],
-                     mode="w+",
-                     shape=shape)
+                     mode="w+")
+    if "n_channels" in params:
+        mdata.reshape(-1, params["n_channels"])
     if data is not None:
         mdata[:] = data[:]
     write_metadata(datfile + ".meta", **params)
-    return SampleData(data, datfile, params)
+    return SampleData(mdata, datfile, params)
 
 
-def load_events(eventsfile)
-    data = pd.read_csv(eventsfile)
-    params = read_metadata(eventsfile + ".meta")
-    return EventData(data, eventsfile, params)
-
-
-def load_dat(datfile, mode="r"):
+def read_sampled(datfile, mode="r"):
     """ loads raw binary file
 
     mode may be "r" or "r+", use "r+" for modifiying the data (not
     recommended).
     """
-    params = read_metadata(datfile)
+    path = os.path.abspath(datfile)
+    params = read_metadata(datfile + ".meta")
     data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
     data = data.reshape(-1, params["n_channels"])
-    return data, params
+    return SampledData(data, path, params) 
+
+
+def write_events(labelfile, data, **params):
+    assert "units" in params and params["units"] in ["s" or "samples"]
+    data.to_csv(eventsfile, index=False)
+    write_metadata(eventsfile+".meta", **params)
+
+
+def read_events(eventsfile):
+    data = pd.read_csv(eventsfile)
+    params = read_metadata(eventsfile + ".meta")
+    return EventData(data, eventsfile, params)
+
+def read_dataset(fname):
+    "determines is file is sampled or events and reads accordingly"
+    params = read_metadata(fname + ".meta")
+    if "units" in params and params["units"] in ("s", "seconds"):
+        return read_events(fname)
+    else:
+        return read_sampled(fname)
 
 
 def read_metadata(metafile):
@@ -125,17 +119,24 @@ def write_metadata(filename, **params):
         yaml_file.write(header)
         yaml_file.write(yaml.dump(params, default_flow_style=False))
 
+def create_root(name, **attrs):
+    """creates a new BARK top level directory"""
+    path = os.path.abspath(name)
+    os.makedirs(name)
+    write_metadata(os.path.join(path, "meta"), **attrs)
+    return Root({}, path, attrs)
 
-def open_file(name, mode=None, **kwargs):
-    """Opens an BARK "file", creating as necessary.
-    """
-    if os.path.isdir(name) and mode in ('r', None):
-        pass  # TODO load entries as dictionary
-    elif mode is ('w', None):
-        os.makedirs(name)
-        return Toplevel(entries={}, path=name)
 
-def create_entry(group, name, timestamp, **attributes):
+def read_root(name):
+    path = os.path.abspath(name)
+    attrs = read_metadata(os.path.join(path, "meta"))
+    all_sub = listdir(path)
+    subdirs = [x for x in allsub if os.path.isdir(x) and x[-1] != '.']
+    entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
+    return Root(entries, path, attrs)
+
+
+def create_entry(root, name, timestamp, **attributes):
     """Creates a new BARK entry under group, setting required attributes.
 
     An entry is an abstract collection of data which all refer to the same time
@@ -153,81 +154,25 @@ def create_entry(group, name, timestamp, **attributes):
 
     Returns: newly created entry object
     """
-    path = os.path.join(toplevel.path, name)
+    path = os.path.join(root.path, name)
     os.makedirs(path)
     if "uuid" not in attributes:
         attributes["uuid"] = uuid4() 
     attributes["timestamp"] = convert_timestamp(timestamp)
     write_metadata(os.path.join(name, "meta"), **attributes)
-    e = Entry([], path, attributes)
-    topleve.entries[name] = e 
+    e = Entry({}, path, attributes)
+    root.entries[name] = e 
     return e
 
-
-def create_dataset(group, name, data, units='', datatype=DataTypes.UNDEFINED,
-                   chunks=True, maxshape=None, compression=None,
-                   **attributes):
-    """Creates an BARK dataset under group, setting required attributes
-
-    Required arguments:
-    name --   the name of dataset in which to store the data
-    data --   the data to store
-
-    Data can be of the following types:
-
-    * sampled data: an N-D numerical array of measurements
-    * a pandas dataframe, with the field 'start' required
-
-    Optional arguments:
-    datatype --      a code defining the nature of the data in the channel
-    units --         channel units (optional for sampled data, otherwise required)
-    sampling_rate -- required for sampled data and event data with units=='samples'
-
-    Additional arguments are set as attributes on the created dataset
-
-    Returns the created dataset
-    """
-    srate = attributes.get('sampling_rate', None)
-    # check data validity before doing anything
-    assert isinstance(data, pd.DataFrame) or "dtype" in attributes
-    if units == '':
-        if srate is None or not srate > 0:
-            raise ValueError(
-                "unitless data assumed time series and requires sampling_rate attribute")
-    elif units == 'samples':
-        if srate is None or not srate > 0:
-            raise ValueError(
-                "data with units of 'samples' requires sampling_rate attribute")
-    # NB: can't really catch case where sampled data has units but doesn't
-    # have sampling_rate attribute
-
-    if isinstance(data, pd.DataFrame):
-        create_events(labelfile, params
-    dset = group.create_dataset(
-        name, data=data,)
-    set_attributes(dset, units=units, datatype=datatype, **attributes)
-    return dset
-
-
-def set_attributes(node, overwrite=True, **attributes):
-    """Sets multiple attributes on node.
-
-    If overwrite is False, and the attribute already exists, does nothing. If
-    the value for a key is None, the attribute is deleted.
-
-    """
-    aset = node.attrs
-    for k, v in attributes.items():
-        if not overwrite and k in aset:
-            pass
-        elif v is None:
-            if k in aset:
-                del aset[k]
-        else:
-            aset[k] = v
-    write_metadata(node.path + ".meta", aset)
-    return aset
-
+def read_entry(name):
+    path = os.path.abspath(path)
+    dsets = {}
+    attrs = read_metadata(os.path.join(path, "meta"))
+    # load only files with associated metadata files
+    dset_metas = glob(os.path.join(path, "*.meta"))
+    dset_names = [x[:-5] for x in dset_metas]
+    datasets = {name: read_dataset(name) for name in dset_names}
+    return Entry(datasets, path, attrs)
 
 def convert_timestamp(obj):
     """Makes a BARK timestamp from an object.
@@ -283,7 +228,7 @@ def get_uuid(obj):
 
 def count_children(obj):
     """Returns the number of children of obj"""
-    if isinstance(obj, Toplevel):
+    if isinstance(obj, Root):
         return len(obj.entries)
     else:
         return len(obj.datasets)

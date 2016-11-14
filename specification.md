@@ -1,12 +1,8 @@
----
-title: pproc-json specification
----
-
 The BARK format is a specification for storing
 electrophysiological, acoustic, and behavioral data along with associated
 metadata and derived quantities in a hierarchical structure. BARK is essentially  
 [ARF](https://github.com/melizalab/arf), but does not use HDF5 format, instead leveraging 
-on the fundamentally heirarchical nature of the filesystem and three common data formats:
+ the heirarchical nature of the filesystem and three common data formats:
 
 + comma separated vectors (CSV)
 + YAML 
@@ -27,14 +23,15 @@ BARK dataset is corrupted, all the data is still readable.
 
 Disadvantages:
 
-+ Because a BARK file isn't a file (it's a directory), data must be rolled into an archive format if a single
++ Because a BARK file isn't a file (it's a directory tree), data must be rolled into an archive format if a single
 file is desired (.zip or .tar).
 
-An example BARK "file":
+An example BARK tree:
 
-    experiment.bark/
+    experiment.bark/        <- optional extension
         meta                <- top level YAML metadata
         day1/               <- first entry, all datasets within have the same timebase
+            meta            <- first entry metadata
             emg.dat         <- an EMG dataset
             emg.dat.meta    <- the metadata (attributes of emg.dat in YAML format)
             mic.dat         <- a second dataset
@@ -70,24 +67,6 @@ details.
 You should have received a copy of the GNU General Public License along with
 this program; if not, see <http://www.gnu.org/licenses>.
 
-## Change Process
-
-This Specification is a free and [open standard](http://www.digistan.org/open-standard:definition) and is governed by the Digital
-Standards Organization's Consensus-Oriented Specification System ([COSS](http://www.digistan.org/spec:1/COSS)).
-
-Version numbering from 2.0 on must be [semantic](http://semver.org). Changes that
-maintain backwards compatibility (i.e., that do not change or remove any
-required fields and attributes) result in increments to the minor version.
-Changes that break backwards compatibility must receive new major version
-numbers. Changes that significantly alter the goals of the specification must
-result in a new identifier, preferably with a reference to the version of this
-document at the time of the fork.
-
-## Language
-
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
-"SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be
-interpreted as described in [RFC 2119](http://tools.ietf.org/html/rfc2119).
 
 ## Goals and conceptual framework
 
@@ -132,20 +111,20 @@ challenge is to organize and annotate the data in such a way that it can
 3.  support a broad range of experimental designs, and
 4.  be accessed with generic and widely available software
 
-A major design goal of **BARK** is to be minimal. Only the attributes and
+A major design goal of **BARK** is to be minimal. Only the metadata and
 structural specifications needed to ensure that any type of data can be stored
-are included. The rest is up to the user. This goal sets **BARK** apart from many
+are included. The rest is up to the user. This goal sets **BARK** and **ARF** apart from many
 similar projects that attempt to explicitly deal with many use cases or that are
 specialized for one or a few applications.
 
 ## Implementation
 
-BARK files consist of four elemets:
+BARK tree can consist of four elemets:
 
 + Standard filesystem directories
 + Raw binary files containing numerical data
 + comma sepparated (csv) plain text files with a header line
-+ strictly named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, with a specific structure and naming format.
++ strictly named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, containing metadata, with a specific structure and naming format.
 
 These basic elements make BARK files available on *ALL* multiple platforms
 and architectures. Standard filesystem directories support hierarchical organization of
@@ -232,8 +211,8 @@ This is the default for Intel x86 and the vast majority of modern systems.
 
 Event data are stored in CSV files. Simple event data should be
 stored in a single column CSV, with each element in the array indicating the time of the
-event **relative to the start of the dataset**. The first line of the file must be `start,`,
-indicating that the data is a single column with the column name `start`. Event datasets can be
+event **relative to the start of the dataset**. The first line of the file must contain `start,`,
+indicating that the column contains the times of the event data. Event datasets can be
 distinguished from sampled datasets because the file is a plaintext CSV and `units` attribute must be
 "samples" or "s".
 
@@ -241,8 +220,8 @@ Complex event data must be stored as arrays with multiple columns. Only one fiel
 
 A special case of event data are intervals, which are defined by a start and
 stop time. In previous versions of the specification, intervals were considered
-a separate data type, with two additional required fields, `label` (a string) and
-`stop` (a time). 
+a separate data type, with two additional required fields, `name` (a string) and
+`stop` (a time with the same units as start). 
 
 #### Dataset attributes
 
@@ -306,13 +285,4 @@ of the dataset. The following values are defined:
     2002    COMPONENTL  component (e.g. motif) labels
 
 Values below 1000 are reserved for sampled data types.
-
-### Extensions to the format
-
-The above specification is a required minimum for a file to be in BARK format.
-Additional attributes, groups, and datasets may be added, but must not conflict
-with any attributes specified above. Because optional attributes may be forwards
-incompatible with later versions due to namespace collision, their names should
-be prefixed with the name of the application (e.g. 'jill\_sample\_count').
-
 
