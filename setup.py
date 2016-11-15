@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='bark',
       version='0.1',
@@ -7,7 +7,7 @@ setup(name='bark',
       author='Kyler Brown',
       author_email='kylerjbrown@gmail.com',
       license='GPL',
-      py_modules='bark',
+      packages=find_packages(),
       zip_safe=False,
       entry_points = {
           'console_scripts' : [
