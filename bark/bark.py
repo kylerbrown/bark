@@ -32,21 +32,20 @@ SampledData = namedtuple('SampledData', ['data', 'path', 'attrs'])
 EventData = namedtuple('EventData', ['data', 'path', 'attrs'])
 
 
-def write_sampled(datfile, data=None, **params):
-    if data is not None:
-        if len(data.shape) == 1:
-            params["n_channels"] = 1 
-        else: 
-            params["n_channels"] = shape[1]
+def write_sampled(datfile, data, sampling_rate, units, **params):
+    if len(data.shape) == 1:
+        params["n_channels"] = 1 
+    else: 
+        params["n_channels"] = data.shape[1]
+    params["dtype"] = data.dtype.name
+    shape = data.shape
     mdata = np.memmap(datfile,
                      dtype=params["dtype"],
-                     mode="w+")
-    if "n_channels" in params:
-        mdata.reshape(-1, params["n_channels"])
-    if data is not None:
-        mdata[:] = data[:]
-    write_metadata(datfile + ".meta", **params)
-    return SampleData(mdata, datfile, params)
+                     mode="w+", shape=shape)
+    mdata[:] = data[:]
+    write_metadata(datfile + ".meta", sampling_rate=sampling_rate,
+            units=units, **params)
+    return SampledData(mdata, datfile, params)
 
 
 def read_sampled(datfile, mode="r"):
@@ -62,16 +61,18 @@ def read_sampled(datfile, mode="r"):
     return SampledData(data, path, params) 
 
 
-def write_events(labelfile, data, **params):
+def write_events(eventsfile, data, **params):
     assert "units" in params and params["units"] in ["s" or "samples"]
     data.to_csv(eventsfile, index=False)
     write_metadata(eventsfile+".meta", **params)
+    return read_events(eventsfile)
 
 
 def read_events(eventsfile):
     data = pd.read_csv(eventsfile)
     params = read_metadata(eventsfile + ".meta")
     return EventData(data, eventsfile, params)
+
 
 def read_dataset(fname):
     "determines is file is sampled or events and reads accordingly"
@@ -106,7 +107,7 @@ sampling_rate: 30000.0
 to create a .meta file interactively, type:
 
 $ dat-meta {dat}
-        """.format(dat=datfile))
+        """.format(dat=metafile))
         sys.exit(0)
 
 
@@ -124,19 +125,20 @@ def create_root(name, **attrs):
     path = os.path.abspath(name)
     os.makedirs(name)
     write_metadata(os.path.join(path, "meta"), **attrs)
-    return Root({}, path, attrs)
+    return read_root(name)
 
 
 def read_root(name):
     path = os.path.abspath(name)
     attrs = read_metadata(os.path.join(path, "meta"))
-    all_sub = listdir(path)
-    subdirs = [x for x in allsub if os.path.isdir(x) and x[-1] != '.']
+    all_sub = [os.path.join(name, x) for x in  listdir(path)]
+    print(all_sub)
+    subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
     entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
     return Root(entries, path, attrs)
 
 
-def create_entry(root, name, timestamp, **attributes):
+def create_entry(name, timestamp, **attributes):
     """Creates a new BARK entry under group, setting required attributes.
 
     An entry is an abstract collection of data which all refer to the same time
@@ -154,18 +156,16 @@ def create_entry(root, name, timestamp, **attributes):
 
     Returns: newly created entry object
     """
-    path = os.path.join(root.path, name)
+    path = os.path.abspath(name)
     os.makedirs(path)
     if "uuid" not in attributes:
-        attributes["uuid"] = uuid4() 
+        attributes["uuid"] = str(uuid4())
     attributes["timestamp"] = convert_timestamp(timestamp)
     write_metadata(os.path.join(name, "meta"), **attributes)
-    e = Entry({}, path, attributes)
-    root.entries[name] = e 
-    return e
+    return read_entry(name)
 
 def read_entry(name):
-    path = os.path.abspath(path)
+    path = os.path.abspath(name)
     dsets = {}
     attrs = read_metadata(os.path.join(path, "meta"))
     # load only files with associated metadata files
