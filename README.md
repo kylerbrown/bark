@@ -38,7 +38,7 @@ The python interface requires Python 2.6+ or 3.2+, numpy, PyYAML and pandas.
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 
-For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempt to adhere to the Bark/ARF standard.
+For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempts to adhere to the Bark/ARF standard.
 
 There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
 
