@@ -13,7 +13,7 @@ setup(name='bark',
           'console_scripts' : [
               'bark-root=bark.barkutils:mk_root',
               'bark-entry=bark.barkutils:mk_entry',
-              'bark-entry-from-glob=bark.barkutils:entry_from_glob',
+              'bark-entry-from-prefix=bark.barkutils:entry_from_glob',
               ]
           }
       )

@@ -41,6 +41,7 @@ The python interface requires Python 2.6+ or 3.2+, numpy, PyYAML and pandas.
 
 - `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
+- `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 
 For data related scripts see the [datutils](https://github.com/kylerbrown/datutils) project.
 
