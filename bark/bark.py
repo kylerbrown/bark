@@ -2,6 +2,7 @@
 # -*- mode: python -*-
 from __future__ import division, print_function, absolute_import, \
         unicode_literals
+from datetime import datetime, timedelta
 import sys
 import os.path
 from os import listdir
@@ -211,7 +212,6 @@ def convert_timestamp(obj):
 
 def timestamp_to_datetime(timestamp):
     """Converts an BARK timestamp a datetime.datetime object (naive local time)"""
-    from datetime import datetime, timedelta
     obj = datetime.fromtimestamp(timestamp[0])
     return obj + timedelta(microseconds=int(timestamp[1]))
 
@@ -219,6 +219,14 @@ def timestamp_to_datetime(timestamp):
 def timestamp_to_float(timestamp):
     """Converts an BARK timestamp to a floating point (sec since epoch) """
     return np.dot(timestamp, (1.0, 1e-6))
+
+
+def parse_timestamp_string(string):
+    if len(string) == len("YYYY-MM-DD"):
+        timestamp = datetime.strptime(string, "%Y-%m-%d")
+    else:
+        timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
+    return timestamp
 
 
 def get_uuid(obj):

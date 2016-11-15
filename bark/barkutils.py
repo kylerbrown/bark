@@ -3,6 +3,8 @@ import os.path
 from glob import glob
 import bark
 import argparse
+from bark import parse_timestamp_string
+
 
 class StoreNameValuePair(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -28,10 +30,13 @@ def mk_entry():
     p.add_argument("-a", "--attributes", action='append',
             type=lambda kv: kv.split("="), dest='keyvalues',
             help="extra metadata in the form of KEY=VALUE")
-    p.add_argument("-t", "--timestamp", help="seconds since Jan 1 1970",
-            default=0, type=float)
+    p.add_argument("-t", "--timestamp", help="format: YYYY-MM-DD or YYYY-MM-DD_HH-MM-SS.S")
     args = p.parse_args()
-    bark.create_entry(args.name, args.timestamp, **dict(args.keyvalues))
+    timestamp = parse_timestamp_string(args.timestamp)
+    if args.keyvalues:
+        bark.create_entry(args.name, timestamp, **dict(args.keyvalues))
+    else:
+        bark.create_entry(args.name, timestamp)
 
 
 def entry_from_glob():
@@ -44,12 +49,15 @@ def entry_from_glob():
     p.add_argument("-a", "--attributes", action='append',
             type=lambda kv: kv.split("="), dest='keyvalues',
             help="extra metadata in the form of KEY=VALUE")
-    p.add_argument("-t", "--timestamp", help="seconds since Jan 1 1970",
-            default=0, type=float)
+    p.add_argument("-t", "--timestamp", help="format: YYYY-MM-DD or YYYY-MM-DD_HH-MM-SS.S")
     args = p.parse_args()
     matching_files = glob(args.name + "*")
+    timestamp = parse_timestamp_string(args.timestamp)
     print(matching_files)
-    bark.create_entry(args.name, args.timestamp, **dict(args.keyvalues))
+    if args.keyvalues:
+        bark.create_entry(args.name, timestamp, **dict(args.keyvalues))
+    else:
+        bark.create_entry(args.name, timestamp)
     for fname in matching_files:
         move(fname, os.path.join(args.name, fname[len(args.name):]))
 
