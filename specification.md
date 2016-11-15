@@ -1,30 +1,16 @@
-The BARK format is a specification for storing
-electrophysiological, acoustic, and behavioral data along with associated
-metadata and derived quantities in a hierarchical structure. BARK is essentially  
-[ARF](https://github.com/melizalab/arf), but does not use HDF5 format, instead leveraging 
- the heirarchical nature of the filesystem and three common data formats:
+# Bark
+Bark is a minimal implementation of [ARF](https://github.com/melizalab/arf).
+
+Much of this specification is copied directly from the ARF spec, and the ARF spec is sole source of truth if there are any ambiguities.
+
+This implementation leverages the hierarchical nature of the file system and three common data formats:
 
 + comma separated vectors (CSV)
 + YAML 
 + Raw binary arrays
 
-Conversion between ARF and BARK files should be easy as they have an identical high-level description,
+Conversion between ARF and Bark files should be easy as 
 only the implementation is different.
-
-The advantages of BARK over ARF:
-
-+ filesystem directories and plaintext files are easier than HDF5 files to explore and modify. 
-BARK is compatible with standard UNIX tools such as `find`, `grep`, `cp` etc. And the data should be easy to load and manipulate in any programming language.
-+ raw binary files are the closest thing to a "standard" in electrophysiology. BARK datasets
-can be opened by a variety of common open-source and proprietary neuroscience utilities.
-+ robustness to corruption -- corrupt HDF5 files cannot be read or recovered. If a single
-BARK dataset is corrupted, all the data is still readable.
-+ minimal requirements: HDF5 is not required.
-
-Disadvantages:
-
-+ Because a BARK file isn't a file (it's a directory tree), data must be rolled into an archive format if a single
-file is desired (.zip or .tar).
 
 An example BARK tree:
 
@@ -44,28 +30,7 @@ An example BARK tree:
             emg.dat.meta    
         ... etc ...
 
-
--   Editor: Kyler Brown (kylerjbrown at gmail.com)
--   Version: 1
--   State:  released
-
-## Licence
-
-Copyright (c) 2010-2013 C Daniel Meliza.
-Copyright (c) 2016 Kyler Brown
-
-This Specification is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the Free
-Software Foundation; either version 3 of the License, or (at your option) any
-later version.
-
-This Specification is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, see <http://www.gnu.org/licenses>.
+Files that do not have associated `.meta` files are ignored. Metafiles must have associated datasets.
 
 
 ## Goals and conceptual framework
@@ -111,23 +76,16 @@ challenge is to organize and annotate the data in such a way that it can
 3.  support a broad range of experimental designs, and
 4.  be accessed with generic and widely available software
 
-A major design goal of **BARK** is to be minimal. Only the metadata and
-structural specifications needed to ensure that any type of data can be stored
-are included. The rest is up to the user. This goal sets **BARK** and **ARF** apart from many
-similar projects that attempt to explicitly deal with many use cases or that are
-specialized for one or a few applications.
-
 ## Implementation
 
-BARK tree can consist of four elemets:
+A Bark tree can consist of four elements:
 
 + Standard filesystem directories
 + Raw binary files containing numerical data
-+ comma sepparated (csv) plain text files with a header line
++ comma separated vector (csv) plain text files with a header line
 + strictly named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, containing metadata, with a specific structure and naming format.
 
-These basic elements make BARK files available on *ALL* multiple platforms
-and architectures. Standard filesystem directories support hierarchical organization of
+Standard filesystem directories support hierarchical organization of
 datasets and plaintext YAML files provide metadata attributes. BARK specifies the layout used to store data
 within this framework, while allowing the user to add metadata specific to an
 application.
@@ -176,7 +134,7 @@ own offsets, which are calculated relative to the entry timestamp.
 The second quantity in a timebase is the *sampling rate*, which allows discrete
 times to be converted to real times. It is required if the data are sampled (as
 in a time series) or if time values in a point process are in units of samples.
-Only point proceses with real-valued units of time may omit the sampling rate.
+Only point processes with real-valued units of time may omit the sampling rate.
 
 Real-valued times must be in units of seconds. Discrete-valued times must be in
 units of samples.

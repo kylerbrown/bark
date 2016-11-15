@@ -1,15 +1,15 @@
-## Bark
+# Bark
 [![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
-What is Bark? Bark is [ARF](https://github.com/melizalab/arf), but 
-uses simple file formats and the filesystem heirarchy to save experimental data and analysis.
+What is Bark? Bark is the outer layer of [ARF](https://github.com/melizalab/arf) combined with an
+implementation that attempts to adhere to the unix philosophy.
 
 The elements of a Bark tree:
 
 - A Root directory grouping a set of entries together
 - Entries (often trials) are directories containing datasets that share a common time base.
-- Continuously sampled datasets are stored as raw binary arrays
-- Event data is are stored in CSV files. 
+- Continuously sampled datasets, stored as raw binary arrays
+- Event data, stored in CSV files. 
 - Every bark element (Root, Entry, SampledData, EventData) has metadata are stored in associated YAML files.
 
 This repository contains:
@@ -18,12 +18,7 @@ This repository contains:
 -   A python interface for reading and writing bark files
 -   Scripts for basic BARK tasks
 
-### contributing
-
-Bark was really just created to help the author process his own data. 
-Contributions are vanishingly unlikely, but warmly welcomed.
-
-### installation
+## installation
 
 The python interface requires Python 2.6+ or 3.2+, numpy, PyYAML and pandas.
 
@@ -37,15 +32,17 @@ The python interface requires Python 2.6+ or 3.2+, numpy, PyYAML and pandas.
     pytest -v
 
 
-## scripts
+# scripts
 
 - `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 
-For data related scripts see the [datutils](https://github.com/kylerbrown/datutils) project.
+For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempt to adhere to the Bark/ARF standard.
 
-### related projects
+There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
+
+## related projects
 
 -   NEO <https://github.com/NeuralEnsemble/python-neo>
 -   NWB <http://www.nwb.org/>
