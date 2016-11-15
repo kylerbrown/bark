@@ -2,9 +2,12 @@ language: python
 python:
   - "2.7"
   - "3.5"
+
+before_install:
+ - sudo apt-get -qq update
+ - sudo apt-get install -y python-yaml python-pandas python-numpy python3-yaml python3-pandas python3-numpy
 # command to install dependencies
 install:
-  - pip install -r requirements.txt 
   - pip install -e .
 # command to run tests
 script: pytest -v
