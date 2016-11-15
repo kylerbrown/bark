@@ -1,4 +1,5 @@
 ## Bark
+[![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
 What is Bark? Bark is [ARF](https://github.com/melizalab/arf), but 
 uses simple file formats and the filesystem heirarchy to save experimental data and analysis.
