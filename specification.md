@@ -185,19 +185,15 @@ a separate data type, with two additional required fields, `name` (a string) and
 
 All datasets must have the following attributes.
 
-  **filetype:** a string specifying the format of the data. The currently
+- **filetype:** a string specifying the format of the data. The currently
   accepted formats are `csv` and `rawbinary`, though more may be implemented
   in the future.
-
 - **units:** A string giving the units of the channel data, which should be in
   SI notation. May be an empty string for sampled data if units are not known.
   Event data must have units of "samples" (for a discrete timebase) or "s" (for
   a continuous timebase); sampled data must not use these units. For complex
   event data, this attribute must be an array, with each element of the array
   indicating the units of the associated field in the data.
-- **datatype:** Indicates the source of data in the entry. Must have at least
-  unsigned integer precision great enough to include all the values defined in
-  5.2.4.
 
 The following attribute is only required for datasets with a discrete timebase:
 
@@ -222,29 +218,4 @@ The following attributes are optional:
   stored as a 128-bit integer or a 36-byte `H5T_STRING` with `CTYPE` of
   `H5T_C_S1`. The latter is preferred as 128-bit integers are not supported on
   many platforms.
-
-####  Datatypes
-
-The `datatype` attribute is an integer code indicating the type of data in a
-channel. This field is purely advisory: it specifies how the data should be
-interpreted but does not imply any contract as to the dataspace or storage type
-of the dataset. The following values are defined:
-
-
-       0    UNDEFINED   undefined or unknown
-       1    ACOUSTIC    acoustic
-       2    EXTRAC_HP   extracellular, high-pass (single-unit or multi-unit)
-       3    EXTRAC_LF   extracellular, local-field
-       4    EXTRAC_EEG  extracellular, EEG
-       5    INTRAC_CC   intracellular, current-clamp
-       6    INTRAC_VC   intracellular, voltage-clamp
-      23    EXTRAC_RAW  extracellular, wide-band
-    1000    EVENT       generic event times
-    1001    SPIKET      spike event times
-    1002    BEHAVET     behavioral event times
-    2000    INTERVAL    generic intervals
-    2001    STIMI       stimulus presentation intervals
-    2002    COMPONENTL  component (e.g. motif) labels
-
-Values below 1000 are reserved for sampled data types.
 
