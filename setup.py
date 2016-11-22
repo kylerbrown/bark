@@ -14,6 +14,7 @@ setup(name='bark',
               'bark-root=bark.barkutils:mk_root',
               'bark-entry=bark.barkutils:mk_entry',
               'bark-entry-from-prefix=bark.barkutils:entry_from_glob',
+              'csv-from-waveclus=bark.csvutils:_waveclus2csv',
               ]
           }
       )
