@@ -44,6 +44,7 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
                      dtype=params["dtype"],
                      mode="w+", shape=shape)
     mdata[:] = data[:]
+    params["filetype"] = "rawbinary"
     write_metadata(datfile + ".meta", sampling_rate=sampling_rate,
             units=units, **params)
     return SampledData(mdata, datfile, params)
@@ -65,6 +66,7 @@ def read_sampled(datfile, mode="r"):
 def write_events(eventsfile, data, **params):
     assert "units" in params and params["units"] in ["s" or "samples"]
     data.to_csv(eventsfile, index=False)
+    params["filetype"] = "csv"
     write_metadata(eventsfile+".meta", **params)
     return read_events(eventsfile)
 

@@ -1,7 +1,7 @@
 # Bark
 [![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
-What is Bark? Bark is the outer layer of [ARF](https://github.com/melizalab/arf) combined with an
+What is Bark? Bark is the fibrous outer layer of [ARF](https://github.com/melizalab/arf) combined with an
 implementation that attempts to adhere to the unix philosophy.
 
 The elements of a Bark tree:
@@ -37,6 +37,7 @@ The python interface requires Python 2.6+ or 3.2+, numpy, PyYAML and pandas.
 - `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
+- `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
 
 For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempts to adhere to the Bark/ARF standard.
 

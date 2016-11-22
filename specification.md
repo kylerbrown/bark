@@ -185,6 +185,10 @@ a separate data type, with two additional required fields, `name` (a string) and
 
 All datasets must have the following attributes.
 
+  **filetype:** a string specifying the format of the data. The currently
+  accepted formats are `csv` and `rawbinary`, though more may be implemented
+  in the future.
+
 - **units:** A string giving the units of the channel data, which should be in
   SI notation. May be an empty string for sampled data if units are not known.
   Event data must have units of "samples" (for a discrete timebase) or "s" (for
