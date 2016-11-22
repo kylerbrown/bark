@@ -20,7 +20,7 @@ This repository contains:
 
 ## installation
 
-The python interface requires Python 2.6+ or 3.2+, numpy, PyYAML and pandas.
+The python interface is tested against Python 3.5. Installation with [Conda](http://conda.pydata.org/miniconda.html) recommended.
 
     git clone https://github.com/kylerbrown/bark
     cd bark
