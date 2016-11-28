@@ -29,10 +29,16 @@ def _waveclus2csv():
                    dest='keyvalues',
                    help="extra metadata in the form of KEY=VALUE")
     args = p.parse_args()
+    if args.keyvalues:
+        attrs = dict(args.keyvalues)
+    else:
+        attrs = {}
+    if "units" not in attrs:
+        attrs["units"] = "s" 
+    attrs["filetype"] = "csv"
+    attrs["creator"] = "wave_clus"
+
     data = load_clusters(args.name)
     bark.write_events(args.out,
                       data,
-                      units="s",
-                      filetype="csv",
-                      creator="wave_clus",
-                      **dict(args.keyvalues))
+                      **attrs)

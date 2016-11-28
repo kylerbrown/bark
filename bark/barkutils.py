@@ -6,11 +6,6 @@ import argparse
 from bark import parse_timestamp_string
 
 
-class StoreNameValuePair(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        n, v = values.split('=')
-        setattr(namespace, n, v)
-
 def mk_root():
     p = argparse.ArgumentParser(description="create a bark root directory")
     p.add_argument("name", help="name of bark root directory")
