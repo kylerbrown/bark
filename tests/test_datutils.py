@@ -1,5 +1,7 @@
+import os.path
 import pytest
-from bark.datutils import Stream
+from bark.datutils import Stream, read
+import bark
 import numpy as np
 
 eq = np.allclose
@@ -154,5 +156,29 @@ def test_chain():
             Stream(data1, sr=1, chunksize=5).chain(Stream(data1,
                 sr=1, chunksize=6)).call())
 
+
+
+def test_write(tmpdir):
+    fname = os.path.join(tmpdir.strpath, "mydat")
+    attrs = dict(sampling_rate=100, n_channels=data1.shape[1], fluffy="cat")
+    a = Stream(data1, attrs=attrs)
+    a.write(fname)
+    sdataset = bark.read_sampled(fname)
+    sdata = sdataset.data
+    assert eq(data1, sdata)
+    sattrs = sdataset.attrs
+    for key in attrs:
+        assert attrs[key] == sattrs[key]
+
+def test_write_read(tmpdir):
+    fname = os.path.join(tmpdir.strpath, "mydat")
+    attrs = dict(sampling_rate=100, n_channels=data1.shape[1], fluffy="cat")
+    a = Stream(data1, attrs=attrs)
+    a.write(fname)
+    b = read(fname)
+    assert eq(data1, b.call())
+    for key in attrs:
+        assert attrs[key] == b.attrs[key]
+        
 
 

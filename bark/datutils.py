@@ -4,9 +4,14 @@ import bark
 
 
 class Stream():
-    def __init__(self, data, sr, attrs=None, chunksize=1e6, ):
+    def __init__(self, data, sr=None, attrs=None, chunksize=1e6, ):
         self.data = data
-        self.sr = sr
+        if sr is None and attrs and "sampling_rate" in attrs:
+            self.sr = attrs["sampling_rate"]
+        elif sr is None:
+            self.sr = 1
+        else:
+            self.sr = sr
         if attrs:
             self.attrs = attrs.copy()
         else:
@@ -69,12 +74,12 @@ class Stream():
         attrs["sampling_rate"] = self.sr
         with open(filename, "wb") as fp:
             for data in self:
-                data.tobytes()
+                fp.write(data.tobytes())
         if not dtype:
             dtype = data.dtype.name
             attrs["dtype"] = dtype
         attrs["n_channels"] = data.shape[1]
-        bark.write_metadata(filename + ".meta")
+        bark.write_metadata(filename + ".meta", **attrs)
 
     def map(self, func, vectorize=False):
         """ Maps a function to data,
@@ -191,17 +196,12 @@ def rechunk(stream, chunksize):
 
 
 class FileStream(Stream):
-    def __init__(self, **kwargs):
-        super(FileStream, self).__init__(**kwargs)
-        self.chunksize = 1e6
-
-    def __iter__(self):
-        return self
-
     def __next__(self):
         try:
             result = self.data[self.index:self.index + self.chunksize]
         except IndexError:
+            raise StopIteration
+        if result.shape[0] == 0:
             raise StopIteration
         self.index += self.chunksize
         return result
@@ -218,4 +218,5 @@ def read(fname, **kwargs):
     bark_obj = bark.read_sampled(fname)
     data = bark_obj.data
     sr = bark_obj.attrs["sampling_rate"]
-    return FileStream(data, sr, data.attrs, **kwargs)
+    kwargs.update(bark_obj.attrs)
+    return FileStream(data, sr=sr, attrs=kwargs)

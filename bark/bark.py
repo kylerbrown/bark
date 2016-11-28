@@ -35,18 +35,18 @@ EventData = namedtuple('EventData', ['data', 'path', 'attrs'])
 
 def write_sampled(datfile, data, sampling_rate, units, **params):
     if len(data.shape) == 1:
-        params["n_channels"] = 1 
-    else: 
+        params["n_channels"] = 1
+    else:
         params["n_channels"] = data.shape[1]
     params["dtype"] = data.dtype.name
     shape = data.shape
-    mdata = np.memmap(datfile,
-                     dtype=params["dtype"],
-                     mode="w+", shape=shape)
+    mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
     params["filetype"] = "rawbinary"
-    write_metadata(datfile + ".meta", sampling_rate=sampling_rate,
-            units=units, **params)
+    write_metadata(datfile + ".meta",
+                   sampling_rate=sampling_rate,
+                   units=units,
+                   **params)
     return SampledData(mdata, datfile, params)
 
 
@@ -60,14 +60,14 @@ def read_sampled(datfile, mode="r"):
     params = read_metadata(datfile + ".meta")
     data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
     data = data.reshape(-1, params["n_channels"])
-    return SampledData(data, path, params) 
+    return SampledData(data, path, params)
 
 
 def write_events(eventsfile, data, **params):
     assert "units" in params and params["units"] in ["s" or "samples"]
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
-    write_metadata(eventsfile+".meta", **params)
+    write_metadata(eventsfile + ".meta", **params)
     return read_events(eventsfile)
 
 
@@ -123,6 +123,7 @@ def write_metadata(filename, **params):
         yaml_file.write(header)
         yaml_file.write(yaml.dump(params, default_flow_style=False))
 
+
 def create_root(name, **attrs):
     """creates a new BARK top level directory"""
     path = os.path.abspath(name)
@@ -134,7 +135,7 @@ def create_root(name, **attrs):
 def read_root(name):
     path = os.path.abspath(name)
     attrs = read_metadata(os.path.join(path, "meta"))
-    all_sub = [os.path.join(name, x) for x in  listdir(path)]
+    all_sub = [os.path.join(name, x) for x in listdir(path)]
     print(all_sub)
     subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
     entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
@@ -167,6 +168,7 @@ def create_entry(name, timestamp, **attributes):
     write_metadata(os.path.join(name, "meta"), **attributes)
     return read_entry(name)
 
+
 def read_entry(name):
     path = os.path.abspath(name)
     dsets = {}
@@ -176,6 +178,7 @@ def read_entry(name):
     dset_names = [x[:-5] for x in dset_metas]
     datasets = {name: read_dataset(name) for name in dset_names}
     return Entry(datasets, path, attrs)
+
 
 def convert_timestamp(obj):
     """Makes a BARK timestamp from an object.
@@ -252,4 +255,3 @@ def is_sampled(dset):
 def is_events(dset):
     """Returns True if dset is a marked point process (a complex dtype with 'start' field)"""
     return isinstance(dset.data, pd.DataFrame) and 'start' in dset.data.columns
-
