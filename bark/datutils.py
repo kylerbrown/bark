@@ -1,3 +1,4 @@
+from itertools import chain
 import numpy as np
 import bark
 
@@ -163,10 +164,13 @@ class Stream():
                                       ))
 
     def chain(*streams):
-        return streams[0].new_stream((rechunk(data, self.chunksize)
-                                      for data in chain(*streams)))
+        self = streams[0]
+        return self.new_stream((data
+                                for data in rechunk(
+                                    chain(*streams), self.chunksize)))
 
     def rechunk(self, chunksize):
+        " calls the function rechunk and returns a Stream object."
         self.chunksize = chunksize
         return self.new_stream(rechunk(self, self.chunksize))
 
