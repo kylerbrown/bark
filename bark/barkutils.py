@@ -1,3 +1,4 @@
+from os import listdir, remove
 from shutil import move
 import os.path
 from glob import glob
@@ -61,3 +62,29 @@ def entry_from_glob():
         move(fname, os.path.join(args.name, fname[len(args.name):]))
 
 
+def _clean_metafiles(path, recursive):
+    metafiles = glob(os.path.join(path, "*.meta"))
+    for mfile in metafiles:
+        if not os.path.isfile(mfile[:-5]):
+            os.remove(mfile)
+    if recursive:
+        dirs = [x for x in os.listdir(path) if os.path.isdir(x)]
+        for d in dirs:
+            _clean_metafiles(os.path.join(path, d), True)
+
+
+
+
+def clean_metafiles():
+    """
+    remove x.meta files with no associated file (x)
+    """
+    p = argparse.ArgumentParser(description="remove x.meta files with no associated file (x)")
+    p.add_argument("path", help="name of bark entry", default=".")
+    p.add_argument("-r", "--recursive",
+            help="search recursively",
+            action="store_true")
+    args = p.parse_args()
+    _clean_metafiles(args.path, args.recursive)
+
+ 
