@@ -12,11 +12,13 @@ def mk_root():
     p.add_argument("-a", "--attributes", action='append',
             type=lambda kv: kv.split("="), dest='keyvalues',
             help="extra metadata in the form of KEY=VALUE")
+    p.add_argument("-p", "--parents", help="no error if already exists, new meta-data written",
+            action="store_true")
     args = p.parse_args()
     if args.keyvalues:
-        bark.create_root(args.name, **dict(args.keyvalues))
+        bark.create_root(args.name, args.parents, **dict(args.keyvalues))
     else:
-        bark.create_root(args.name)
+        bark.create_root(args.name, args.parents)
 
 
 def mk_entry():
@@ -26,12 +28,14 @@ def mk_entry():
             type=lambda kv: kv.split("="), dest='keyvalues',
             help="extra metadata in the form of KEY=VALUE")
     p.add_argument("-t", "--timestamp", help="format: YYYY-MM-DD or YYYY-MM-DD_HH-MM-SS.S")
+    p.add_argument("-p", "--parents", help="no error if already exists, new meta-data written",
+            action="store_true")
     args = p.parse_args()
     timestamp = parse_timestamp_string(args.timestamp)
     if args.keyvalues:
-        bark.create_entry(args.name, timestamp, **dict(args.keyvalues))
+        bark.create_entry(args.name, timestamp, args.parents, **dict(args.keyvalues))
     else:
-        bark.create_entry(args.name, timestamp)
+        bark.create_entry(args.name, timestamp, args.parents)
 
 
 def entry_from_glob():

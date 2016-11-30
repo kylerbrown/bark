@@ -124,10 +124,10 @@ def write_metadata(filename, **params):
         yaml_file.write(yaml.dump(params, default_flow_style=False))
 
 
-def create_root(name, **attrs):
+def create_root(name, parents=False, **attrs):
     """creates a new BARK top level directory"""
     path = os.path.abspath(name)
-    os.makedirs(name)
+    os.makedirs(name, exist_ok=parents)
     write_metadata(os.path.join(path, "meta"), **attrs)
     return read_root(name)
 
@@ -142,7 +142,7 @@ def read_root(name):
     return Root(entries, path, attrs)
 
 
-def create_entry(name, timestamp, **attributes):
+def create_entry(name, timestamp, parents=False, **attributes):
     """Creates a new BARK entry under group, setting required attributes.
 
     An entry is an abstract collection of data which all refer to the same time
@@ -156,12 +156,15 @@ def create_entry(name, timestamp, **attributes):
                January 1, 1970). Can be an integer, a float, or a tuple
                of integers (seconds, microsceconds)
 
+    parents -- if True, no error is raised if file already exists. Metadata
+                is overwritten
+
     Additional keyword arguments are set as attributes on created entry.
 
     Returns: newly created entry object
     """
     path = os.path.abspath(name)
-    os.makedirs(path)
+    os.makedirs(path, exist_ok=parents)
     if "uuid" not in attributes:
         attributes["uuid"] = str(uuid4())
     attributes["timestamp"] = convert_timestamp(timestamp)
