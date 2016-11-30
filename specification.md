@@ -31,7 +31,7 @@ An example BARK tree:
         ... etc ...
 
 Files that do not have associated `.meta` files are ignored. Metafiles must have associated datasets.
-
+By ignoring extra files, this system flexibly allows the inclusion of non-standard data such as videos, screenshots and notes.
 
 ## Goals and conceptual framework
 
