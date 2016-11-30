@@ -29,11 +29,9 @@ class Stream():
             result = self.data[self.index:self.index + self.chunksize]
         except IndexError:
             raise StopIteration
-        print(result)
         if result.shape[0] == 0:
             raise StopIteration
         self.index += self.chunksize
-        print(self.index)
         return result
 
     def __add__(self, other):
@@ -189,7 +187,6 @@ def rechunk(stream, chunksize):
         else:
             buffer = np.vstack((buffer, x))
         while len(buffer) > chunksize:
-            print(len(buffer))
             yield buffer[:chunksize, :]
             buffer = buffer[chunksize:, :]
     yield buffer  # leftover samples at end of stream
