@@ -68,7 +68,8 @@ def _clean_metafiles(path, recursive):
         if not os.path.isfile(mfile[:-5]):
             os.remove(mfile)
     if recursive:
-        dirs = [x for x in os.listdir(path) if os.path.isdir(x)]
+        dirs = [x for x in os.listdir(path)
+                if os.path.isdir(os.path.join(path, x))]
         for d in dirs:
             _clean_metafiles(os.path.join(path, d), True)
 
@@ -87,4 +88,3 @@ def clean_metafiles():
     args = p.parse_args()
     _clean_metafiles(args.path, args.recursive)
 
- 
