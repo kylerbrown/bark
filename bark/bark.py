@@ -11,7 +11,7 @@ from collections import namedtuple
 from uuid import uuid4
 import yaml
 import numpy as np
-import pandas as pd
+from bark import datutils
 
 BUFFER_SIZE = 10000
 
@@ -27,11 +27,39 @@ Library versions:
 """ % (version)
 
 # heirarchical classes
-Root = namedtuple('Root', ['entries', 'path', 'attrs'])
-Entry = namedtuple('Entry', ['datasets', 'path', 'attrs'])
-SampledData = namedtuple('SampledData', ['data', 'path', 'attrs'])
-EventData = namedtuple('EventData', ['data', 'path', 'attrs'])
+class Root():
+    def __init__(self, entries, path, attrs):
+        self.entries = entries
+        self.path = path
+        self.attrs = attrs
+    def __getitem__(self, item):
+        return self.entries[item]
+    def __len__(self):
+        return self.entries.__len__()
+    def __contains__(self, item):
+        return self.entries.__contains__(item)
 
+class Entry():
+    def __init__(self, datasets, path, attrs):
+        self.datasets = datasets
+        self.path = path
+        self.attrs = attrs
+    def __getitem__(self, item):
+        return self.datasets[item]
+
+class Data():
+    def __init__(self, data, path, attrs):
+        self.data = data
+        self.path = path
+        self.attrs = attrs
+    def __getitem__(self, item):
+        return self.data[item]
+
+class SampledData(Data):
+    def toStream(self):
+        datutils.read(self.path)
+
+EventData = Data
 
 def write_sampled(datfile, data, sampling_rate, units, **params):
     if len(data.shape) == 1:
@@ -72,6 +100,7 @@ def write_events(eventsfile, data, **params):
 
 
 def read_events(eventsfile):
+    import pandas as pd
     data = pd.read_csv(eventsfile)
     params = read_metadata(eventsfile + ".meta")
     return EventData(data, eventsfile, params)
@@ -136,7 +165,6 @@ def read_root(name):
     path = os.path.abspath(name)
     attrs = read_metadata(os.path.join(path, "meta"))
     all_sub = [os.path.join(name, x) for x in listdir(path)]
-    print(all_sub)
     subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
     entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
     return Root(entries, path, attrs)
@@ -178,8 +206,11 @@ def read_entry(name):
     attrs = read_metadata(os.path.join(path, "meta"))
     # load only files with associated metadata files
     dset_metas = glob(os.path.join(path, "*.meta"))
-    dset_names = [x[:-5] for x in dset_metas]
-    datasets = {name: read_dataset(name) for name in dset_names}
+    dset_full_names = [x[:-5] for x in dset_metas]
+    dset_names = [os.path.split(x)[-1]
+            for x in dset_full_names]
+    datasets = {name: read_dataset(full_name) for
+            name, full_name in zip(dset_names, dset_full_names)}
     return Entry(datasets, path, attrs)
 
 
@@ -257,4 +288,5 @@ def is_sampled(dset):
 
 def is_events(dset):
     """Returns True if dset is a marked point process (a complex dtype with 'start' field)"""
+    import pandas as pd
     return isinstance(dset.data, pd.DataFrame) and 'start' in dset.data.columns
