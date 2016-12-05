@@ -8,7 +8,7 @@ def load_clusters(matfile, channel=None):
     """ From a wave_clus *.m file, return a pandas dataframe."""
 
     cluster_classes = loadmat(matfile)["cluster_class"]
-    times = pd.DataFrame({"label": cluster_classes[:, 0].astype(int),
+    times = pd.DataFrame({"name": cluster_classes[:, 0].astype(int),
                           "start": cluster_classes[:, 1] / 1000.})
     if channel is not None:
         times["channel"] = channel
