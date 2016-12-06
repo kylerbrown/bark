@@ -263,6 +263,8 @@ def timestamp_to_float(timestamp):
 def parse_timestamp_string(string):
     if len(string) == len("YYYY-MM-DD"):
         timestamp = datetime.strptime(string, "%Y-%m-%d")
+    elif len(string) == len("YYYY-MM-DD_HH-MM_SS"):
+        timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S")
     else:
         timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
     return timestamp
