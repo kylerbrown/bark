@@ -41,6 +41,7 @@ The python interface is tested against Python 3.5. Installation with [Conda](htt
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 - `bark-clean-orphan-metas` -- remove orphan `.meta` files without associated datafiles
+- `bark-scope` -- opens a Bark SampledData file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
 
 For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempts to adhere to the Bark/ARF standard.

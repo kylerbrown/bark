@@ -16,6 +16,7 @@ setup(name='bark',
               'bark-entry-from-prefix=bark.barkutils:entry_from_glob',
               'bark-clean-orphan-metas=bark.barkutils:clean_metafiles',
               'csv-from-waveclus=bark.csvutils:_waveclus2csv',
+              'bark-scope=bark.barkscope:main',
               ]
           }
       )
