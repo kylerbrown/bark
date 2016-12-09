@@ -81,10 +81,10 @@ class Stream():
 
     def map(self, func, vectorize=False):
         """ Maps a function to data,
-        intended for scalar operators like 
+        intended for scalar operators like
         numpy.abs
         or
-        lambda x : x ** 2 
+        lambda x : x ** 2
 
         make sure your custom function returns a two dimensional array
         """
@@ -206,11 +206,8 @@ class FileStream(Stream):
 
 def read(fname, **kwargs):
     """ input: the filename of a raw binary file
-
         should have an associated .meta file
-        
-        (should be a method of the SampledData object
-        eventually)
+        returns FileStream
         """
     bark_obj = bark.read_sampled(fname)
     data = bark_obj.data

@@ -1,6 +1,6 @@
 import os.path
 import pytest
-from bark.datutils import Stream, read
+from bark.stream import Stream, read
 import bark
 import numpy as np
 

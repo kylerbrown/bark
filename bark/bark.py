@@ -7,11 +7,10 @@ import sys
 import os.path
 from os import listdir
 from glob import glob
-from collections import namedtuple
 from uuid import uuid4
 import yaml
 import numpy as np
-from bark import datutils
+from bark import stream
 
 BUFFER_SIZE = 10000
 
@@ -26,40 +25,82 @@ Library versions:
  bark: %s
 """ % (version)
 
+
 # heirarchical classes
 class Root():
-    def __init__(self, entries, path, attrs):
-        self.entries = entries
-        self.path = path
-        self.attrs = attrs
+    def __init__(self, path, entries=None, attrs=None):
+        if entries is None or attrs is None:
+            self.read(path)
+        else:
+            self.entries = entries
+            self.path = path
+            self.attrs = attrs
+
+    def read(self, name):
+        self.path = os.path.abspath(name)
+        self.attrs = read_metadata(os.path.join(path, "meta"))
+        all_sub = [os.path.join(name, x) for x in listdir(path)]
+        subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
+        sefl.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
+
     def __getitem__(self, item):
         return self.entries[item]
+
     def __len__(self):
         return self.entries.__len__()
+
     def __contains__(self, item):
         return self.entries.__contains__(item)
+
 
 class Entry():
     def __init__(self, datasets, path, attrs):
         self.datasets = datasets
         self.path = path
         self.attrs = attrs
+        self.timestamp = timestamp_to_datetime(attrs["timestamp"])
+        self.uuid = attrs["uuid"]
+
     def __getitem__(self, item):
         return self.datasets[item]
+
+    def __len__(self):
+        return self.datasets.__len__()
+
+    def __contains__(self, item):
+        return self.datasets.__contains__(item)
+
+    def __lt__(self, other):
+        return self.timestamp < other.timestamp
+
 
 class Data():
     def __init__(self, data, path, attrs):
         self.data = data
         self.path = path
         self.attrs = attrs
+
     def __getitem__(self, item):
         return self.data[item]
 
+
 class SampledData(Data):
     def toStream(self):
-        datutils.read(self.path)
+        stream.read(self.path)
 
-EventData = Data
+    def write(self, path=None):
+        if path is None:
+            path = self.path
+        write_sampled(self.path, self.data, **self.attrs)
+
+
+class EventData(Data):
+    def write(self, path=None):
+        "Saves data to file"
+        if path is None:
+            path = self.path
+        write_events(path, self.data, **self.attrs)
+
 
 def write_sampled(datfile, data, sampling_rate, units, **params):
     if len(data.shape) == 1:
@@ -167,7 +208,7 @@ def read_root(name):
     all_sub = [os.path.join(name, x) for x in listdir(path)]
     subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
     entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
-    return Root(entries, path, attrs)
+    return Root(path, entries, attrs)
 
 
 def create_entry(name, timestamp, parents=False, **attributes):
@@ -207,10 +248,9 @@ def read_entry(name):
     # load only files with associated metadata files
     dset_metas = glob(os.path.join(path, "*.meta"))
     dset_full_names = [x[:-5] for x in dset_metas]
-    dset_names = [os.path.split(x)[-1]
-            for x in dset_full_names]
-    datasets = {name: read_dataset(full_name) for
-            name, full_name in zip(dset_names, dset_full_names)}
+    dset_names = [os.path.split(x)[-1] for x in dset_full_names]
+    datasets = {name: read_dataset(full_name)
+                for name, full_name in zip(dset_names, dset_full_names)}
     return Entry(datasets, path, attrs)
 
 
@@ -273,14 +313,6 @@ def parse_timestamp_string(string):
 def get_uuid(obj):
     """Returns the uuid for obj, or None if none is set"""
     return obj.attrs.get('uuid', None)
-
-
-def count_children(obj):
-    """Returns the number of children of obj"""
-    if isinstance(obj, Root):
-        return len(obj.entries)
-    else:
-        return len(obj.datasets)
 
 
 def is_sampled(dset):

@@ -62,3 +62,14 @@ def test_create_entry(tmpdir):
     assert 'uuid' in entry.attrs
     assert dtime == bark.timestamp_to_datetime(entry.attrs["timestamp"])
     assert entry.attrs["food"] == "pizza"
+
+def test_entry_sort(tmpdir):
+    path1 = os.path.join(tmpdir.strpath, "myentry")
+    dtime1 = datetime.datetime(2020,1,1,0,0,0,0)
+    entry1 = bark.create_entry(path1, dtime1, food="pizza")
+    path2 = os.path.join(tmpdir.strpath, "myentry2")
+    dtime2 = datetime.datetime(2021,1,1,0,0,0,0)
+    entry2 = bark.create_entry(path2, dtime2, food="pizza")
+    mylist = sorted([entry2, entry1])
+    assert mylist[0] == entry1
+    assert mylist[1] == entry2
