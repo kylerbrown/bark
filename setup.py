@@ -7,7 +7,8 @@ setup(name='bark',
       author='Kyler Brown',
       author_email='kylerjbrown@gmail.com',
       license='GPL',
-      packages=find_packages(),
+      #packages=find_packages('bark'),
+      packages=['bark', 'bark.io'],
       zip_safe=False,
       entry_points = {
           'console_scripts' : [
