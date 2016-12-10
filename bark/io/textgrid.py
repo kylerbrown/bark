@@ -85,7 +85,7 @@ def write_csv(textgrid_list, filename=None, sep=",", header=True, save_gaps=Fals
     if filename:
         f.flush()
         f.close()
-    if meta:
+    if meta and filename:
         with open(filename + ".meta", "w") as metaf:
             metaf.write("""---\nunits: s\ndatatype: 1002\n""")
         

@@ -16,10 +16,11 @@ setup(name='bark',
               'bark-entry=bark.barkutils:mk_entry',
               'bark-entry-from-prefix=bark.barkutils:entry_from_glob',
               'bark-clean-orphan-metas=bark.barkutils:clean_metafiles',
-              'csv-from-waveclus=bark.csvutils:_waveclus2csv',
-              'csv-from-textgrid = bark.io.textgrid:textgrid2csv',
               'bark-scope=bark.barkscope:main',
+              'csv-from-waveclus=bark.io.waveclus:_waveclus2csv',
+              'csv-from-textgrid=bark.io.textgrid:textgrid2csv',
               'bark-convert-rhd=bark.io.rhd.rhd2bark:bark_rhd_to_entry',
+              'bark-convert-openephys=bark.io.openephys.kwik2dat:kwd_to_entry',
               ]
           }
       )

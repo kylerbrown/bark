@@ -1,1 +1,2 @@
-from bark.io.rhd.rhd2bark import rhds_to_entry 
+from bark.io import rhd
+from bark.io import openephys
