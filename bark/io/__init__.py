@@ -1,1 +1,1 @@
-from bark.io.rhd.load_intan_rhd_format import rhds_to_entry 
+from bark.io.rhd.rhd2bark import rhds_to_entry 

@@ -17,7 +17,9 @@ setup(name='bark',
               'bark-entry-from-prefix=bark.barkutils:entry_from_glob',
               'bark-clean-orphan-metas=bark.barkutils:clean_metafiles',
               'csv-from-waveclus=bark.csvutils:_waveclus2csv',
+              'csv-from-textgrid = bark.io.textgrid:textgrid2csv',
               'bark-scope=bark.barkscope:main',
+              'bark-convert-rhd=bark.io.rhd.rhd2bark:bark_rhd_to_entry',
               ]
           }
       )
