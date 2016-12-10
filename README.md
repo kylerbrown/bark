@@ -1,7 +1,7 @@
 # Bark
 [![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
-What is Bark? Bark is a hierarchical standard for electrophysiology data. By emphasizing filesystem 
+What is Bark? Bark is a standard for electrophysiology data. By emphasizing filesystem 
 directories, plain text files and simple binary arrays, Bark data can leverage a broad tool set that includes Unix commands.
 
 Bark is also the fibrous outer layer of [ARF](https://github.com/melizalab/arf), wrapped around a few standard
@@ -13,15 +13,15 @@ The elements of a Bark tree:
 - Entries (often trials) are directories containing datasets that share a common time base.
 - Continuously sampled datasets, stored as raw binary arrays
 - Event data, stored in CSV files.
-- Every bark element (Root, Entry, SampledData, EventData) has metadata stored in associated YAML files.
+- Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated YAML files.
 
 This repository contains:
 
--   The specification for bark (in specification.md)
--   A python interface for reading and writing bark files
--   Scripts for basic BARK tasks
+-   The specification for bark (in [specification.md](specification.md))
+-   A python interface for reading and writing Bark files
+-   Scripts for basic Bark tasks
 
-## installation
+## Installation
 
 The python interface is tested against Python 3.5. Installation with [Conda](http://conda.pydata.org/miniconda.html) recommended.
 
@@ -35,14 +35,17 @@ The python interface is tested against Python 3.5. Installation with [Conda](htt
     pytest -v
 
 
-# Usage
+# Shell Commands
+
+Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
 
 - `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 - `bark-clean-orphan-metas` -- remove orphan `.meta` files without associated datafiles
 - `bark-scope` -- opens a Bark SampledData file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
-- `bark-convert-rhd` -- converts Intan .rhd files to datasets in a Bark entry
+- `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
+- `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
 
