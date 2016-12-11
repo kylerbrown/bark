@@ -18,16 +18,16 @@ Bark takes the architecture of ARF and replaces HDF5 with common data storage fo
 This makes Bark files more susceptible to losing metadata and deviating
 from the specification, but gives Bark a few advantages:
 
-+ Use standard unix tools to explore your data (cd, ls, grep, find, mv)
++ Use standard Unix tools to explore your data (cd, ls, grep, find, mv)
 + Build robust data processing pipelines with shell scripting or
   [make](http://kbroman.org/minimal_make/).
 + Edit metadata with a standard text editor
-+ Leverage any third party tools that use Barks common data formats.
++ Leverage any third party tools that use Bark's common data formats.
   + Raw binary tools: [Aplot](https://github.com/melizalab/aplot), [Neuroscope](http://neurosuite.sourceforge.net/), 
 [Plexon Offline Sorter](http://www.plexon.com/products/offline-sorter), [Wave_clus](https://github.com/csn-le/wave_clus), 
 [spyking circus](https://spyking-circus.readthedocs.io), [phy](https://github.com/kwikteam/phy), 
 [datutils](https://github.com/kylerbrown/datutils).
-  + CSV tools: R, Pandas (Python), Excel, csvkit and unix tools like sed and
+  + CSV tools: R, Pandas (Python), Excel, csvkit and Unix tools like sed and
       awk.
 + Include non-standard data such as image or video in Bark entries.
 
@@ -80,6 +80,7 @@ Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
+- `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
 
 For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempts to adhere to the Bark/ARF standard.
 
