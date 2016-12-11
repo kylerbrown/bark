@@ -14,8 +14,8 @@ within HDF5, they are harder to access without using ARF-specific tools.
 This protects ARF datasets from accidental loss of metadata, and helps ensure
 datasets conform to the ARF specification.
 
-Bark takes the architecture of ARF and replaces HDF5 with common data storage  
-formats. This makes Bark files more susceptible to loosing metadata and deviating
+Bark takes the architecture of ARF and replaces HDF5 with common data storage formats.
+This makes Bark files more susceptible to losing metadata and deviating
 from the specification, but gives Bark a few advantages:
 
 + Use standard unix tools to explore your data (cd, ls, grep, find, mv)
