@@ -14,7 +14,7 @@ only the implementation is different.
 
 An example BARK tree:
 
-    experiment.bark/        <- optional extension
+    experiment.bark/        <- root directory, optional extension
         meta                <- top level YAML metadata
         day1/               <- first entry, all datasets within have the same timebase
             meta            <- first entry metadata
@@ -90,6 +90,13 @@ datasets and plaintext YAML files provide metadata attributes. BARK specifies th
 within this framework, while allowing the user to add metadata specific to an
 application.
 
+
+### Roots
+
+A *root* is a top-level directory containing a `meta` file and entries.
+There are no required attributes in the root `meta` file. Root directories must not
+contain datasets.
+
 ### Entries
 
 An *entry* is defined as an abstract grouping of zero or more *datasets* that
@@ -116,6 +123,18 @@ be present in the group if not applicable.
 -   **protocol:** Comment field indicating the treatment, stimulus, or any other
     user-specified data.
 -   **recuri:** The URI of an external database where `uuid` can be looked up.
+
+Example meta file for an Entry:
+
+    ---
+    timestamp:
+    - 1452891725
+    - 0
+    uuid: b05c865d-fb68-44de-86fc-1e95b273159c
+    animal: bk196
+
+Entry directories must not contain root or entry directories.
+Any subdirectories are ignored.
 
 ### Datasets
 
@@ -164,6 +183,18 @@ The disadvantage of simple raw binary files is that no metadata are stored withi
 
 For all sampled data files, the endianness is *MUST* be little-endian. 
 This is the default for Intel x86 and the vast majority of modern systems.
+
+An example .meta file:
+
+    ---
+    sampling_rate: 30000
+    dtype: int16
+    n_channels: 8
+    trial: 1
+    units: V
+    unit_scale: 0.025
+
+The first three attributes are required for sampled data. Any others are optional.
 
 #### Event data
 
@@ -215,7 +246,5 @@ The following attributes are optional:
   [RFC 4122](http://tools.ietf.org/html/rfc4122.html)). Multiple datasets in
   different entries of the same file may have the same uuid, indicating that
   they were obtained from the same source and experimental conditions. Must be
-  stored as a 128-bit integer or a 36-byte `H5T_STRING` with `CTYPE` of
-  `H5T_C_S1`. The latter is preferred as 128-bit integers are not supported on
-  many platforms.
+  stored as a string.
 
