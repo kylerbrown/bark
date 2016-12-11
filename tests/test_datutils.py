@@ -1,3 +1,5 @@
+from scipy.signal import fftconvolve
+from scipy.signal import filtfilt, butter
 import os.path
 import pytest
 from bark.stream import Stream, read
@@ -106,9 +108,36 @@ def test_reduce_columns_by_map():
 
 def test_vector_map():
     for data in (data1, data2, data3, data4):
-        y = Stream(data, sr=1).vector_map(dummyf).call()
+        y = Stream(data, sr=1, chunksize=6).vector_map(dummyf).call()
         assert eq(data, y)
 
+def test_vector_map2():
+    for data in (data1, data2, data3, data4):
+        y = Stream(data, sr=1, chunksize=7).vector_map(dummyf).call()
+        assert eq(data, y)
+
+def test_filtfilt():
+    sr = 1000
+    freq = 100
+    b, a = butter(3, freq/(sr/2), 'high')
+    for data in (data2, data3, data4):
+        x = filtfilt(b, a, data, axis=0)
+        y = Stream(data, chunksize=211, sr=sr).filtfilt(b, a).call()
+        assert eq(x, y)
+
+def test_convolve():
+    win = [.1, 0, 3]
+    for data in (data2, data3, data4):
+        x = np.column_stack([fftconvolve(data[:, i], win)
+            for i in range(data.shape[1])]) 
+        y = Stream(data, sr=1).convolve(win).call()
+        assert eq(x, y)
+
+def test_decimate():
+    for data in (data2, data3, data4):
+        x = data[::3]
+        y = Stream(data, sr=1).decimate(3).call()
+        assert eq(x, y)
 
 def test_getitem():
     y = Stream(data1, sr=1)[-1].call()

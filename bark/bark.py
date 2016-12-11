@@ -119,6 +119,19 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
     return SampledData(mdata, datfile, params)
 
 
+def load_dat(datfile, mode="r"):
+    """ loads raw binary file
+
+    mode may be "r" or "r+", use "r+" for modifiying the data (not
+    recommended).
+
+    does NOT return a SampledData object, use read_sampled instead.
+    """
+    params = read_metadata(datfile)
+    data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
+    data = data.reshape(-1, params["n_channels"])
+    return data, params
+
 def read_sampled(datfile, mode="r"):
     """ loads raw binary file
 

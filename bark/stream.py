@@ -66,16 +66,25 @@ class Stream():
         "Returns the data as a numpy array."
         return np.vstack(self)
 
+    def pop(self):
+        "Returns the first buffer of the stream."
+        next(self)
+
     def write(self, filename, dtype=None):
         """ Saves to disk as raw binary """
         attrs = self.attrs.copy()
         attrs["sampling_rate"] = self.sr
-        with open(filename, "wb") as fp:
-            for data in self:
-                fp.write(data.tobytes())
-        if not dtype:
+        if dtype:
+            with open(filename, "wb") as fp:
+                for data in self:
+                    fp.write(data.astype(dtype).tobytes())
+        else:
+            # we don't know the datatype until we stream
+            with open(filename, "wb") as fp:
+                for data in self:
+                    fp.write(data.tobytes())
             dtype = data.dtype.name
-            attrs["dtype"] = dtype
+        attrs["dtype"] = dtype
         attrs["n_channels"] = data.shape[1]
         bark.write_metadata(filename + ".meta", **attrs)
 
@@ -104,16 +113,22 @@ class Stream():
 
         function should return values the same shape as
         the input data
+
+        algorithm:
+        Run function over two consecutive buffers.
+        return result in 1/3 sections, ensuring that
+        there is always a extra 1/3 on either side if possible.
         """
-        return self.new_stream(self._vector_map(func))
+        return self.new_stream(self._vector_map(func)).rechunk()
 
     def _vector_map(self, func):
         """ helper function """
-        N = self.chunksize // 3
+        C = self.chunksize
+        N = C // 3
         prev = None
         try:
             for x in self:
-                if not prev:
+                if prev is None:
                     y = func(x)
                     yield y[:N, :]
                     if len(y) > N:
@@ -121,42 +136,16 @@ class Stream():
                 else:
                     y = func(np.vstack((prev, x)))
                     if len(y) > 2 * N:
-                        yield y[2 * N:3 * N]
-                    if len(y) > 3 * N:
-                        yield y[3 * N:4 * N]
-                    if len(y) > 4 * N:
-                        yield y[4 * N:5 * N]
+                        yield y[2 * N: C]
+                    if len(y) > C:
+                        yield y[C: C + N]
+                    if len(y) >C + N:
+                        yield y[C + N: C + 2 * N]
                 prev = x
-            if len(y) > 5 * N:
-                yield y[5 * N:]
+            if len(y) > C + 2 * N:
+                yield y[C + 2 * N:]
         except IndexError:
             raise StopIteration
-
-    def _vector_map_old(self, func):
-        """ helper function """
-        x, x2, x3 = None, None, None
-        try:
-            x1 = next(self)
-            x = x1
-            x2 = next(self)
-            x = np.vstack((x1, x2))
-            x3 = next(self)
-            x = np.vstack((x1, x2, x3))
-        except StopIteration:
-            pass
-        if x1:
-            yield func(x)[:len(x1), :]
-        if x2:
-            yield fun(x)[len(x1):len(x1) + len(x2), :]
-
-        for data in self:
-            x1 = x2
-            x2 = x3
-            x3 = data
-            x = np.vstack(x1, x2, x3)
-            yield func(x)[len(x1):len(x) - len(x3), :]
-        if x3:
-            yield func(x)[len(x) - len(x3):, :]
 
     def split(self, *args):
         return self.new_stream((x[:, args] for x in self))
@@ -172,11 +161,34 @@ class Stream():
                                 for data in rechunk(
                                     chain(*streams), self.chunksize)))
 
-    def rechunk(self, chunksize):
+    def rechunk(self, chunksize=None):
         " calls the function rechunk and returns a Stream object."
-        self.chunksize = chunksize
+        if chunksize is not None:
+            self.chunksize = chunksize
         return self.new_stream(rechunk(self, self.chunksize))
 
+    def filtfilt(self, b, a):
+        " Performs forward backward filtering on the stream."
+        from scipy.signal import filtfilt
+        filter_func = lambda x: filtfilt(b, a, x, axis=0)
+        return self.new_stream(self.vector_map(filter_func))
+
+    def convolve(self, win):
+        " Convolves each channel with window win."
+        from scipy.signal import fftconvolve
+        def conv_func(x):
+            return np.column_stack([fftconvolve(x[:, i], win) for i in range(x.shape[1])]) 
+        return self.new_stream(self.vector_map(conv_func))
+
+    def decimate(self, factor):
+        return self.new_stream(decimate(self, factor)).rechunk()
+
+def decimate(stream, factor):
+    " Downsample signals by factor. Remember to filter first!"
+    remainder = 0
+    for data in stream:
+        yield data[remainder::factor, :]
+        remainder = (remainder + data.shape[0]) % factor
 
 def rechunk(stream, chunksize):
     "New iterator with correct chunksize."
