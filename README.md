@@ -88,11 +88,31 @@ for common datapipelines and adheres to the Bark/ARF standard.
 
 There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
 
-# Expressive Python interface
+# Python interface
 
-The `Stream` object in the `bark.stream` module exposes a powerful data pipeline design system.
+    import bark
+    root = bark.read_root("black5")
+    root.entries.keys()
+    # dict_keys(['2016-01-18', '2016-01-19', '2016-01-17', '2016-01-20', '2016-01-21'])
+    entry = root['2016-01-18']
+    entry.attrs
+    # {'bird': 'black5',
+    # 'experiment': 'hvc_syrinx_screwdrive',
+    # 'experimenter': 'kjbrown',
+    # 'timestamp': [1453096800, 0],
+    # 'uuid': 'a53d24af-ac13-4eb3-b5f4-0600a14bb7b0'}
+    entry.datasets.keys()
+    # dict_keys(['enr_emg.dat', 'enr_mic.dat', 'enr_emg_times.csv', 'enr_hvc.dat', 'raw.label', 'enr_hvc_times.csv', 'enr.label'])
+    hvc = entry['enr_hvc.dat']
+    hvc.data.shape
+    # (7604129, 3)
+
+
+
+The `Stream` object in the `bark.stream` module exposes a powerful data pipeline design system for sampled data.
 Example usage:
 ![Example usage](bark-stream-example.png)
+
 
 
 ## Other common tasks

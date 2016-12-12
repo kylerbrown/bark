@@ -86,7 +86,7 @@ class Data():
 
 class SampledData(Data):
     def toStream(self):
-        stream.read(self.path)
+        return stream.read(self.path)
 
     def write(self, path=None):
         if path is None:
