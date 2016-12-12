@@ -26,7 +26,7 @@ from the specification, but gives Bark a few advantages:
   + Raw binary tools: [Aplot](https://github.com/melizalab/aplot), [Neuroscope](http://neurosuite.sourceforge.net/), 
 [Plexon Offline Sorter](http://www.plexon.com/products/offline-sorter), [Wave_clus](https://github.com/csn-le/wave_clus), 
 [spyking circus](https://spyking-circus.readthedocs.io), [phy](https://github.com/kwikteam/phy), 
-[datutils](https://github.com/kylerbrown/datutils).
+[datutils](https://github.com/kylerbrown/datutils), [sox](http://sox.sourceforge.net/sox.html).
   + CSV tools: R, Pandas (Python), Excel, csvkit and Unix tools like sed and
       awk.
 + Include non-standard data such as image or video in Bark entries.
@@ -45,7 +45,7 @@ Bark trees are made from the following elements:
 - Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated YAML files.
 
 Roots must only have Entries and Entries must only have Datasets.
-However, Datasets can exist outside of Entries, and Entries can exists without Roots.
+However, Datasets can exist outside of Entries, and Entries can exist without Roots.
 
 This repository contains:
 
