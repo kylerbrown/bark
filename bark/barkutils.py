@@ -39,7 +39,7 @@ def mk_entry():
         attrs = dict(args.keyvalues)
     else:
         attrs = {}
-    bark.create_entry(args.name, timestamp, args.parents, **attrsr)
+    bark.create_entry(args.name, timestamp, args.parents, **attrs)
 
 
 def entry_from_glob():
