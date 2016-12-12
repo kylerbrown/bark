@@ -5,6 +5,7 @@ from glob import glob
 import bark
 import argparse
 from bark import parse_timestamp_string
+from bark import stream
 
 
 def mk_root():
@@ -17,9 +18,10 @@ def mk_root():
             action="store_true")
     args = p.parse_args()
     if args.keyvalues:
-        bark.create_root(args.name, args.parents, **dict(args.keyvalues))
+        attrs = dict(args.keyvalues)
     else:
-        bark.create_root(args.name, args.parents)
+        attrs = {}
+    bark.create_root(args.name, args.parents, **attrs)
 
 
 def mk_entry():
@@ -34,9 +36,10 @@ def mk_entry():
     args = p.parse_args()
     timestamp = parse_timestamp_string(args.timestamp)
     if args.keyvalues:
-        bark.create_entry(args.name, timestamp, args.parents, **dict(args.keyvalues))
+        attrs = dict(args.keyvalues)
     else:
-        bark.create_entry(args.name, timestamp, args.parents)
+        attrs = {}
+    bark.create_entry(args.name, timestamp, args.parents, **attrs}
 
 
 def entry_from_glob():
@@ -55,9 +58,10 @@ def entry_from_glob():
     timestamp = parse_timestamp_string(args.timestamp)
     print(matching_files)
     if args.keyvalues:
-        bark.create_entry(args.name, timestamp, **dict(args.keyvalues))
+        attrs = dict(args.keyvalues)
     else:
-        bark.create_entry(args.name, timestamp)
+        attrs = {}
+    bark.create_entry(args.name, timestamp, **attrs)
     for fname in matching_files:
         move(fname, os.path.join(args.name, fname[len(args.name):]))
 
@@ -87,4 +91,45 @@ def clean_metafiles():
             action="store_true")
     args = p.parse_args()
     _clean_metafiles(args.path, args.recursive)
+
+
+
+def rb_concat():
+    p = argparse.ArgumentParser(description=
+    """Concatenate raw binary files by adding new samples. 
+    Do not confuse with merge, which combines channels""")
+    p.add_argument("input", help="input raw binary files",
+            nargs="+")
+    p.add_argument("-a", "--attributes", action='append',
+            type=lambda kv: kv.split("="), dest='keyvalues',
+            help="extra metadata in the form of KEY=VALUE")
+    p.add_argument("-o", "--out",
+            help="name of output file", required=True)
+    args = p.parse_args()
+    if args.keyvalues:
+        attrs = dict(args.keyvalues)
+    else:
+        attrs = {}
+    streams = [stream.read(x) for x in args.input]
+    streams[0].chain(*streams[1:]).write(args.out, **attrs)
+
+def rb_decimate():
+    ' Downsample raw binary file.'
+    p = argparse.ArgumentParser(description="Downsample raw binary file")
+    p.add_argument("input", help="input bark file")
+    p.add_argument("--factor", required=True,
+            type=int,
+            help="downsample factor")
+    p.add_argument("-a", "--attributes", action='append',
+            type=lambda kv: kv.split("="), dest='keyvalues',
+            help="extra metadata in the form of KEY=VALUE")
+    p.add_argument("-o", "--out",
+            help="name of output file", required=True)
+    args = p.parse_args()
+    if args.keyvalues:
+        attrs = dict(args.keyvalues)
+    else:
+        attrs = {}
+    stream.read(args.input).decimate(args.factor).write(args.out, **attrs)
+
 

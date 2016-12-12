@@ -68,9 +68,9 @@ class Stream():
 
     def pop(self):
         "Returns the first buffer of the stream."
-        next(self)
+        return next(self)
 
-    def write(self, filename, dtype=None):
+    def write(self, filename, dtype=None, **new_attrs):
         """ Saves to disk as raw binary """
         attrs = self.attrs.copy()
         attrs["sampling_rate"] = self.sr
@@ -86,6 +86,7 @@ class Stream():
             dtype = data.dtype.name
         attrs["dtype"] = dtype
         attrs["n_channels"] = data.shape[1]
+        attrs.update(new_attrs)
         bark.write_metadata(filename + ".meta", **attrs)
 
     def map(self, func, vectorize=False):
@@ -126,6 +127,7 @@ class Stream():
         C = self.chunksize
         N = C // 3
         prev = None
+        y = []
         try:
             for x in self:
                 if prev is None:
@@ -161,6 +163,33 @@ class Stream():
                                 for data in rechunk(
                                     chain(*streams), self.chunksize)))
 
+    def medfilt(self, kernel_size):
+        ' Performed median filtering on each channel, casts dtype to float32'
+        from scipy.signal import medfilt2d  # oddly faster than medfilt
+        def medfilt_func(x):
+            return np.column_stack([medfilt2d(x[:, i]
+                .astype(np.float32)
+                .reshape(-1, 1), (kernel_size, 1)) 
+                for i in range(x.shape[1])]) 
+        return self.new_stream(self.vector_map(medfilt_func))
+
+    def bessel(self, highpass=None, lowpass=None, order=3):
+        ' Bessel filter the data'
+        from scipy.signal import bessel
+        if highpass is None and lowpass is not None:
+            b, a = bessel(order, lowpass/(self.sr/2), btype='lowpass')
+        elif highpass is not None and lowpass is None:
+            b, a = bessel(order, highpass/(self.sr/2), btype='highpass')
+        elif highpass is not None and lowpass is not None:
+            if highpass < lowpass:
+                b, a = bessel(order, 
+                        (highpass/(self.sr/2), lowpass/(self.sr/2)), btype='bandpass')
+            else:
+                b, a = bessel(order, 
+                        (lowpass/(self.sr/2), highpass/(self.sr/2)), btype='bandstop')
+        return self.filtfilt(b, a)
+
+
     def rechunk(self, chunksize=None):
         " calls the function rechunk and returns a Stream object."
         if chunksize is not None:
@@ -181,7 +210,20 @@ class Stream():
         return self.new_stream(self.vector_map(conv_func))
 
     def decimate(self, factor):
-        return self.new_stream(decimate(self, factor)).rechunk()
+        s = self.new_stream(decimate(self, factor)).rechunk()
+        s.sr = self.sr / factor
+        return s
+    
+    def demean(self):
+        ' Subtracts the mean across channels for each sample.'
+        func = lambda x: x - np.mean(x, axis=1).reshape(-1, 1)
+        return self.map(func)
+
+    def demedian(self):
+        ' Subtracts the median across channels for each sample.'
+        func = lambda x: x - np.median(x, axis=1).reshape(-1, 1)
+        return self.map(func)
+
 
 def decimate(stream, factor):
     " Downsample signals by factor. Remember to filter first!"

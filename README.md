@@ -82,9 +82,18 @@ Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
 
-For processing continuously sampled data, try the [datutils](https://github.com/kylerbrown/datutils) project, which attempts to adhere to the Bark/ARF standard.
+For processing continuously sampled data, try the included python moduled `bark.stream` or the 
+[datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
+for common datapipelines and adheres to the Bark/ARF standard.
 
 There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
+
+# Expressive Python interface
+
+The `Stream` object in the `bark.stream` module exposes a powerful data pipeline design system.
+Example usage:
+![Example usage](bark-stream-example.png)
+
 
 ## Other common tasks
 
