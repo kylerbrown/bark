@@ -18,7 +18,10 @@ def load(filename, dataset=0):
     data = {}
     recording = f["recordings"][str(dataset)]
     data["info"] = dict(recording.attrs)
-    data["app_attrs"] = dict(recording["application_data"].attrs)
+    try:
+        data["app_attrs"] = dict(recording["application_data"].attrs)
+    except Exception:
+        pass
     data["data"] = recording["data"]
     return data
 
