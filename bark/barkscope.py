@@ -82,7 +82,10 @@ def main():
         # save to file
         xml_tree.write(fname, xml_declaration=True, short_empty_elements=False)
     # open neuroscope
-    subprocess.run(['neuroscope', args.dat])
+    try:
+        subprocess.run(['neuroscope', args.dat])
+    except AttributeError:
+        subprocess.call(['neuroscope', args.dat])
 
 if __name__ == "__main__":
     main()
