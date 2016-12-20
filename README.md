@@ -81,6 +81,7 @@ Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
+- `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
 
 For processing continuously sampled data, try the included python moduled `bark.stream` or the 
 [datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
