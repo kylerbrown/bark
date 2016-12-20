@@ -7,6 +7,8 @@ directories, plain text files and simple binary arrays, Bark data can leverage a
 Bark is also the fibrous outer layer of [ARF](https://github.com/melizalab/arf), wrapped around a few standard
 file types.
 
+Finally **BARK** is also an acronym for **B**ark is **A**rf **R**einterpreted by **K**yler.
+
 ## Why use Bark instead of ARF?
 
 Both systems have their advantages. Because ARF datasets are encapsulated 
