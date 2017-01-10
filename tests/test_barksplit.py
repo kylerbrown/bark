@@ -7,6 +7,11 @@ import time
 import numpy as np
 
 def test_time_to_index():
+    try:
+        basestring
+    except NameError:
+        basestring = str
+        # python 2/3 compatibility
     series = pd.Series({'start': 1.5, 'stop': 2.7, 'name': 'a'})
     attrs = {'sampling_rate': 13}
     output = bs.time_to_index(series, attrs)
@@ -46,6 +51,11 @@ def test_points_to_span():
     common(points, attrs)
 
 def test_label_to_splits():
+    try:
+        xrange
+    except NameError:
+        xrange = range
+        # python 2/3 compatibility
     def common(output):
         assert isinstance(output, pd.DataFrame)
         assert 'start' in output
@@ -94,6 +104,11 @@ def test_label_to_splits():
     assert output['name'][1] == event.data['name'][2]
 
 def test_gen_split_files(tmpdir):
+    try:
+        xrange
+    except NameError:
+        xrange = range
+        # python 2/3 compatibility
     entry_path = tmpdir
     spath = os.path.join(tmpdir.strpath, 'data.dat')
     sdata = np.array(random.sample(xrange(100), 93)).reshape(-1, 3)
