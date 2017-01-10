@@ -153,9 +153,9 @@ def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
     return new_ds_list
 
 def parse_args(raw_args):
-    desc = ('For all entries in a bark tree, splits the specified sampled-' +
-            'data record according to the split times in the specified ' +
-            'label file.')
+    desc = ('Splits a sampled-data record according to the split times in a ' +
+            'label file. Works on both single entries and recursively over ' +
+            'an entire BARK root.')
     epilog = 'Exactly one of --point and --interval is required.'
     parser = argparse.ArgumentParser(description=desc, epilog=epilog)
     parser.add_argument('-v', '--verbose', help='increase verbosity',
@@ -173,19 +173,28 @@ def parse_args(raw_args):
                         '--name',
                         help='label to split on (default: split on all)',
                         default='')
-    parser.add_argument('bark_root', help='bark root directory')
+    parser.add_argument('path', help='may be Entry or Root')
     parser.add_argument('sampled_data', help='sampled data file')
     parser.add_argument('label_file', help='label file containing splits')
     args = parser.parse_args(raw_args)
     return args
 
-def split_dataset(bark_root,
+def split_dataset(path,
                   sampled_data,
                   label_file,
                   split_on,
                   point_mode,
                   verbose):
-    root = bark.read_root(bark_root)
+    # if path is not an Entry (i.e., if it is a Root), it will lack a 
+    # timestamp or uuid, and read_entry will throw a KeyError
+    try:
+        entry = bark.read_entry(path)
+    except KeyError:
+        entry = None
+    if entry:
+        root = bark.Root('', {entry.path: entry}, {})
+    else:
+        root = bark.read_root(path)
     for ename,entry in root.entries.iteritems():
         if sampled_data not in entry.datasets.iterkeys():
             if verbose:
@@ -207,7 +216,7 @@ def split_dataset(bark_root,
 
 def _main():
     args = parse_args(sys.argv[1:])
-    split_dataset(args.bark_root,
+    split_dataset(args.path,
                   args.sampled_data,
                   args.label_file,
                   args.name,
