@@ -9,6 +9,7 @@ setup(name='bark',
       license='GPL',
       #packages=find_packages('bark', 'bark.io'),
       packages=['bark',
+          'bark.tools',
           'bark.io',
           'bark.io.rhd',
           'bark.io.openephys',
@@ -27,6 +28,7 @@ setup(name='bark',
               'csv-from-plexon-csv=bark.io.plexon:_plexon_csv_to_bark_csv',
               'bark-convert-rhd=bark.io.rhd.rhd2bark:bark_rhd_to_entry',
               'bark-convert-openephys=bark.io.openephys.kwik2dat:kwd_to_entry',
+              'bark-split=bark.tools.barksplit:_main',
               ]
           }
       )
