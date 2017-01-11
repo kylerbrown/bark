@@ -63,6 +63,7 @@ def test_label_to_splits():
         assert 'name' in output
 
     path = 'not/a/real/path'
+    random.seed(42)
     sdata = np.array(random.sample(xrange(100), 93)).reshape(-1, 3)
     sattrs = {'sampling_rate': 13, 'n_samples': 31, 'n_channels': 3}
     samp = bark.SampledData(sdata, path, sattrs)
@@ -111,6 +112,7 @@ def test_gen_split_files(tmpdir):
         # python 2/3 compatibility
     entry_path = tmpdir
     spath = os.path.join(tmpdir.strpath, 'data.dat')
+    random.seed(42)
     sdata = np.array(random.sample(xrange(100), 93)).reshape(-1, 3)
     sattrs = {'sampling_rate': 13, 'n_samples': 31, 'n_channels': 3}
     samp = bark.SampledData(sdata, spath, sattrs)
