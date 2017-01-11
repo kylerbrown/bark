@@ -84,6 +84,7 @@ Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
 - `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
+- `bark-split` -- splits a dataset according to the split times in a label file, either in a single entry or in an entire bark tree
 
 For processing continuously sampled data, try the included python moduled `bark.stream` or the 
 [datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
