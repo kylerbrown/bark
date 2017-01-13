@@ -34,10 +34,12 @@ class Root():
         else:
             self.entries = entries
             self.path = path
+            self.name = os.path.split(path)[-1]
             self.attrs = attrs
 
     def read(self, name):
         self.path = os.path.abspath(name)
+        self.name = os.path.split(path)[-1]
         self.attrs = read_metadata(os.path.join(path, "meta"))
         all_sub = [os.path.join(name, x) for x in listdir(path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
@@ -57,6 +59,7 @@ class Entry():
     def __init__(self, datasets, path, attrs):
         self.datasets = datasets
         self.path = path
+        self.name = os.path.split(path)[-1]
         self.attrs = attrs
         self.timestamp = timestamp_to_datetime(attrs["timestamp"])
         self.uuid = attrs["uuid"]
@@ -79,12 +82,17 @@ class Data():
         self.data = data
         self.path = path
         self.attrs = attrs
+        self.name = os.path.split(path)[-1]
 
     def __getitem__(self, item):
         return self.data[item]
 
 
 class SampledData(Data):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sampling_rate = self.attrs['sampling_rate']
+
     def toStream(self):
         return stream.read(self.path)
 
@@ -116,6 +124,8 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
                    sampling_rate=sampling_rate,
                    units=units,
                    **params)
+    params['sampling_rate'] = sampling_rate
+    params['units'] = units
     return SampledData(mdata, datfile, params)
 
 
