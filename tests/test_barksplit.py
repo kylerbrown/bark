@@ -121,7 +121,7 @@ def test_gen_split_files(tmpdir):
                               'name': ['a', 'b', 'a', 'c']})
     event = bark.EventData(edata, epath, {})
     entry = bark.Entry([samp, event],
-                       entry_path,
+                       tmpdir.strpath,
                        {'uuid': 1, 'timestamp': [time.time(), 0]})
     split_on = ''
     pmode = True
