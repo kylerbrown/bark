@@ -44,7 +44,7 @@ Bark trees are made from the following elements:
 - **SampledData** stored as raw binary arrays, metadata is stored in another
   file with ".meta" appended to the datasets filename.
 - **EventData** stored in CSV files, again, metadata is stored in a ".meta" file.
-- Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated YAML files.
+- Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated UTF-8-encoded YAML files.
 
 Roots must only have Entries and Entries must only have Datasets.
 However, Datasets can exist outside of Entries, and Entries can exist without Roots.
