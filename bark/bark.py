@@ -27,7 +27,7 @@ Library versions:
 """ % (version)
 
 
-# heirarchical classes
+# hierarchical classes
 class Root():
     def __init__(self, path, entries=None, attrs=None):
         if entries is None or attrs is None:
@@ -44,7 +44,7 @@ class Root():
         self.attrs = read_metadata(os.path.join(path, "meta"))
         all_sub = [os.path.join(name, x) for x in listdir(path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
-        sefl.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
+        self.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
 
     def __getitem__(self, item):
         return self.entries[item]
@@ -133,10 +133,10 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
 def load_dat(datfile, mode="r"):
     """ loads raw binary file
 
-    mode may be "r" or "r+", use "r+" for modifiying the data (not
+    mode may be "r" or "r+"; use "r+" for modifiying the data (not
     recommended).
 
-    does NOT return a SampledData object, use read_sampled instead.
+    does NOT return a SampledData object - use read_sampled instead.
     """
     params = read_metadata(datfile)
     data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
@@ -146,7 +146,7 @@ def load_dat(datfile, mode="r"):
 def read_sampled(datfile, mode="r"):
     """ loads raw binary file
 
-    mode may be "r" or "r+", use "r+" for modifiying the data (not
+    mode may be "r" or "r+"; use "r+" for modifiying the data (not
     recommended).
     """
     path = os.path.abspath(datfile)
@@ -172,7 +172,7 @@ def read_events(eventsfile):
 
 
 def read_dataset(fname):
-    "determines is file is sampled or events and reads accordingly"
+    "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
     if "units" in params and params["units"] in ("s", "seconds"):
         return read_events(fname)
@@ -219,7 +219,7 @@ def write_metadata(filename, **params):
 
 
 def create_root(name, parents=False, **attrs):
-    """creates a new BARK top level directory"""
+    """creates a new BARK top-level directory"""
     path = os.path.abspath(name)
     os.makedirs(name, exist_ok=parents)
     write_metadata(os.path.join(path, "meta"), **attrs)
@@ -314,13 +314,13 @@ def convert_timestamp(obj):
 
 
 def timestamp_to_datetime(timestamp):
-    """Converts an BARK timestamp a datetime.datetime object (naive local time)"""
+    """Converts a BARK timestamp to a datetime.datetime object (naive local time)"""
     obj = datetime.fromtimestamp(timestamp[0])
     return obj + timedelta(microseconds=int(timestamp[1]))
 
 
 def timestamp_to_float(timestamp):
-    """Converts an BARK timestamp to a floating point (sec since epoch) """
+    """Converts a BARK timestamp to a floating point value (sec since epoch) """
     return np.dot(timestamp, (1.0, 1e-6))
 
 

@@ -31,19 +31,21 @@ from the specification, but gives Bark a few advantages:
 [datutils](https://github.com/kylerbrown/datutils), [sox](http://sox.sourceforge.net/sox.html).
   + CSV tools: R, Pandas (Python), Excel, csvkit and Unix tools like sed and
       awk.
-+ Include non-standard data such as image or video in Bark entries.
++ Include non-standard data such as images or video in Bark entries.
 
 ## The elements of Bark
 Bark trees are made from the following elements:
 
-- A **Root** directory grouping a set of entries together, this is a standard
-  filesystem directory containing one file named "meta" which contains top-level
-  metadata, and any number of Entry subdirectories.
-- **Entries** (often trials) are directories containing datasets that share a common time base.
-  These directories also contain a "meta" file and any number of Datasets.
-- **SampledData** stored as raw binary arrays, metadata is stored in another
-  file with ".meta" appended to the datasets filename.
-- **EventData** stored in CSV files, again, metadata is stored in a ".meta" file.
+- A **Root** directory grouping a set of Entries together. This is a standard
+  filesystem directory containing one file named "meta", which contains top-
+  level metadata, and any number of Entry subdirectories.
+- **Entries** (often trials) are directories containing Datasets that share a
+  common time base. These directories also contain a "meta" file and any number
+  of Datasets.
+- **SampledData** stored as raw binary arrays. Metadata is stored in another
+  file with ".meta" appended to the dataset's filename.
+- **EventData** stored in CSV files. As above, metadata is stored in a ".meta"
+  file.
 - Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated UTF-8-encoded YAML files.
 
 Roots must only have Entries and Entries must only have Datasets.
@@ -53,11 +55,11 @@ This repository contains:
 
 -   The specification for bark (in [specification.md](specification.md))
 -   A python interface for reading and writing Bark files
--   Scripts for Bark tasks
+-   Tools to accomplish common Bark tasks
 
 ## Installation
 
-The python interface is tested against Python 3.5. Installation with [Conda](http://conda.pydata.org/miniconda.html) recommended.
+The python interface is tested against Python 3.5. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
 
     git clone https://github.com/kylerbrown/bark
     cd bark
@@ -71,7 +73,7 @@ The python interface is tested against Python 3.5. Installation with [Conda](htt
 
 # Shell Commands
 
-Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
+Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 
 - `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
@@ -88,7 +90,7 @@ Every command has help accessible with the flag `-h`, e.g. `bark-root -h`.
 
 For processing continuously sampled data, try the included python moduled `bark.stream` or the 
 [datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
-for common datapipelines and adheres to the Bark/ARF standard.
+for common data pipelines and adhere to the Bark/ARF standard.
 
 There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
 
@@ -121,11 +123,11 @@ Example usage:
 
 ## Other common tasks
 
-- recursively search for datafile by metadata: `grep -R --include "*.meta" "source: hvc" PATH/TO/DATA`
-- recursively search for an entry or root by metadata: `grep -R --include "meta" "experimenter: kjbrown" PATH/TO/DATA`
-- add new metadata to file `echo "condition: control" >> FILE.meta`
+- Recursively search for datafile by metadata: `grep -R --include "*.meta" "source: hvc" PATH/TO/DATA`
+- Recursively search for an entry or root by metadata: `grep -R --include "meta" "experimenter: kjbrown" PATH/TO/DATA`
+- Add new metadata to file: `echo "condition: control" >> FILE.meta`
 
-# related projects
+# Related projects
 
 -   NEO <https://github.com/NeuralEnsemble/python-neo>
 -   NWB <http://www.nwb.org/>
