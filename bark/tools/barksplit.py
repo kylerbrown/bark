@@ -161,7 +161,7 @@ def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
         new_ds_list.append(new_ds)
     return new_ds_list
 
-def parse_args(raw_args):
+def _parse_args(raw_args):
     desc = ('Splits a sampled-data record according to the split times in a ' +
             'label file. Works on both single entries and recursively over ' +
             'an entire BARK root.')
@@ -224,7 +224,7 @@ def split_dataset(path,
                                           point_mode)
 
 def _main():
-    args = parse_args(sys.argv[1:])
+    args = _parse_args(sys.argv[1:])
     split_dataset(args.path,
                   args.sampled_data,
                   args.label_file,
