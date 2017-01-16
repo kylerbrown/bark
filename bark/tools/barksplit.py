@@ -44,8 +44,16 @@ def label_to_splits(sampled_ds, event_ds, split_on, point_mode):
             splits = splits[splits['name'] == split_on]
         except KeyError:
             raise KeyError('label file does not contain label column')
-    map_fn = functools.partial(time_to_index, ds_attrs=sampled_ds.attrs)
-    splits = splits.apply(map_fn, axis='columns')
+    if event_ds.attrs['units'] == 's':
+        map_fn = functools.partial(time_to_index, ds_attrs=sampled_ds.attrs)
+        splits = splits.apply(map_fn, axis='columns')
+    elif event_ds.attrs['units'] == 'samples':
+        # no modification required
+        pass
+    else:
+        msg = '{} units not recognized: {}'.format(event_ds.path,
+                                                   event_ds.attrs['units'])
+        raise KeyError(msg)
     if point_mode:
         splits = points_to_span(list(splits.loc[:,'start']), sampled_ds.attrs)
     return splits.sort_values(by='start').reset_index(drop=True)
