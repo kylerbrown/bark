@@ -1,12 +1,12 @@
 # Bark
 Bark is a minimal implementation of [ARF](https://github.com/melizalab/arf).
 
-Much of this specification is copied directly from the ARF spec, and the ARF spec is sole source of truth if there are any ambiguities.
+Much of this specification is copied directly from the ARF spec, and the ARF spec is the sole source of truth if there are any ambiguities.
 
 This implementation leverages the hierarchical nature of the file system and three common data formats:
 
-+ comma separated vectors (CSV)
-+ YAML 
++ Comma separated values (CSV) text files
++ YAML
 + Raw binary arrays
 
 Conversion between ARF and Bark files should be easy as 
@@ -14,19 +14,19 @@ only the implementation is different.
 
 An example BARK tree:
 
-    experiment.bark/        <- root directory, optional extension
-        meta                <- top level YAML metadata
-        day1/               <- first entry, all datasets within have the same timebase
-            meta            <- first entry metadata
-            emg.dat         <- an EMG dataset
-            emg.dat.meta    <- the metadata (attributes of emg.dat in YAML format)
-            mic.dat         <- a second dataset
+    experiment.bark/            <- root directory, optional extension
+        meta                    <- top level YAML metadata
+        day1/                   <- first entry; all datasets within have the same timebase
+            meta                <- first entry metadata
+            emg.dat             <- an EMG dataset
+            emg.dat.meta        <- the metadata (attributes of emg.dat in YAML format)
+            mic.dat             <- a second dataset
             mic.dat.meta
-            song.label      <- a third dataset, in CSV format
+            song.label          <- a third dataset, in CSV format
             song.label.meta     <- meta data for the third dataset
         
-        day2_session2/      <- second entry
-            emg.dat         <- a dataset in the second entry
+        day2_session2/          <- second entry
+            emg.dat             <- a dataset in the second entry
             emg.dat.meta    
         ... etc ...
 
@@ -82,8 +82,8 @@ A Bark tree can consist of four elements:
 
 + Standard filesystem directories
 + Raw binary files containing numerical data
-+ comma separated vector (csv) plain text files with a header line
-+ strictly named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, containing metadata, with a specific structure and naming format.
++ Comma separated value (CSV) plain text files with a header line (see [RFC 4180](https://tools.ietf.org/html/rfc4180))
++ Strictly named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, containing metadata, with a specific structure and naming format
 
 Standard filesystem directories support hierarchical organization of
 datasets and plaintext YAML files provide metadata attributes. BARK specifies the layout used to store data
@@ -112,7 +112,7 @@ as YAML key-value pairs in a file named `meta`. The following attributes are req
     have at least 64-bit integer precision.
 -   **uuid:** A universally unique ID for the entry (see [RFC 4122](http://tools.ietf.org/html/rfc4122.html)). Must be stored
     as a 128-bit integer or a 36-byte `H5T_STRING` with `CTYPE` of
-    `H5T_C_S1`. The latter is preferred as 128-bit integers are not
+    `H5T_C_S1`. The latter is preferred, as 128-bit integers are not
     supported on many platforms.
 
 In addition, the following optional attributes are defined. They do not need to
@@ -160,29 +160,29 @@ units of samples.
 
 #### Sampled data
 
-Sampled data are stored in raw binary files as outlined 
-[here](http://neurosuite.sourceforge.net/formats.html).
+Sampled data are stored in raw binary files as outlined in
+[the Neurosuite documentation](http://neurosuite.sourceforge.net/formats.html).
 
 For multi-channel files, samples are interleaved. A raw binary file with N channels and M samples looks like this:
 
     c1s1, c2s1, c3s1, ..., cNs1, c1s2, c2s2, c3s2, ..., c1sM, c2sM, c3sM,...,cNsM 
 
 
-There is no required extension, however `.dat` or `.pcm` are common choices.
+There is no required extension, but `.dat` or `.pcm` are common choices.
 
 Sampled data shall be stored as an N-dimensional array of scalar values
 corresponding to the measurement at each sampling interval. The first dimension
 of the array must correspond to time. The second dimension corresponds to channels.
 The `sampling_rate` attribute is required.
 
-The disadvantage of simple raw binary files is that no metadata are stored within the file itself. At a minimum three values a required to read a raw binary file:
+The disadvantage of simple raw binary files is that no metadata are stored within the file itself. At a minimum three values are required to read a raw binary file:
 
 - sampling rate, such as 30000
-- numeric type, such as 16 bit integer or 32 bit float
+- numeric type, such as 16-bit integer or 32-bit float
 - number of channels, such as 32
 
-For all sampled data files, the endianness is *MUST* be little-endian. 
-This is the default for Intel x86 and the vast majority of modern systems.
+For all sampled data files, the endianness *MUST* be little-endian. 
+This is the default for Intel x86 architectures, and thus the vast majority of modern systems.
 
 An example .meta file:
 
@@ -194,7 +194,9 @@ An example .meta file:
     units: V
     unit_scale: 0.025
 
-The first three attributes are required for sampled data. Any others are optional.
+The first three attributes are required for sampled data. Any others are optional. The `units`
+attribute must be an SI unit, or a null value if the units are unknown. 
+The null value in YAML is `null`, in Python, use `None`.
 
 #### Event data
 
@@ -202,39 +204,41 @@ Event data are stored in CSV files. Simple event data should be
 stored in a single column CSV, with each element in the array indicating the time of the
 event **relative to the start of the dataset**. The first line of the file must contain `start,`,
 indicating that the column contains the times of the event data. Event datasets can be
-distinguished from sampled datasets because the file is a plaintext CSV and `units` attribute must be
-"samples" or "s".
+distinguished from sampled datasets because the file is a plaintext CSV, and the `units` 
+attribute a unit of time: either `s` or `samples`. Conversely, sampled data should not have units
+of time, but may have other physical units, such as`V` or `A`.
+
 
 Complex event data must be stored as arrays with multiple columns. Only one field is required, `start`, which indicates the time of the event and can be any numerical type.
 
-A special case of event data are intervals, which are defined by a start and
-stop time. In previous versions of the specification, intervals were considered
+Intervals are a special class of event data, and are defined by a `start` and a
+`stop` time. In earlier versions of the specification, intervals were considered
 a separate data type, with two additional required fields, `name` (a string) and
-`stop` (a time with the same units as start). 
+`stop` (a time with the same units as `start`). 
 
 #### Dataset attributes
 
 All datasets must have the following attributes.
 
 - **filetype:** a string specifying the format of the data. The currently
-  accepted formats are `csv` and `rawbinary`, though more may be implemented
+  accepted formats are `csv` and `rawbinary`, though others may be added
   in the future.
 - **units:** A string giving the units of the channel data, which should be in
-  SI notation. May be an empty string for sampled data if units are not known.
-  Event data must have units of "samples" (for a discrete timebase) or "s" (for
-  a continuous timebase); sampled data must not use these units. For complex
-  event data, this attribute must be an array, with each element of the array
-  indicating the units of the associated field in the data.
+  SI notation. May be an empty string for sampled data if the units are not
+  known. Event data must have units of "samples" (for a discrete timebase) or
+  "s" (for a continuous timebase); sampled data must not use these units. For
+  complex event data, this attribute must be an array, with each element of the
+  array indicating the units of the associated field in the data.
 
 The following attribute is only required for datasets with a discrete timebase:
 
 - **sampling\_rate:** A nonzero number indicating the sampling rate of the data,
-  in samples per second (Hz). Required for all datasets with a sampled timebase.
+  in samples per second (Hz).
   May be any numerical datatype.
 
 The following attributes are optional:
 
-- **unit\_scale** A multiplier to scale the raw data to match the **units**. Useful
+- **unit\_scale**: A multiplier to scale the raw data to match the **units**. Useful
   when raw integer data must be converted to a floating point number to match the correct units.
   If **units** is an array, **unit\_scale** must be an array of the same shape.
 - **offset:** Indicates the start time of the dataset relative to the start of

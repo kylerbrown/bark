@@ -69,7 +69,8 @@ def test_label_to_splits():
     samp = bark.SampledData(sdata, path, sattrs)
     edata = pd.DataFrame({'start': [0.54, 1.46, 4.08, 6.85],
                               'name': ['a', 'b', 'a', 'c']})
-    event = bark.EventData(edata, path, {})
+    eattrs = {'units': 's'}
+    event = bark.EventData(edata, path, eattrs)
     # point mode, split_on empty
     split_on = ''
     output = bs.label_to_splits(samp, event, split_on, point_mode=True)
@@ -82,7 +83,7 @@ def test_label_to_splits():
     assert output['name'][0] == ''
     # interval mode, split_on empty
     edata['stop'] = [.77, 2.31, 6.15, 6.92]
-    event = bark.EventData(edata, path, {})
+    event = bark.EventData(edata, path, eattrs)
     output = bs.label_to_splits(samp, event, split_on, point_mode=False)
     common(output)
     assert len(output['start']) == 4
@@ -119,7 +120,8 @@ def test_gen_split_files(tmpdir):
     epath = os.path.join(tmpdir.strpath, 'times.csv')
     edata = pd.DataFrame({'start': [0.18, 0.49, 1.36, 2.28],
                               'name': ['a', 'b', 'a', 'c']})
-    event = bark.EventData(edata, epath, {})
+    eattrs = {'units': 's'}
+    event = bark.EventData(edata, epath, eattrs)
     entry = bark.Entry([samp, event],
                        tmpdir.strpath,
                        {'uuid': 1, 'timestamp': [time.time(), 0]})
