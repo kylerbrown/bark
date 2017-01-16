@@ -205,7 +205,7 @@ stored in a single column CSV, with each element in the array indicating the tim
 event **relative to the start of the dataset**. The first line of the file must contain `start,`,
 indicating that the column contains the times of the event data. Event datasets can be
 distinguished from sampled datasets because the file is a plaintext CSV, and the `units` 
-attribute a unit of time: either `s` or `samples`. Conversly, sampled data should not have units
+attribute a unit of time: either `s` or `samples`. Conversely, sampled data should not have units
 of time, but may have other physical units, such as`V` or `A`.
 
 
