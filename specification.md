@@ -194,7 +194,9 @@ An example .meta file:
     units: V
     unit_scale: 0.025
 
-The first three attributes are required for sampled data. Any others are optional.
+The first three attributes are required for sampled data. Any others are optional. The `units`
+attribute must be an SI unit, or a null value if the units are unknown. 
+The null value in YAML is `null`, in Python, use `None`.
 
 #### Event data
 
@@ -202,7 +204,10 @@ Event data are stored in CSV files. Simple event data should be
 stored in a single column CSV, with each element in the array indicating the time of the
 event **relative to the start of the dataset**. The first line of the file must contain `start,`,
 indicating that the column contains the times of the event data. Event datasets can be
-distinguished from sampled datasets because the file is a plaintext CSV.
+distinguished from sampled datasets because the file is a plaintext CSV, and the `units` 
+attribute a unit of time: either `s` or `samples`. Conversely, sampled data should not have units
+of time, but may have other physical units, such as`V` or `A`.
+
 
 Complex event data must be stored as arrays with multiple columns. Only one field is required, `start`, which indicates the time of the event and can be any numerical type.
 
