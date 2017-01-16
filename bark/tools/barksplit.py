@@ -43,7 +43,7 @@ def label_to_splits(sampled_ds, event_ds, split_on, point_mode):
         try:
             splits = splits[splits['name'] == split_on]
         except KeyError:
-            raise KeyError('label file does not contain label column')
+            raise KeyError('label file does not contain name column')
     if event_ds.attrs['units'] == 's':
         map_fn = functools.partial(time_to_index, ds_attrs=sampled_ds.attrs)
         splits = splits.apply(map_fn, axis='columns')
@@ -60,12 +60,13 @@ def label_to_splits(sampled_ds, event_ds, split_on, point_mode):
 
 def time_to_index(series, ds_attrs):
     """Transforms an event's limits from seconds to indices into an array."""
-    sta = int(round(series['start'] * ds_attrs['sampling_rate']))
+    ns = pandas.Series()
+    ns['start'] = int(round(series['start'] * ds_attrs['sampling_rate']))
     if 'stop' in series:
-        sto = int(round(series['stop'] * ds_attrs['sampling_rate']))
-    else:
-        sto = float('nan')
-    return pandas.Series({'start': sta, 'stop': sto, 'name': series['name']})
+        ns['stop'] = int(round(series['stop'] * ds_attrs['sampling_rate']))
+    if 'name' in series:
+        ns['name'] = series['name']
+    return ns
 
 def points_to_span(points, ds_attrs):
     """Produces a spanning split of an interval from a list of points."""
