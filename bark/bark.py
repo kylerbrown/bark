@@ -318,17 +318,12 @@ def _enforce_datatype(params):
     if 'datatype' in params:
         if DataTypes._fromcode(params['datatype']) is None:
             raise BarkMetaError('bad datatype code: {}'.format(code))
+    elif 'units' in params and params['units'] in Units.TIME_UNITS:
+        params['datatype_name'] = 'EVENT'
+        params['datatype'] = DataTypes._fromstring('EVENT')
     else:
-        try:
-            if params['units'] in Units.TIME_UNITS:
-                params['datatype_name'] = 'EVENT'
-                params['datatype'] = DataTypes._fromstring('EVENT')
-            else:
-                params['datatype_name'] = 'UNDEFINED'
-                params['datatype'] = DataTypes._fromstring('UNDEFINED')
-        except KeyError:
-            msg = "dataset has neither 'units' nor 'datatype' metadata"
-            raise BarkMetaError(msg)
+        params['datatype_name'] = 'UNDEFINED'
+        params['datatype'] = DataTypes._fromstring('UNDEFINED')
     return
 
 def create_root(name, parents=False, **attrs):
