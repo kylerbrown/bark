@@ -187,6 +187,8 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
     params["filetype"] = "rawbinary"
+    _enforce_units(params)
+    _enforce_datatype(params)
     write_metadata(datfile + ".meta",
                    sampling_rate=sampling_rate,
                    units=units,
@@ -226,6 +228,8 @@ def write_events(eventsfile, data, **params):
     assert "units" in params and params["units"] in Units.TIME_UNITS
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
+    _enforce_units(params)
+    _enforce_datatype(params)
     write_metadata(eventsfile + ".meta", **params)
     return read_events(eventsfile)
 
@@ -241,15 +245,19 @@ def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
     if "units" in params and params["units"] in Units.TIME_UNITS:
-        return read_events(fname)
+        dset = read_events(fname)
     else:
-        return read_sampled(fname)
+        dset = read_sampled(fname)
+    _enforce_units(params)
+    _enforce_datatype(params)
+    return dset
 
 
 def read_metadata(metafile):
     try:
         with codecs.open(metafile, 'r', encoding='utf-8') as fp:
             params = yaml.safe_load(fp)
+        return params
     except IOError as err:
         fname = os.path.splitext(metafile)[0]
         if fname == "meta":
@@ -271,17 +279,11 @@ to create a .meta file interactively, type:
 $ dat-meta {dat}
         """.format(dat=metafile))
         sys.exit(0)
-    
-    _enforce_units(params)
-    _enforce_datatype(params)
-    return params
 
 def write_metadata(filename, **params):
     for k, v in params.items():
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
-    _enforce_units(params)
-    _enforce_datatype(params)
     with codecs.open(filename, 'w', encoding='utf-8') as yaml_file:
         header = """# metadata using YAML syntax\n---\n"""
         yaml_file.write(header)
