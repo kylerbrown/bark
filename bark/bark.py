@@ -29,6 +29,17 @@ Library versions:
 class BarkMetaError(Exception):
     """Raised in case of inconsistency between metadata and Bark objects."""
 
+class Units:
+    """
+    Units which Bark recognizes and treats as special.
+    
+    Note that Bark will accept any value for units, including None.
+    
+    For more on how Bark treats these units, refer to the spec.
+    """
+    
+    TIME_UNITS = ('s', 'samples')
+
 class DataTypes:
     """
     Available ARF data types, by name and integer code.
@@ -212,7 +223,7 @@ def read_sampled(datfile, mode="r"):
 
 
 def write_events(eventsfile, data, **params):
-    assert "units" in params and params["units"] in ["s" or "samples"]
+    assert "units" in params and params["units"] in Units.TIME_UNITS
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
     write_metadata(eventsfile + ".meta", **params)
@@ -229,7 +240,7 @@ def read_events(eventsfile):
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
-    if "units" in params and params["units"] in ("s", "samples"):
+    if "units" in params and params["units"] in Units.TIME_UNITS:
         return read_events(fname)
     else:
         return read_sampled(fname)
@@ -307,7 +318,7 @@ def _enforce_datatype(params):
             raise BarkMetaError('bad datatype code: {}'.format(code))
     else:
         try:
-            if params['units'] in ('s', 'samples'):
+            if params['units'] in Units.TIME_UNITS:
                 params['datatype_name'] = 'EVENT'
                 params['datatype'] = DataTypes._fromname('EVENT')
             else:
@@ -444,7 +455,7 @@ def is_sampled(dset):
     if 'datatype' in dset.attrs:
         return DataTypes.is_timeseries(dset.attrs['datatype'])
     elif 'units' in dset.attrs:
-        return (dset.attrs['units'] not in ('s', 'samples'))
+        return (dset.attrs['units'] not in Units.TIME_UNITS)
     else:
         # this only occurs if the dset has been created but not written yet
         msg = "dataset has neither 'units' nor 'datatype' metadata"
