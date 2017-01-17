@@ -26,6 +26,9 @@ Library versions:
  bark: %s
 """ % (version)
 
+class BarkMetaError(Exception):
+    """Raised in case of inconsistency between metadata and Bark objects."""
+
 # hierarchical classes
 class Root():
     def __init__(self, path, entries=None, attrs=None):
