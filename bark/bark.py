@@ -262,6 +262,7 @@ $ dat-meta {dat}
         sys.exit(0)
     
     _enforce_units(params)
+    _enforce_datatypes(params)
     return params
 
 def write_metadata(filename, **params):
@@ -269,6 +270,7 @@ def write_metadata(filename, **params):
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
     _enforce_units(params)
+    _enforce_datatypes(params)
     with codecs.open(filename, 'w', encoding='utf-8') as yaml_file:
         header = """# metadata using YAML syntax\n---\n"""
         yaml_file.write(header)
@@ -286,6 +288,34 @@ def _enforce_units(params):
             params['units'] = params['units'].lower()
             if params['units'] == 'seconds':
                 params['units'] = 's'
+    return
+
+def _enforce_datatype(params):
+    """
+    Checks params['datatype'] against canonical list.
+
+    Throws BarkMetaError if params['datatype'] is not on the list.
+
+    If there is no 'datatype' attribute, infers time series / point process
+    identity from 'units' and assigns either 0/UNDEFINED or 1000/EVENT,
+    respectively.
+
+    Modifies the given dict in place.
+    """
+    if 'datatype' in params:
+        if DataTypes._fromcode(params['datatype']) is None:
+            raise BarkMetaError('bad datatype code: {}'.format(code))
+    else:
+        try:
+            if params['units'] in ('s', 'samples'):
+                params['datatype_name'] = 'EVENT'
+                params['datatype'] = DataTypes._fromname('EVENT')
+            else:
+                params['datatype_name'] = 'UNDEFINED'
+                params['datatype'] = DataTypes._fromname('UNDEFINED')
+        except KeyError:
+            msg = "dataset has neither 'units' nor 'datatype' metadata"
+            raise BarkMetaError(msg)
     return
 
 def create_root(name, parents=False, **attrs):
