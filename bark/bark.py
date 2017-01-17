@@ -12,6 +12,7 @@ import yaml
 import numpy as np
 from bark import stream
 import codecs
+import collections
 
 BUFFER_SIZE = 10000
 
@@ -26,16 +27,8 @@ Library versions:
  bark: %s
 """ % (version)
 
-class Units:
-    """
-    Units which Bark recognizes and treats as special.
-    
-    Note that Bark will accept any value for units, including None.
-    
-    For more on how Bark treats these units, refer to the spec.
-    """
-    
-    TIME_UNITS = ('s', 'samples')
+_Units = collections.namedtuple('Units', ['TIME_UNITS'])
+UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
 class DataTypes:
     """
@@ -222,7 +215,7 @@ def read_sampled(datfile, mode="r"):
 
 
 def write_events(eventsfile, data, **params):
-    assert "units" in params and params["units"] in Units.TIME_UNITS
+    assert "units" in params and params["units"] in UNITS.TIME_UNITS
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
     _enforce_units(params)
@@ -241,7 +234,7 @@ def read_events(eventsfile):
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
-    if "units" in params and params["units"] in Units.TIME_UNITS:
+    if "units" in params and params["units"] in UNITS.TIME_UNITS:
         dset = read_events(fname)
     else:
         dset = read_sampled(fname)
@@ -315,7 +308,7 @@ def _enforce_datatype(params):
     if 'datatype' in params:
         if DataTypes._fromcode(params['datatype']) is None:
             raise KeyError('bad datatype code: {}'.format(code))
-    elif 'units' in params and params['units'] in Units.TIME_UNITS:
+    elif 'units' in params and params['units'] in UNITS.TIME_UNITS:
         params['datatype_name'] = 'EVENT'
         params['datatype'] = DataTypes._fromstring('EVENT')
     else:
@@ -449,7 +442,7 @@ def is_sampled(dset):
     if 'datatype' in dset.attrs:
         return DataTypes.is_timeseries(dset.attrs['datatype'])
     elif 'units' in dset.attrs:
-        return (dset.attrs['units'] not in Units.TIME_UNITS)
+        return (dset.attrs['units'] not in UNITS.TIME_UNITS)
     else:
         # this only occurs if the dset has been created but not written yet
         msg = "dataset has neither 'units' nor 'datatype' metadata"
