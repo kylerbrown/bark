@@ -440,11 +440,17 @@ def get_uuid(obj):
 
 
 def is_sampled(dset):
-    """Returns True if dset is a sampled time series (units are not time)"""
-    return isinstance(dset, np.memmap)
+    """Returns True if dset is a sampled time series."""
+    if 'datatype' in dset.attrs:
+        return DataTypes.is_timeseries(dset.attrs['datatype'])
+    elif 'units' in dset.attrs:
+        return (dset.attrs['units'] not in ('s', 'samples'))
+    else:
+        # this only occurs if the dset has been created but not written yet
+        msg = "dataset has neither 'units' nor 'datatype' metadata"
+        raise BarkMetaError(msg)
 
 
 def is_events(dset):
-    """Returns True if dset is a marked point process (a complex dtype with 'start' field)"""
-    import pandas as pd
-    return isinstance(dset.data, pd.DataFrame) and 'start' in dset.data.columns
+    """Returns True if dset is a point process."""
+    return (not is_sampled(dset))
