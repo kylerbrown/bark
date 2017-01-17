@@ -54,7 +54,7 @@ class DataTypes:
     @classmethod
     def is_timeseries(cls, code):
         """Indicates whether the code corresponds to time series data."""
-        if cls._fromint() is None:
+        if cls._fromcode() is None:
             raise KeyError('bad datatype code: {}'.format(code))
         else:
             if code < cls.EVENT:
