@@ -273,7 +273,7 @@ $ dat-meta {dat}
         sys.exit(0)
     
     _enforce_units(params)
-    _enforce_datatypes(params)
+    _enforce_datatype(params)
     return params
 
 def write_metadata(filename, **params):
@@ -281,7 +281,7 @@ def write_metadata(filename, **params):
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
     _enforce_units(params)
-    _enforce_datatypes(params)
+    _enforce_datatype(params)
     with codecs.open(filename, 'w', encoding='utf-8') as yaml_file:
         header = """# metadata using YAML syntax\n---\n"""
         yaml_file.write(header)
@@ -320,10 +320,10 @@ def _enforce_datatype(params):
         try:
             if params['units'] in Units.TIME_UNITS:
                 params['datatype_name'] = 'EVENT'
-                params['datatype'] = DataTypes._fromname('EVENT')
+                params['datatype'] = DataTypes._fromstring('EVENT')
             else:
                 params['datatype_name'] = 'UNDEFINED'
-                params['datatype'] = DataTypes._fromname('UNDEFINED')
+                params['datatype'] = DataTypes._fromstring('UNDEFINED')
         except KeyError:
             msg = "dataset has neither 'units' nor 'datatype' metadata"
             raise BarkMetaError(msg)
