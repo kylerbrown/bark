@@ -26,9 +26,6 @@ Library versions:
  bark: %s
 """ % (version)
 
-class BarkMetaError(Exception):
-    """Raised in case of inconsistency between metadata and Bark objects."""
-
 class Units:
     """
     Units which Bark recognizes and treats as special.
@@ -65,7 +62,7 @@ class DataTypes:
     def is_timeseries(cls, code):
         """Indicates whether the code corresponds to time series data."""
         if cls._fromint() is None:
-            raise BarkMetaError('bad datatype code: {}'.format(code))
+            raise KeyError('bad datatype code: {}'.format(code))
         else:
             if code < cls.EVENT:
                 return True
@@ -307,7 +304,7 @@ def _enforce_datatype(params):
     """
     Checks params['datatype'] against canonical list.
 
-    Throws BarkMetaError if params['datatype'] is not on the list.
+    Throws KeyError if params['datatype'] is not on the list.
 
     If there is no 'datatype' attribute, infers time series / point process
     identity from 'units' and assigns either 0/UNDEFINED or 1000/EVENT,
@@ -317,7 +314,7 @@ def _enforce_datatype(params):
     """
     if 'datatype' in params:
         if DataTypes._fromcode(params['datatype']) is None:
-            raise BarkMetaError('bad datatype code: {}'.format(code))
+            raise KeyError('bad datatype code: {}'.format(code))
     elif 'units' in params and params['units'] in Units.TIME_UNITS:
         params['datatype_name'] = 'EVENT'
         params['datatype'] = DataTypes._fromstring('EVENT')
@@ -456,7 +453,7 @@ def is_sampled(dset):
     else:
         # this only occurs if the dset has been created but not written yet
         msg = "dataset has neither 'units' nor 'datatype' metadata"
-        raise BarkMetaError(msg)
+        raise KeyError(msg)
 
 
 def is_events(dset):
