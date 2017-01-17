@@ -186,7 +186,6 @@ def read_metadata(metafile):
     try:
         with codecs.open(metafile, 'r', encoding='utf-8') as fp:
             params = yaml.safe_load(fp)
-        return params
     except IOError as err:
         fname = os.path.splitext(metafile)[0]
         if fname == "meta":
@@ -208,16 +207,33 @@ to create a .meta file interactively, type:
 $ dat-meta {dat}
         """.format(dat=metafile))
         sys.exit(0)
+    
+    _enforce_units(params)
+    return params
 
 def write_metadata(filename, **params):
     for k, v in params.items():
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
+    _enforce_units(params)
     with codecs.open(filename, 'w', encoding='utf-8') as yaml_file:
         header = """# metadata using YAML syntax\n---\n"""
         yaml_file.write(header)
         yaml_file.write(yaml.safe_dump(params, default_flow_style=False))
 
+
+def _enforce_units(params):
+    """
+    Enforces strict adherence to the BARK spec for the 'units' attribute.
+
+    Modifies the given dict in place.
+    """
+    if 'units' in params:
+        if params['units'] is not None:
+            params['units'] = params['units'].lower()
+            if params['units'] == 'seconds':
+                params['units'] = 's'
+    return
 
 def create_root(name, parents=False, **attrs):
     """creates a new BARK top-level directory"""
