@@ -27,7 +27,7 @@ Library versions:
  bark: %s
 """ % (version)
 
-_Units = collections.namedtuple('Units', ['TIME_UNITS'])
+_Units = collections.namedtuple('_Units', ['TIME_UNITS'])
 UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
 class DataTypes:
