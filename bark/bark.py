@@ -61,7 +61,7 @@ class DataTypes:
                 return True
             else:
                 return False
-
+    @classmethod
     def is_pointproc(cls, code):
         """Indicates whether the code corresponds to point process data."""
         return (not cls.is_timeseries(code))
