@@ -26,7 +26,6 @@ Library versions:
  bark: %s
 """ % (version)
 
-
 # hierarchical classes
 class Root():
     def __init__(self, path, entries=None, attrs=None):
@@ -174,7 +173,7 @@ def read_events(eventsfile):
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
-    if "units" in params and params["units"] in ("s", "seconds"):
+    if "units" in params and params["units"] in ("s", "samples"):
         return read_events(fname)
     else:
         return read_sampled(fname)
@@ -206,7 +205,6 @@ to create a .meta file interactively, type:
 $ dat-meta {dat}
         """.format(dat=metafile))
         sys.exit(0)
-
 
 def write_metadata(filename, **params):
     for k, v in params.items():
