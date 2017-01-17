@@ -29,6 +29,59 @@ Library versions:
 class BarkMetaError(Exception):
     """Raised in case of inconsistency between metadata and Bark objects."""
 
+class DataTypes:
+    """
+    Available ARF data types, by name and integer code.
+    
+    Copied, with some modifications, from Dan Meliza's ARF repo.
+    """
+
+    UNDEFINED = 0
+    ACOUSTIC = 1
+    EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG = range(2, 5)
+    INTRAC_CC, INTRAC_VC = range(5, 7)
+    EVENT, SPIKET, BEHAVET = range(1000, 1003)
+    INTERVAL, STIMI, COMPONENTL = range(2000, 2003)
+
+    @classmethod
+    def _doc(cls):
+        out = str(cls.__doc__)
+        for code,name in sorted(cls._todict().items()):
+            out += '\n{%s}:{%d}'.format(name, code)
+        return out
+
+    @classmethod
+    def is_timeseries(cls, code):
+        """Indicates whether the code corresponds to time series data."""
+        if cls._fromint() is None:
+            raise BarkMetaError('bad datatype code: {}'.format(code))
+        else:
+            if code < cls.EVENT:
+                return True
+            else:
+                return False
+
+    def is_pointproc(cls, code):
+        """Indicates whether the code corresponds to point process data."""
+        return (not cls.is_timeseries(code))
+
+    @classmethod
+    def _todict(cls):
+        """Generate a dictionary keyed by datatype code."""
+        return dict((getattr(cls, attr), attr)
+                     for attr in dir(cls)
+                     if not attr.startswith('_'))
+
+    @classmethod
+    def _fromstring(cls, name):
+        """Returns datatype code given the name, or None if undefined."""
+        return getattr(cls, name.upper(), None)
+
+    @classmethod
+    def _fromcode(cls, code):
+        """Returns datatype name given the code, or None if undefined."""
+        return cls._todict().get(code, None)
+
 # hierarchical classes
 class Root():
     def __init__(self, path, entries=None, attrs=None):
