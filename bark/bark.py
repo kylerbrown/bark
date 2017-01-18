@@ -149,23 +149,6 @@ class Data():
         """Returns the name of the dataset's datatype, or None if unspecified."""
         return DataTypes._fromcode(self.attrs.get('datatype', None))
    
-    @property
-    def is_events(self):
-        """Returns True if dataset is a point process."""
-        if self.attrs.get('units', None) in UNITS.TIME_UNITS:
-            return True
-        elif 'sampling_rate' in self.attrs:
-            return False
-        else:
-            # indeterminate - something went wrong during dataset creation
-            raise KeyError('dataset without units of time must have sampling rate')
-    
-    @property
-    def is_sampled(self):
-        """Returns True if dataset is a sampled time series."""
-        return (not self.is_events)
-
-
 class SampledData(Data):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
