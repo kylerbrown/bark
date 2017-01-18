@@ -12,6 +12,7 @@ import yaml
 import numpy as np
 from bark import stream
 import codecs
+import collections
 
 BUFFER_SIZE = 10000
 
@@ -26,6 +27,61 @@ Library versions:
  bark: %s
 """ % (version)
 
+_Units = collections.namedtuple('_Units', ['TIME_UNITS'])
+UNITS = _Units(TIME_UNITS=('s', 'samples'))
+
+class DataTypes:
+    """
+    Available ARF data types, by name and integer code.
+    
+    Copied, with some modifications, from Dan Meliza's ARF repo.
+    """
+
+    UNDEFINED = 0
+    ACOUSTIC = 1
+    EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG = range(2, 5)
+    INTRAC_CC, INTRAC_VC = range(5, 7)
+    EVENT, SPIKET, BEHAVET = range(1000, 1003)
+    INTERVAL, STIMI, COMPONENTL = range(2000, 2003)
+
+    @classmethod
+    def _doc(cls):
+        out = str(cls.__doc__)
+        for code,name in sorted(cls._todict().items()):
+            out += '\n{%s}:{%d}'.format(name, code)
+        return out
+
+    @classmethod
+    def is_timeseries(cls, code):
+        """Indicates whether the code corresponds to time series data."""
+        if cls._fromcode(code) is None:
+            raise KeyError('bad datatype code: {}'.format(code))
+        else:
+            if code < cls.EVENT:
+                return True
+            else:
+                return False
+    @classmethod
+    def is_pointproc(cls, code):
+        """Indicates whether the code corresponds to point process data."""
+        return (not cls.is_timeseries(code))
+
+    @classmethod
+    def _todict(cls):
+        """Generate a dictionary keyed by datatype code."""
+        return dict((getattr(cls, attr), attr)
+                     for attr in dir(cls)
+                     if not attr.startswith('_'))
+
+    @classmethod
+    def _fromstring(cls, name):
+        """Returns datatype code given the name, or None if undefined."""
+        return getattr(cls, name.upper(), None)
+
+    @classmethod
+    def _fromcode(cls, code):
+        """Returns datatype name given the code, or None if undefined."""
+        return cls._todict().get(code, None)
 
 # hierarchical classes
 class Root():
@@ -87,6 +143,11 @@ class Data():
 
     def __getitem__(self, item):
         return self.data[item]
+    
+    @property
+    def datatype_name(self):
+        """Returns the name of the dataset's datatype, or None if unspecified."""
+        return DataTypes._fromcode(self.attrs.get('datatype', None))
 
 
 class SampledData(Data):
@@ -157,7 +218,7 @@ def read_sampled(datfile, mode="r"):
 
 
 def write_events(eventsfile, data, **params):
-    assert "units" in params and params["units"] in ["s" or "samples"]
+    assert "units" in params and params["units"] in UNITS.TIME_UNITS
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
     write_metadata(eventsfile + ".meta", **params)
@@ -174,10 +235,11 @@ def read_events(eventsfile):
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
-    if "units" in params and params["units"] in ("s", "seconds"):
-        return read_events(fname)
+    if "units" in params and params["units"] in UNITS.TIME_UNITS:
+        dset = read_events(fname)
     else:
-        return read_sampled(fname)
+        dset = read_sampled(fname)
+    return dset
 
 
 def read_metadata(metafile):
@@ -206,7 +268,6 @@ to create a .meta file interactively, type:
 $ dat-meta {dat}
         """.format(dat=metafile))
         sys.exit(0)
-
 
 def write_metadata(filename, **params):
     for k, v in params.items():
@@ -337,14 +398,3 @@ def parse_timestamp_string(string):
 def get_uuid(obj):
     """Returns the uuid for obj, or None if none is set"""
     return obj.attrs.get('uuid', None)
-
-
-def is_sampled(dset):
-    """Returns True if dset is a sampled time series (units are not time)"""
-    return isinstance(dset, np.memmap)
-
-
-def is_events(dset):
-    """Returns True if dset is a marked point process (a complex dtype with 'start' field)"""
-    import pandas as pd
-    return isinstance(dset.data, pd.DataFrame) and 'start' in dset.data.columns

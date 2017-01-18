@@ -47,6 +47,21 @@ def test_write_events(tmpdir):
     assert 'name' in events.data.columns
     assert np.allclose([0, 1, 2, 3], events.data.start)
 
+def test_read_dataset(tmpdir):
+    path = os.path.join(tmpdir.strpath, 'test_events')
+    data = pd.DataFrame({'start': [0,1,2,3], 'stop': [1,2,3,4],
+                         'name': ['a', 'b', 'c', 'd']})
+    event_written = bark.write_events(path, data, units='s')
+    event_read = bark.read_dataset(path)
+    assert event_read.attrs['units'] == 's'
+    
+    path = os.path.join(tmpdir.strpath, 'test_samp')
+    data = np.zeros((10,3),dtype="int16")
+    params = {'sampling_rate': 30000, 'units': 'mV', 'unit_scale': 0.025}
+    samp_written = bark.write_sampled(path, data=data, **params)
+    samp_read = bark.read_dataset(path)
+    assert samp_read.attrs['units'] == params['units']
+
 def test_create_root(tmpdir):
     path = os.path.join(tmpdir.strpath, "mybark")
     root = bark.create_root(path, experimenter="kjbrown",
@@ -73,3 +88,14 @@ def test_entry_sort(tmpdir):
     mylist = sorted([entry2, entry1])
     assert mylist[0] == entry1
     assert mylist[1] == entry2
+
+def test_datatypes():
+    assert bark.DataTypes.is_timeseries(0)
+    assert bark.DataTypes.is_timeseries(1)
+    assert (not bark.DataTypes.is_timeseries(1000))
+    assert (not bark.DataTypes.is_timeseries(2002))
+    assert bark.DataTypes.is_pointproc(1000)
+    assert bark.DataTypes._fromstring('UNDEFINED') == 0
+    assert bark.DataTypes._fromstring('EVENT') == 1000
+    assert bark.DataTypes._fromcode(1) == 'ACOUSTIC'
+    assert bark.DataTypes._fromcode(2002) == 'COMPONENTL'
