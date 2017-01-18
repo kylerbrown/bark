@@ -148,7 +148,8 @@ class Data():
     def datatype_name(self):
         """Returns the name of the dataset's datatype, or None if unspecified."""
         return DataTypes._fromcode(self.attrs.get('datatype', None))
-   
+
+
 class SampledData(Data):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
