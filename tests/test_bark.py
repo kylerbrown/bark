@@ -84,4 +84,29 @@ def test_datatypes():
     assert bark.DataTypes._fromstring('EVENT') == 1000
     assert bark.DataTypes._fromcode(1) == 'ACOUSTIC'
     assert bark.DataTypes._fromcode(2002) == 'COMPONENTL"
+
+def test__enforce_units():
+    params = {'units': 'seconds'}
+    bark._enforce_units(params)
+    assert params['units'] == 's'
+    params['units'] = 'samples'
+    bark._enforce_units(params)
+    assert params['units'] == 'samples'
+
+def test__enforce_datatypes():
+    params = {'datatype': 2}
+    bark._enforce_datatypes(params) # should do nothing
+
+    params['datatype'] = -1
+    with pytest.raises(KeyError):
+        bark._enforce_datatypes(params)
+
+    params = {'units': 's'}
+    bark._enforce_datatypes(params)
+    assert params['datatype'] == 1000
+    assert params['datatype_name'] == 'EVENT'
     
+    params = {'units': 'mV'}
+    bark._enforce_datatypes(params)
+    assert params['datatype'] == 0
+    assert params['datatype'] == 'UNDEFINED'
