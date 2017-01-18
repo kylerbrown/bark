@@ -182,7 +182,6 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
     params["filetype"] = "rawbinary"
-    _enforce_units(params)
     write_metadata(datfile + ".meta",
                    sampling_rate=sampling_rate,
                    units=units,
@@ -222,7 +221,6 @@ def write_events(eventsfile, data, **params):
     assert "units" in params and params["units"] in UNITS.TIME_UNITS
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
-    _enforce_units(params)
     write_metadata(eventsfile + ".meta", **params)
     return read_events(eventsfile)
 
@@ -241,7 +239,6 @@ def read_dataset(fname):
         dset = read_events(fname)
     else:
         dset = read_sampled(fname)
-    _enforce_units(params)
     return dset
 
 
@@ -281,17 +278,6 @@ def write_metadata(filename, **params):
         yaml_file.write(header)
         yaml_file.write(yaml.safe_dump(params, default_flow_style=False))
 
-
-def _enforce_units(params):
-    """
-    Enforces strict adherence to the BARK spec for the 'units' attribute.
-
-    Modifies the given dict in place.
-    """
-    if 'units' in params:
-        if params['units'] == 'seconds':
-            params['units'] = 's'
-    return
 
 def create_root(name, parents=False, **attrs):
     """creates a new BARK top-level directory"""

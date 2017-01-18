@@ -99,13 +99,3 @@ def test_datatypes():
     assert bark.DataTypes._fromstring('EVENT') == 1000
     assert bark.DataTypes._fromcode(1) == 'ACOUSTIC'
     assert bark.DataTypes._fromcode(2002) == 'COMPONENTL'
-
-def test__enforce_units():
-    from bark.bark import _enforce_units
-    params = {'units': 'seconds'}
-    _enforce_units(params)
-    assert params['units'] == 's'
-    params['units'] = 'samples'
-    _enforce_units(params)
-    assert params['units'] == 'samples'
-
