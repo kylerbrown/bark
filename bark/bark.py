@@ -143,6 +143,27 @@ class Data():
 
     def __getitem__(self, item):
         return self.data[item]
+    
+    @property
+    def datatype_name(self):
+        """Returns the name of the dataset's datatype, or None if unspecified."""
+        return DataTypes._fromcode(self.attrs.get('datatype', None))
+   
+    @property
+    def is_events(self):
+        """Returns True if dataset is a point process."""
+        if self.attrs.get('units', None) in UNITS.TIME_UNITS:
+            return True
+        elif 'sampling_rate' in self.attrs:
+            return False
+        else:
+            # indeterminate - something went wrong during dataset creation
+            raise KeyError('dataset without units of time must have sampling rate')
+    
+    @property
+    def is_sampled(self):
+        """Returns True if dataset is a sampled time series."""
+        return (not self.is_events)
 
 
 class SampledData(Data):
@@ -178,7 +199,6 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
     mdata[:] = data[:]
     params["filetype"] = "rawbinary"
     _enforce_units(params)
-    _enforce_datatype(params)
     write_metadata(datfile + ".meta",
                    sampling_rate=sampling_rate,
                    units=units,
@@ -219,7 +239,6 @@ def write_events(eventsfile, data, **params):
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
     _enforce_units(params)
-    _enforce_datatype(params)
     write_metadata(eventsfile + ".meta", **params)
     return read_events(eventsfile)
 
@@ -239,7 +258,6 @@ def read_dataset(fname):
     else:
         dset = read_sampled(fname)
     _enforce_units(params)
-    _enforce_datatype(params)
     return dset
 
 
@@ -289,29 +307,6 @@ def _enforce_units(params):
     if 'units' in params:
         if params['units'] == 'seconds':
             params['units'] = 's'
-    return
-
-def _enforce_datatype(params):
-    """
-    Checks params['datatype'] against canonical list.
-
-    Throws KeyError if params['datatype'] is not on the list.
-
-    If there is no 'datatype' attribute, infers time series / point process
-    identity from 'units' and assigns either 0/UNDEFINED or 1000/EVENT,
-    respectively.
-
-    Modifies the given dict in place.
-    """
-    if 'datatype' in params:
-        if DataTypes._fromcode(params['datatype']) is None:
-            raise KeyError('bad datatype code: {}'.format(params['datatype']))
-    elif 'units' in params and params['units'] in UNITS.TIME_UNITS:
-        params['datatype_name'] = 'EVENT'
-        params['datatype'] = DataTypes._fromstring('EVENT')
-    else:
-        params['datatype_name'] = 'UNDEFINED'
-        params['datatype'] = DataTypes._fromstring('UNDEFINED')
     return
 
 def create_root(name, parents=False, **attrs):
@@ -433,20 +428,3 @@ def parse_timestamp_string(string):
 def get_uuid(obj):
     """Returns the uuid for obj, or None if none is set"""
     return obj.attrs.get('uuid', None)
-
-
-def is_sampled(dset):
-    """Returns True if dset is a sampled time series."""
-    if 'datatype' in dset.attrs:
-        return DataTypes.is_timeseries(dset.attrs['datatype'])
-    elif 'units' in dset.attrs:
-        return (dset.attrs['units'] not in UNITS.TIME_UNITS)
-    else:
-        # this only occurs if the dset has been created but not written yet
-        msg = "dataset has neither 'units' nor 'datatype' metadata"
-        raise KeyError(msg)
-
-
-def is_events(dset):
-    """Returns True if dset is a point process."""
-    return (not is_sampled(dset))

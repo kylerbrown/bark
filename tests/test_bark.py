@@ -54,8 +54,6 @@ def test_read_dataset(tmpdir):
     event_written = bark.write_events(path, data, units='s')
     event_read = bark.read_dataset(path)
     assert event_read.attrs['units'] == 's'
-    assert event_read.attrs['datatype'] == 1000
-    assert event_read.attrs['datatype_name'] == 'EVENT'
     
     path = os.path.join(tmpdir.strpath, 'test_samp')
     data = np.zeros((10,3),dtype="int16")
@@ -63,8 +61,6 @@ def test_read_dataset(tmpdir):
     samp_written = bark.write_sampled(path, data=data, **params)
     samp_read = bark.read_dataset(path)
     assert samp_read.attrs['units'] == params['units']
-    assert samp_read.attrs['datatype'] == 0
-    assert samp_read.attrs['datatype_name'] == 'UNDEFINED'
 
 def test_create_root(tmpdir):
     path = os.path.join(tmpdir.strpath, "mybark")
@@ -113,36 +109,17 @@ def test__enforce_units():
     _enforce_units(params)
     assert params['units'] == 'samples'
 
-def test__enforce_datatype():
-    from bark.bark import _enforce_datatype
-    params = {'datatype': 2}
-    _enforce_datatype(params) # should do nothing
-
-    params['datatype'] = -1
-    with pytest.raises(KeyError):
-        _enforce_datatype(params)
-
-    params = {'units': 's'}
-    _enforce_datatype(params)
-    assert params['datatype'] == 1000
-    assert params['datatype_name'] == 'EVENT'
-    
-    params = {'units': 'mV'}
-    _enforce_datatype(params)
-    assert params['datatype'] == 0
-    assert params['datatype_name'] == 'UNDEFINED'
-
 def test_dset_type_checkers(tmpdir):
     data = np.zeros((10,3),dtype="int16")
     params = dict(sampling_rate=30000, units="mV", unit_scale=0.025,
             extra="barley")
     samp = bark.write_sampled(os.path.join(tmpdir.strpath, "test_sampled"), data=data, **params)
-    assert bark.is_sampled(samp)
-    assert (not bark.is_events(samp))
+    assert samp.is_sampled
+    assert (not samp.is_events)
 
     path = os.path.join(tmpdir.strpath, "test_events")
     data = pd.DataFrame({'start': [0,1,2,3], 'stop': [1,2,3,4],
             'name': ['a','b','c','d']})
     events = bark.write_events(path, data, units='s')
-    assert (not bark.is_sampled(events))
-    assert bark.is_events(events)
+    assert (not events.is_sampled)
+    assert events.is_events
