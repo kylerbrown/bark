@@ -47,6 +47,25 @@ def test_write_events(tmpdir):
     assert 'name' in events.data.columns
     assert np.allclose([0, 1, 2, 3], events.data.start)
 
+def test_read_dataset(tmpdir):
+    path = os.path.join(tmpdir.strpath, 'test_events')
+    data = pd.DataFrame({'start': [0,1,2,3], 'stop': [1,2,3,4],
+                         'name': ['a', 'b', 'c', 'd']})
+    event_written = bark.write_events(path, data, units='s')
+    event_read = bark.read_dataset(path)
+    assert event_read.attrs['units'] == 's'
+    assert event_read.attrs['datatype'] == 1000
+    assert event_read.attrs['datatype_name'] == 'EVENT'
+    
+    path = os.path.join(tmpdir.strpath, 'test_samp')
+    data = np.zeros((10,3),dtype="int16")
+    params = {'sampling_rate': 30000, 'units' = 'mV', 'unit_scale': 0.025}
+    samp_written = bark.write_sampled(path, data=data, **params)
+    samp_read = bark.read_dataset(path)
+    assert samp_read.attrs['units'] == params['units']
+    assert samp_read.attrs['datatype'] == 0
+    assert samp_read.attrs['datatype_name'] == 'UNDEFINED
+
 def test_create_root(tmpdir):
     path = os.path.join(tmpdir.strpath, "mybark")
     root = bark.create_root(path, experimenter="kjbrown",
