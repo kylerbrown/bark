@@ -54,7 +54,7 @@ class DataTypes:
     @classmethod
     def is_timeseries(cls, code):
         """Indicates whether the code corresponds to time series data."""
-        if cls._fromcode() is None:
+        if cls._fromcode(code) is None:
             raise KeyError('bad datatype code: {}'.format(code))
         else:
             if code < cls.EVENT:
@@ -307,7 +307,7 @@ def _enforce_datatype(params):
     """
     if 'datatype' in params:
         if DataTypes._fromcode(params['datatype']) is None:
-            raise KeyError('bad datatype code: {}'.format(code))
+            raise KeyError('bad datatype code: {}'.format(params['datatype']))
     elif 'units' in params and params['units'] in UNITS.TIME_UNITS:
         params['datatype_name'] = 'EVENT'
         params['datatype'] = DataTypes._fromstring('EVENT')

@@ -59,12 +59,12 @@ def test_read_dataset(tmpdir):
     
     path = os.path.join(tmpdir.strpath, 'test_samp')
     data = np.zeros((10,3),dtype="int16")
-    params = {'sampling_rate': 30000, 'units' = 'mV', 'unit_scale': 0.025}
+    params = {'sampling_rate': 30000, 'units': 'mV', 'unit_scale': 0.025}
     samp_written = bark.write_sampled(path, data=data, **params)
     samp_read = bark.read_dataset(path)
     assert samp_read.attrs['units'] == params['units']
     assert samp_read.attrs['datatype'] == 0
-    assert samp_read.attrs['datatype_name'] == 'UNDEFINED
+    assert samp_read.attrs['datatype_name'] == 'UNDEFINED'
 
 def test_create_root(tmpdir):
     path = os.path.join(tmpdir.strpath, "mybark")
@@ -102,33 +102,35 @@ def test_datatypes():
     assert bark.DataTypes._fromstring('UNDEFINED') == 0
     assert bark.DataTypes._fromstring('EVENT') == 1000
     assert bark.DataTypes._fromcode(1) == 'ACOUSTIC'
-    assert bark.DataTypes._fromcode(2002) == 'COMPONENTL"
+    assert bark.DataTypes._fromcode(2002) == 'COMPONENTL'
 
 def test__enforce_units():
+    from bark.bark import _enforce_units
     params = {'units': 'seconds'}
-    bark._enforce_units(params)
+    _enforce_units(params)
     assert params['units'] == 's'
     params['units'] = 'samples'
-    bark._enforce_units(params)
+    _enforce_units(params)
     assert params['units'] == 'samples'
 
-def test__enforce_datatypes():
+def test__enforce_datatype():
+    from bark.bark import _enforce_datatype
     params = {'datatype': 2}
-    bark._enforce_datatypes(params) # should do nothing
+    _enforce_datatype(params) # should do nothing
 
     params['datatype'] = -1
     with pytest.raises(KeyError):
-        bark._enforce_datatypes(params)
+        _enforce_datatype(params)
 
     params = {'units': 's'}
-    bark._enforce_datatypes(params)
+    _enforce_datatype(params)
     assert params['datatype'] == 1000
     assert params['datatype_name'] == 'EVENT'
     
     params = {'units': 'mV'}
-    bark._enforce_datatypes(params)
+    _enforce_datatype(params)
     assert params['datatype'] == 0
-    assert params['datatype'] == 'UNDEFINED'
+    assert params['datatype_name'] == 'UNDEFINED'
 
 def test_dset_type_checkers(tmpdir):
     data = np.zeros((10,3),dtype="int16")
