@@ -129,3 +129,18 @@ def test__enforce_datatypes():
     bark._enforce_datatypes(params)
     assert params['datatype'] == 0
     assert params['datatype'] == 'UNDEFINED'
+
+def test_dset_type_checkers(tmpdir):
+    data = np.zeros((10,3),dtype="int16")
+    params = dict(sampling_rate=30000, units="mV", unit_scale=0.025,
+            extra="barley")
+    samp = bark.write_sampled(os.path.join(tmpdir.strpath, "test_sampled"), data=data, **params)
+    assert bark.is_sampled(samp)
+    assert (not bark.is_events(samp))
+
+    path = os.path.join(tmpdir.strpath, "test_events")
+    data = pd.DataFrame({'start': [0,1,2,3], 'stop': [1,2,3,4],
+            'name': ['a','b','c','d']})
+    events = bark.write_events(path, data, units='s')
+    assert (not bark.is_sampled(events))
+    assert bark.is_events(events)
