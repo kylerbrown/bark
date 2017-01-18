@@ -287,10 +287,8 @@ def _enforce_units(params):
     Modifies the given dict in place.
     """
     if 'units' in params:
-        if params['units'] is not None:
-            params['units'] = params['units'].lower()
-            if params['units'] == 'seconds':
-                params['units'] = 's'
+        if params['units'] == 'seconds':
+            params['units'] = 's'
     return
 
 def _enforce_datatype(params):
