@@ -79,7 +79,7 @@ def rhds_to_entry(rhd_paths, entry_name, timestamp=None, parents=False, **attrs)
                      sampling_rate=result['frequency_parameters'][
                          'amplifier_sample_rate'],
                      unit_scale=result['amplifier_bit_microvolts'],
-                     units="mV")
+                     units="uV")
         spike_triggers = {'spike_trigger_' + k: []
                           for k, v in result['spike_triggers'][0].items()}
         for chan in result['spike_triggers']:

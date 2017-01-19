@@ -282,7 +282,11 @@ def write_metadata(filename, **params):
 def create_root(name, parents=False, **attrs):
     """creates a new BARK top-level directory"""
     path = os.path.abspath(name)
-    os.makedirs(name, exist_ok=parents)
+    if os.path.isdir(path):
+        if not parents:
+            raise IOError("{} already exists".format(path))
+    else:
+        os.makedirs(path)
     write_metadata(os.path.join(path, "meta"), **attrs)
     return read_root(name)
 
@@ -318,7 +322,12 @@ def create_entry(name, timestamp, parents=False, **attributes):
     Returns: newly created entry object
     """
     path = os.path.abspath(name)
-    os.makedirs(path, exist_ok=parents)
+    if os.path.isdir(path):
+        if not parents:
+            raise IOError("{} already exists".format(path))
+    else:
+        os.makedirs(path)
+
     if "uuid" not in attributes:
         attributes["uuid"] = str(uuid4())
     attributes["timestamp"] = convert_timestamp(timestamp)
