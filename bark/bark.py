@@ -288,16 +288,11 @@ def create_root(name, parents=False, **attrs):
     else:
         os.makedirs(path)
     write_metadata(os.path.join(path, "meta"), **attrs)
-    return read_root(name)
+    return Root(name)
 
 
 def read_root(name):
-    path = os.path.abspath(name)
-    attrs = read_metadata(os.path.join(path, "meta"))
-    all_sub = [os.path.join(name, x) for x in listdir(path)]
-    subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
-    entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
-    return Root(path, entries, attrs)
+    return Root(name)
 
 
 def create_entry(name, timestamp, parents=False, **attributes):
