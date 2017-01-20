@@ -397,8 +397,3 @@ def parse_timestamp_string(string):
     else:
         timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
     return timestamp
-
-
-def get_uuid(obj):
-    """Returns the uuid for obj, or None if none is set"""
-    return obj.attrs.get('uuid', None)
