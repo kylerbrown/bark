@@ -161,7 +161,7 @@ class SampledData(Data):
     def write(self, path=None):
         if path is None:
             path = self.path
-        write_sampled(self.path, self.data, **self.attrs)
+        write_sampled(path, self.data, **self.attrs)
 
 
 class EventData(Data):
