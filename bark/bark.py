@@ -96,9 +96,9 @@ class Root():
 
     def read(self, name):
         self.path = os.path.abspath(name)
-        self.name = os.path.split(path)[-1]
-        self.attrs = read_metadata(os.path.join(path, "meta"))
-        all_sub = [os.path.join(name, x) for x in listdir(path)]
+        self.name = os.path.split(self.path)[-1]
+        self.attrs = read_metadata(os.path.join(self.path, "meta"))
+        all_sub = [os.path.join(name, x) for x in listdir(self.path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
         self.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
 
