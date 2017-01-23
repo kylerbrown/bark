@@ -288,7 +288,7 @@ def create_root(name, parents=False, **attrs):
     else:
         os.makedirs(path)
     write_metadata(os.path.join(path, "meta"), **attrs)
-    return read_root(name)
+    return Root(name)
 
 
 def read_root(name):
