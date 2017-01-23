@@ -39,7 +39,7 @@ def label_to_splits(sampled_ds, event_ds, split_on, point_mode):
     Output -> DataFrame with columns 'start', 'stop', 'name'
     """
     splits = event_ds.data.copy(deep=True)
-    if split_on != '':
+    if split_on:
         try:
             splits = splits[splits['name'] == split_on]
         except KeyError:
@@ -51,11 +51,10 @@ def label_to_splits(sampled_ds, event_ds, split_on, point_mode):
         # no modification required
         pass
     else:
-        msg = '{} units not recognized: {}'.format(event_ds.path,
-                                                   event_ds.attrs['units'])
-        raise KeyError(msg)
+        raise KeyError('{} units not recognized: {}'
+                .format(event_ds.path, event_ds.attrs['units']))
     if point_mode:
-        splits = points_to_span(list(splits.loc[:,'start']), sampled_ds.attrs)
+        splits = points_to_span(list(splits.loc[:,'start']), sampled_ds.data.shape[0])
     return splits.sort_values(by='start').reset_index(drop=True)
 
 def time_to_index(series, ds_attrs):
@@ -68,7 +67,7 @@ def time_to_index(series, ds_attrs):
         ns['name'] = series['name']
     return ns
 
-def points_to_span(points, ds_attrs):
+def points_to_span(points, n_samples):
     """Produces a spanning split of an interval from a list of points."""
     if points[0] == 0:
         new_start = []
@@ -77,17 +76,14 @@ def points_to_span(points, ds_attrs):
     new_start.extend(points)
 
     new_stop = new_start[1:]
-    last_elt = ds_attrs['n_channels'] * ds_attrs['n_samples']
-    if new_start[-1] < last_elt:
-        new_stop.append(last_elt)
+    if new_start[-1] < n_samples:
+        new_stop.append(n_samples)
     else:
-        _ = new_start.pop()
+        new_start.pop()
 
-    new_label = [''] * len(new_start)
-    
     return pandas.DataFrame({'start': new_start,
                              'stop': new_stop,
-                             'name': new_label})
+                             'name': ''})
 
 def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
     """
@@ -113,10 +109,10 @@ def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
     parent_dir, parent_fn = os.path.split(sampled_ds.path)
     parent_name, parent_ext = os.path.splitext(parent_fn)
     event_file = os.path.splitext(os.path.split(event_ds.path)[1])[0]
-    if split_on == '':
-        name = 'all'
-    else:
+    if split_on:
         name = base64.urlsafe_b64encode(split_on)
+    else:
+        name = 'all'
 
     if point_mode:
         split_string = 'point'
@@ -201,14 +197,14 @@ def split_dataset(path,
     except KeyError:
         entry = None
     if entry:
-        root = bark.Root('', {entry.path: entry}, {})
+        entries = [entry]
     else:
-        root = bark.read_root(path)
-    for ename,entry in root.entries.iteritems():
-        if sampled_data not in entry.datasets.iterkeys():
+        entries = bark.read_root(path).entries.values()
+    for entry in entries:
+        if sampled_data not in entry.datasets:
             if verbose:
                 print ('No dataset ' + sampled_data + ' in entry ' + entry.path)
-        elif label_file not in entry.datasets.iterkeys():
+        elif label_file not in entry.datasets:
             if verbose:
                 print ('No dataset ' + label_file + ' in entry ' + entry.path)
         else:
