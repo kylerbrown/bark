@@ -30,58 +30,14 @@ Library versions:
 _Units = collections.namedtuple('_Units', ['TIME_UNITS'])
 UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
-class DataTypes:
-    """
-    Available ARF data types, by name and integer code.
-    
-    Copied, with some modifications, from Dan Meliza's ARF repo.
-    """
-
-    UNDEFINED = 0
-    ACOUSTIC = 1
-    EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG = range(2, 5)
-    INTRAC_CC, INTRAC_VC = range(5, 7)
-    EVENT, SPIKET, BEHAVET = range(1000, 1003)
-    INTERVAL, STIMI, COMPONENTL = range(2000, 2003)
-
-    @classmethod
-    def _doc(cls):
-        out = str(cls.__doc__)
-        for code,name in sorted(cls._todict().items()):
-            out += '\n{%s}:{%d}'.format(name, code)
-        return out
-
-    @classmethod
-    def is_timeseries(cls, code):
-        """Indicates whether the code corresponds to time series data."""
-        if cls._fromcode(code) is None:
-            raise KeyError('bad datatype code: {}'.format(code))
-        else:
-            if code < cls.EVENT:
-                return True
-            else:
-                return False
-    @classmethod
-    def is_pointproc(cls, code):
-        """Indicates whether the code corresponds to point process data."""
-        return (not cls.is_timeseries(code))
-
-    @classmethod
-    def _todict(cls):
-        """Generate a dictionary keyed by datatype code."""
-        return dict((getattr(cls, attr), attr)
-                     for attr in dir(cls)
-                     if not attr.startswith('_'))
-
-    @classmethod
-    def _fromstring(cls, name):
-        """Returns datatype code given the name, or None if undefined."""
-        return getattr(cls, name.upper(), None)
-
-    @classmethod
-    def _fromcode(cls, code):
-        """Returns datatype name given the code, or None if undefined."""
-        return cls._todict().get(code, None)
+_pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1),
+          ('EXTRAC_HP', 2), ('EXTRAC_LF', 3), ('EXTRAC_EEG', 4),
+          ('INTRAC_CC', 5), ('INTRAC_VC', 6),
+          ('EVENT', 1000), ('SPIKET', 1001), ('BEHAVET', 1002),
+          ('INTERVAL', 2000), ('STIMI', 2001), ('COMPONENTL', 2002))
+_dt = collections.namedtuple('_dt', ['name_to_code', 'code_to_name'])
+DATATYPES = _dt(name_to_code={name: code for name, code in _pairs},
+                code_to_name={code: name for name, code in _pairs})
 
 # hierarchical classes
 class Root():
@@ -146,8 +102,8 @@ class Data():
     
     @property
     def datatype_name(self):
-        """Returns the name of the dataset's datatype, or None if unspecified."""
-        return DataTypes._fromcode(self.attrs.get('datatype', None))
+        """Returns the dataset's datatype name, or None if unspecified."""
+        return DATATYPES.name_to_code[self.attrs.get('datatype', None)]
 
 
 class SampledData(Data):
