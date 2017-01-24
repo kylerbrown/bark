@@ -82,11 +82,12 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `bark-scope` -- opens a Bark SampledData file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
+- `bark-split` -- splits a dataset according to the split times in a label file, either in a single entry or in an entire bark tree
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
 - `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
-- `bark-split` -- splits a dataset according to the split times in a label file, either in a single entry or in an entire bark tree
+- `dat-decimate` -- downsamples a raw binary data file by an integer factor, likely want to low-pass filter your data first.
 
 For processing continuously sampled data, try the included python moduled `bark.stream` or the 
 [datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
