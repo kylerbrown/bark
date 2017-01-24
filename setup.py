@@ -29,6 +29,7 @@ setup(name='bark',
               'bark-convert-rhd=bark.io.rhd.rhd2bark:bark_rhd_to_entry',
               'bark-convert-openephys=bark.io.openephys.kwik2dat:kwd_to_entry',
               'bark-split=bark.tools.barksplit:_main',
+              'dat-decimate=bark.tools.barkutils:rb_decimate',
               ]
           }
       )

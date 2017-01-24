@@ -93,7 +93,6 @@ def clean_metafiles():
     _clean_metafiles(args.path, args.recursive)
 
 
-
 def rb_concat():
     p = argparse.ArgumentParser(description=
     """Concatenate raw binary files by adding new samples. 
@@ -112,6 +111,7 @@ def rb_concat():
         attrs = {}
     streams = [stream.read(x) for x in args.input]
     streams[0].chain(*streams[1:]).write(args.out, **attrs)
+
 
 def rb_decimate():
     ' Downsample raw binary file.'
