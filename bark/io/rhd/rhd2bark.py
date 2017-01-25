@@ -52,10 +52,11 @@ def rhds_to_entry(rhd_paths, entry_name, timestamp=None, parents=False, **attrs)
     create_entry(entry_name, timestamp, parents, **attrs)
     # make datasets
     if 'board_adc_data' in result:
+        board_channels = len(result['board_adc_channels'])
         dsetname = os.path.join(entry_name, 'board_adc.dat')
         # make metadata
         attrs = dict(dtype=str(result['board_adc_data'].dtype),
-                     n_channels=len(result['board_adc_channels']),
+                     n_channels=board_channels,
                      sampling_rate=result['frequency_parameters'][
                          'board_adc_sample_rate'],
                      unit_scale=result['ADC_input_bit_volts'],
@@ -70,12 +71,15 @@ def rhds_to_entry(rhd_paths, entry_name, timestamp=None, parents=False, **attrs)
         # write data
         with open(dsetname, 'wb') as fp:
             fp.write(result['board_adc_data'].T.tobytes())
+    else:
+        board_channels = 0
 
     if 'amplifier_data' in result:
+        amplifier_channels = len(result['amplifier_channels'])
         dsetname = os.path.join(entry_name, 'amplifier.dat')
         # make metadata
         attrs = dict(dtype=str(result['amplifier_data'].dtype),
-                     n_channels=len(result['amplifier_channels']),
+                     n_channels=amplifier_channels,
                      sampling_rate=result['frequency_parameters'][
                          'amplifier_sample_rate'],
                      unit_scale=result['amplifier_bit_microvolts'],
@@ -108,14 +112,24 @@ def rhds_to_entry(rhd_paths, entry_name, timestamp=None, parents=False, **attrs)
     if 'temp_sensor_data' in result:
         print("TEMP SENSOR DATA CONVERSION NOT YET IMPLEMENTED")
 
+    # now that the metadata has been written (and data from the first file)
+    # write data for the remainder of the files
     for rhdfile in rhd_paths[1:]:
-        result = read_data(rhd_paths[0], no_floats=True)
-        dsetname = os.path.join(entry_name, 'board_adc.dat')
-        with open(dsetname, 'ab') as fp:
-            fp.write(result['board_adc_data'].T.tobytes())
-        dsetname = os.path.join(entry_name, 'amplifier.dat')
-        with open(dsetname, 'ab') as fp:
-            fp.write(result['amplifier_data'].T.tobytes())
+        result = read_data(rhdfile, no_floats=True)
+        if board_channels > 0:
+            if board_channels != len(result['board_adc_channels']):
+                raise ValueError("{} does not have the same number of board adc channels as {}"
+                        .format(rhdfile, rhdpaths[0]))
+            dsetname = os.path.join(entry_name, 'board_adc.dat')
+            with open(dsetname, 'ab') as fp:
+                fp.write(result['board_adc_data'].T.tobytes())
+        if amplifier_channels > 0:
+            if amplifier_channels != len(result['amplifier_channels']):
+                raise ValueError("{} does not have the same number of board adc channels as {}"
+                        .format(rhdfile, rhdpaths[0]))
+            dsetname = os.path.join(entry_name, 'amplifier.dat')
+            with open(dsetname, 'ab') as fp:
+                fp.write(result['amplifier_data'].T.tobytes())
 
 
 
