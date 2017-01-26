@@ -116,20 +116,24 @@ def rhds_to_entry(rhd_paths, entry_name, timestamp=None, parents=False, **attrs)
     # write data for the remainder of the files
     for rhdfile in rhd_paths[1:]:
         result = read_data(rhdfile, no_floats=True)
-        if board_channels > 0:
-            if board_channels != len(result['board_adc_channels']):
-                raise ValueError("{} does not have the same number of board adc channels as {}"
-                        .format(rhdfile, rhdpaths[0]))
+        if board_channels > 0 or 'board_acd_channels' in result:
+            cur_board_channels = len(result['board_adc_channels'])
+            if board_channels != cur_board_channels:
+                raise ValueError("""{} has {} board ADC channels 
+                        {} has {} board ADC channels."""
+                        .format(rhdfile, cur_board_channels,
+                            rhd_paths[0], board_channels))
             dsetname = os.path.join(entry_name, 'board_adc.dat')
             with open(dsetname, 'ab') as fp:
                 fp.write(result['board_adc_data'].T.tobytes())
-        if amplifier_channels > 0:
-            if amplifier_channels != len(result['amplifier_channels']):
-                raise ValueError("{} does not have the same number of board adc channels as {}"
-                        .format(rhdfile, rhdpaths[0]))
+        if amplifier_channels > 0 or 'amplifier_channels' in result:
+            cur_amplifier_channels = len(result['amplifier_channels'])
+            if amplifier_channels != cur_amplifier_channels:
+                raise ValueError("""{} has {} amplifier channels
+                        {} has {} amplifier channels"""
+                        .format(rhdfile, cur_amplifier_channels,
+                            rhd_paths[0], amplifier_channels))
             dsetname = os.path.join(entry_name, 'amplifier.dat')
             with open(dsetname, 'ab') as fp:
                 fp.write(result['amplifier_data'].T.tobytes())
-
-
 
