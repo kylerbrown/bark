@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='bark',
-      version='0.1',
+      version='0.1.1',
       description='tools for reading and writing BARK formatted data',
       url='http://github.com/kylerbrown/bark',
       author='Kyler Brown',
