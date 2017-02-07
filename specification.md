@@ -1,7 +1,9 @@
 # Bark
 Bark is a minimal implementation of [ARF](https://github.com/melizalab/arf).
 
-Much of this specification is copied directly from the ARF spec, and the ARF spec is the sole source of truth if there are any ambiguities.
+Much of this specification is adapted directly from the ARF spec. Unless a
+divergence from the ARF spec is explicitly noted, any ambiguities must be
+resolved in favor of the ARF spec.
 
 This implementation leverages the hierarchical nature of the file system and three common data formats:
 
@@ -9,11 +11,10 @@ This implementation leverages the hierarchical nature of the file system and thr
 + YAML
 + Raw binary arrays
 
-Files that do not have associated `.meta` files are ignored. Metafiles must have associated datasets.
-By ignoring extra files, this system flexibly allows the inclusion of non-standard data such as videos, screenshots and notes.
+All Bark data files have associated metadata files. Files that do not have
+associated metadata files are ignored. Metafiles must have associated datasets.
 
-Conversion between ARF and Bark files should be easy as 
-only the implementation is different.
+By ignoring extra files, this system flexibly allows the inclusion of non-standard data such as videos, screenshots and notes.
 
 An example Bark tree:
 
@@ -37,7 +38,7 @@ An example Bark tree:
 
 ## Goals and conceptual framework
 
-The goal of BARK is to provide an open, unified, flexible, and portable format
+The goal of Bark is to provide an open, unified, flexible, and portable format
 for storing time-varying data, along with sufficient metadata to reconstruct
 the conditions of how the data were recorded for many decades in the future.
 
@@ -95,9 +96,12 @@ while allowing the user to add metadata specific to an application.
 
 ### Roots
 
-A *root* is a top-level directory containing a `meta` file and zero or more entries.
-There are no required attributes in the root `meta` file. Root directories must not
-contain datasets.
+A *root* is a top-level directory containing a `meta` file and zero or more
+*entries*.
+
+There are no required attributes in the root `meta` file.
+
+Root directories must not contain datasets.
 
 ### Entries
 
@@ -105,7 +109,9 @@ An *entry* is an abstract grouping of zero or more *datasets* that
 all share a common start time. Each entry shall be represented by a directory.
 The directory shall contain all the data objects associated with that entry, 
 and all the metadata associated with the entry, stored
-as YAML key-value pairs in a file named `meta`. The following attributes are **required**:
+as YAML key-value pairs in a file named `meta`.
+
+The following attributes are **required**:
 
 -   **timestamp:** The start time of the entry. This attribute shall consist of a
     two-element array, with the first element indicating the POSIX time (number of
@@ -117,9 +123,9 @@ as YAML key-value pairs in a file named `meta`. The following attributes are **r
     representation is handled by standard libraries.
 
 In addition, the following optional attributes are defined. They do not need to
-be present in the group if not applicable.
+be present in an entry's `meta` file if not applicable.
 
--   **animal:** Indicates the name or ID of the animal.
+-   **animal:** Indicates the name or ID of the experimental subject.
 -   **experimenter:** Indicates the name or ID of the experimenter.
 -   **protocol:** Comment field indicating the treatment, stimulus, or any other
     user-specified data.
@@ -127,7 +133,7 @@ be present in the group if not applicable.
 
 Any other attributes may be included in an entry's `meta` file.
 
-Example meta file for an Entry:
+Example `meta` file for an entry:
 
     ---
     timestamp:
@@ -142,45 +148,47 @@ Any subdirectories are ignored.
 ### Datasets
 
 A *dataset* is a concrete time series or point process.  Multiple
-datasets may be stored in an entry, and may be unequal in length or have
-different *timebases*.
+datasets may be stored in an entry, and may have different lengths or
+timebases (i.e., an *offset* and a *sampling rate*).
 
 Datasets must have a corresponding YAML file containing metadata. The name of this
-metadata file must be `<dataset_filename>.meta`. The metadata in these files correspond
-to the attributes specified in the ARF specification.
+metadata file must be `<dataset_filename>.meta`.
 
-A *timebase* consists of two quantities: an *offset* and a *sampling rate*.
+The *offset* (attribute `offset`) applies to all datasets. All time values in a
+dataset are relative to the entry's timestamp plus the dataset's offset. The 
+offset does not need to be explicitly specified for every dataset. If it is not
+specified, it is assumed to be zero. If it is specified, its units (attribute 
+`offset_units`) must also be specified. Two datasets in the same entry may have 
+different offsets.
 
-The *offset* (attribute `offset`) applies to all datasets. All time values in a dataset are relative to
-the entry's timestamp plus the dataset's offset. The offset does not need to be
-explicitly specified for every dataset. If it is not specified, it is assumed to
-be zero. If it is specified, its units (attribute `offset_units`) must also be
-specified. Two datasets in the same entry may have different offsets.
+The *sampling rate* (attribute `sampling_rate`) allows discrete times to be
+converted to real times. If the dataset contains time series (or *sampled*) 
+data, this attribute must be present. Alternatively, if the dataset contains 
+point process (or *event*) data, and the units of these data are samples, the 
+sampling rate must also be specified. The only datasets which may omit the 
+sampling rate attribute are point process datasets with units of seconds.
 
-The *sampling rate* (attribute `sampling_rate`) allows discrete times to be converted
-to real times. If the dataset contains time series (or *sampled*) data, this
-attribute must be present. Alternatively, if the dataset contains point process (or
-*event*) data, and the units of these data are samples, the sampling rate must also be
-specified. The only datasets which may omit the sampling rate attribute are point
-process datasets with units of seconds.
-
-Real-valued times must be in units of seconds (`s`). Discrete-valued times must be in
-units of samples (`samples`).
+Real-valued times must be in units of seconds (`s`). Discrete-valued times must 
+be in units of samples (`samples`).
 
 #### Sampled data
 
 Sampled data are stored in raw binary files as outlined in
 [the Neurosuite documentation](http://neurosuite.sourceforge.net/formats.html).
 
-These data shall be represented as N-dimensional arrays of scalar values,
-corresponding to the measurement during each sampling interval. The first dimension
-of the array must correspond to time, and the second to channels.
+These data shall be represented as 2-dimensional arrays of scalar values,
+corresponding to the measurement during each sampling interval. The first  
+dimension of the array must correspond to time, and the second to channels.
 
-(The spec as written does not explicitly accommodate vector-valued time series
-such as video, but does not disallow them.)
+(The spec as written does not accommodate vector-valued time series such as
+video, but does not disallow them.)
 
-For multi-channel files, samples are interleaved, so files should be written in C
-(or row-major) order.
+For multi-channel files, samples are interleaved, so files should be written
+in C (or row-major) order.
+
+ARF allows user-specified endianness, but Bark does not. All sampled data files
+**must** be little-endian. This is the default for Intel x86 architectures, and
+thus the vast majority of modern systems.
 
 A raw binary file with N channels and M samples looks like this:
 
@@ -189,18 +197,16 @@ A raw binary file with N channels and M samples looks like this:
 There is no required extension, but `.dat` or `.pcm` are common choices.
 
 The disadvantage of simple raw binary files is that no metadata are stored
-within the file itself. At minimum, three values are required to intelligently
-read a raw binary file:
+within the file itself. Three metadata attributes are thus **required**:
 
-- a sampling rate, such as 30000
-- a numeric type, such as 16-bit integer or 32-bit float
-- the number of channels, such as 32
+- `sampling_rate`: allows discrete times to be converted to real times (Hz)
+- `dtype`: the numeric type of the data, such as 16-bit integer or 32-bit
+  float
+- `n_channels`: the number of channels in the dataset
 
-For all sampled data files, the endianness **must** be little-endian. This is
-the default for Intel x86 architectures, and thus the vast majority of modern
-systems.
+All other attributes are optional.
 
-An example .meta file:
+An example `.meta` file for a sampled dataset:
 
     ---
     sampling_rate: 30000
@@ -209,8 +215,6 @@ An example .meta file:
     trial: 1
     units: V
     unit_scale: 0.025
-
-The first three attributes are required for sampled data. All others are optional.
 
 #### Units
 
@@ -231,7 +235,7 @@ the file must contain `start,`, indicating that the column contains the times
 of the event data. Event datasets may be distinguished from sampled datasets in
 several ways, but the only method the Bark standard guarantees relies on the
 `units` attribute. Event datasets must have `units` of time - either `s` (for
-seconds) or `samples`. Sampled datasets must not have these units.
+seconds) or `samples`. Sampled datasets **must not** have these units.
 
 Complex event data must be stored as arrays with multiple columns. Only one
 field or column is required: `start`, which indicates the times of the events;
