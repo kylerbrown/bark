@@ -231,9 +231,9 @@ The following attributes are **required** for all sampled datasets:
 - **`sampling_rate`:** A nonzero positive number indicating the sampling rate
   of the data, in samples per second (Hz). May be either an integer or a
   floating-point value.
-- `dtype`: the numeric type of the data, such as 16-bit integer or 32-bit
+- **`dtype`:** the numeric type of the data, such as 16-bit integer or 32-bit
   float
-- `n_channels`: the number of channels in the dataset
+- **`n_channels`:** the number of channels in the dataset
 
 The following attribute is **required** for event datasets with `units` of
 "samples":
