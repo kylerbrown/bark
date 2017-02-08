@@ -12,7 +12,8 @@ This implementation leverages the hierarchical nature of the file system and thr
 + Raw binary arrays
 
 All Bark data files have associated metadata files. Files that do not have
-associated metadata files are ignored. Metafiles must have associated datasets.
+associated metadata files are ignored. Metadata files must have associated
+datasets.
 
 By ignoring extra files, this system flexibly allows the inclusion of non-standard data such as videos, screenshots and notes.
 
@@ -99,17 +100,27 @@ while allowing the user to add metadata specific to an application.
 A *root* is a top-level directory containing a `meta` file and zero or more
 *entries*.
 
+Root directories must not contain datasets.
+
+#### Root metadata
+
 There are no required attributes in the root `meta` file.
 
-Root directories must not contain datasets.
+Any attributes the user finds helpful may be included.
 
 ### Entries
 
 An *entry* is an abstract grouping of zero or more *datasets* that
 all share a common start time. Each entry shall be represented by a directory.
 The directory shall contain all the data objects associated with that entry, 
-and all the metadata associated with the entry, stored
-as YAML key-value pairs in a file named `meta`.
+and all the metadata associated with the entry.
+
+Entry directories must not contain root or entry directories.
+Any subdirectories are ignored.
+
+#### Entry metadata
+
+An entry's metadata must be stored in a file named `meta`.
 
 The following attributes are **required**:
 
@@ -142,34 +153,11 @@ Example `meta` file for an entry:
     uuid: b05c865d-fb68-44de-86fc-1e95b273159c
     animal: bk196
 
-Entry directories must not contain root or entry directories.
-Any subdirectories are ignored.
-
 ### Datasets
 
-A *dataset* is a concrete time series or point process.  Multiple
-datasets may be stored in an entry, and may have different lengths or
-timebases (i.e., an *offset* and a *sampling rate*).
-
-Datasets must have a corresponding YAML file containing metadata. The name of this
-metadata file must be `<dataset_filename>.meta`.
-
-The *offset* (attribute `offset`) applies to all datasets. All time values in a
-dataset are relative to the entry's timestamp plus the dataset's offset. The 
-offset does not need to be explicitly specified for every dataset. If it is not
-specified, it is assumed to be zero. If it is specified, its units (attribute 
-`offset_units`) must also be specified. Two datasets in the same entry may have 
-different offsets.
-
-The *sampling rate* (attribute `sampling_rate`) allows discrete times to be
-converted to real times. If the dataset contains time series (or *sampled*) 
-data, this attribute must be present. Alternatively, if the dataset contains 
-point process (or *event*) data, and the units of these data are samples, the 
-sampling rate must also be specified. The only datasets which may omit the 
-sampling rate attribute are point process datasets with units of seconds.
-
-Real-valued times must be in units of seconds (`s`). Discrete-valued times must 
-be in units of samples (`samples`).
+A *dataset* is a concrete time series or point process.  Multiple datasets may
+be stored in an entry, and may have different lengths or timebases (i.e.,
+*offset* and *sampling rate*).
 
 #### Sampled data
 
@@ -196,76 +184,61 @@ A raw binary file with N channels and M samples looks like this:
 
 There is no required extension, but `.dat` or `.pcm` are common choices.
 
-The disadvantage of simple raw binary files is that no metadata are stored
-within the file itself. Three metadata attributes are thus **required**:
-
-- `sampling_rate`: allows discrete times to be converted to real times (Hz)
-- `dtype`: the numeric type of the data, such as 16-bit integer or 32-bit
-  float
-- `n_channels`: the number of channels in the dataset
-
-All other attributes are optional.
-
-An example `.meta` file for a sampled dataset:
-
-    ---
-    sampling_rate: 30000
-    dtype: int16
-    n_channels: 8
-    trial: 1
-    units: V
-    unit_scale: 0.025
-
-#### Units
-
-The `units` attribute must, with two exceptions, be an SI unit abbreviation.
-Inference of its meaning is case sensitive (e.g., `s` means seconds, but `S`
-means Siemens).
-
-The first exception is the value `samples`, which is dimensionless in SI notation.
-The second exception is a null value, to be used if the units are unknown. The null
-value in YAML is `null`; in Python, use `None`.
-
 #### Event data
 
-Event data are stored in CSV files with a header line. Simple event data should
-be stored in a single-column CSV, with each element in the array indicating the
-time of the event **relative to the start of the dataset**. The first line of
-the file must contain `start,`, indicating that the column contains the times
-of the event data. Event datasets may be distinguished from sampled datasets in
-several ways, but the only method the Bark standard guarantees relies on the
-`units` attribute. Event datasets must have `units` of time - either `s` (for
-seconds) or `samples`. Sampled datasets **must not** have these units.
+Event data are stored in CSV files with a header line.
 
-Complex event data must be stored as arrays with multiple columns. Only one
-field or column is required: `start`, which indicates the times of the events;
-these values may be either integers or floating-point numbers.
+Simple event data should be stored in a single-column CSV, with each element in
+the array indicating the time of the event **relative to the start of the
+dataset**. The first line of the file must contain `start,`, indicating that
+the column contains the times of the event data.
 
-Intervals are a special class of event data, and are described by `start` and
-`stop` columns. They are not treated differently by Bark.
+Complex event data must be stored as arrays with multiple columns. As for
+simple event data, a column labeled `start,` is required, indicating the
+times of the events; these values may be either integers or floating-point
+numbers.
 
-#### Dataset attributes
+Intervals are simply a type of complex event data, with the required `start,`
+column plus a column labeled `stop` (plus any others the user desires).
+They are not treated differently by Bark.
 
-All datasets must have the following attributes:
+Event datasets may be distinguished from sampled datasets in several ways, but
+the only method the Bark standard guarantees relies on the `units` attribute
+(see below).
+
+#### Dataset metadata
+
+Datasets must have a corresponding YAML file containing metadata in the same
+folder/entry. The name of this metadata file must be `<dataset_filename>.meta`.
+
+The following attributes are **required** for all datasets:
 
 - **`filetype`:** A string specifying the format of the data. The currently
   accepted formats are "csv" and "rawbinary", though others may be added
   in the future.
-- **`units`:** A string giving the units of the data, which, if present, should
-  be either an SI unit abbreviation, "samples", or "null" (in Python, `None`).
-  Alternatively, it may be an empty string, indicating sampled data for which
-  the units are unknown. Event data must have units of "samples" (for a
-  discrete timebase) or "s" (for a continuous timebase); sampled data must not
-  use these units. For complex event data, this attribute must be an array,
-  with each element of the array indicating the units of the associated field
-  in the data.
+- **`units`:** A string giving the units of the data. `units` must, with two 
+  exceptions, be an SI unit abbreviation. Inference of its meaning is case-
+  sensitive (e.g., `s` means seconds, but `S` means Siemens). The first
+  exception to this rule is the value `samples`, which is dimensionless in SI
+  notation. The second exception is a null value, to be used if the units are
+  unknown. The null value in YAML is `null`; in Python, use `None`. An empty
+  string is also treated as a `null` value. For complex event data, this
+  attribute must be an array. Event datasets **must** have units of either "s"
+  or "samples"; sampled datasets **must not** use those units.
 
-The following attribute is only required for all sampled datasets, and for
-event datasets with `units` of "samples":
+The following attributes are **required** for all sampled datasets:
 
 - **`sampling_rate`:** A nonzero positive number indicating the sampling rate
   of the data, in samples per second (Hz). May be either an integer or a
   floating-point value.
+- `dtype`: the numeric type of the data, such as 16-bit integer or 32-bit
+  float
+- `n_channels`: the number of channels in the dataset
+
+The following attribute is **required** for event datasets with `units` of
+"samples":
+
+- **`sampling_rate`:** as described above for sampled datasets.
 
 The following attributes are defined by the spec, but are optional:
 
@@ -274,10 +247,13 @@ The following attributes are defined by the spec, but are optional:
   match the correct units. If `units` is an array, `unit_scale` must be an
   array of the same shape.
 - **`offset`:** Indicates the start time of the dataset relative to the
-  timestamp of the entry, defined by the timebase of the dataset. For discrete timebases, the
-  units must be in samples; for continuous timebases, the units must be the same
-  as the units of the dataset. If this attribute is missing, the offset shall be
-  assumed to be zero.
+  timestamp of the entry. For discrete timebases, the units must be in samples;
+  for continuous timebases, the units must be the same as the units of the
+  dataset. If this attribute is missing, the offset is assumed to be zero. If
+  it is present, it must be accompanied by the `offset_units` attribute. Note
+  that two datasets in the same entry may have different offsets.
+- **`offset_units`:** Indicates the units necessary to interpret the `offset`
+  attribute. Must be present if `offset` is present.
 - **`uuid`:** A universally unique ID for the dataset (see
   [RFC 4122](http://tools.ietf.org/html/rfc4122.html)). Multiple datasets in
   different entries of the same file may have the same `uuid`, indicating that
@@ -285,3 +261,22 @@ The following attributes are defined by the spec, but are optional:
   stored as a string.
 
 All other attributes are optional, and may be specified by the user.
+
+An example `.meta` file for a sampled dataset:
+
+    ---
+    filetype: rawbinary
+    sampling_rate: 30000
+    dtype: int16
+    n_channels: 8
+    trial: 1
+    units: V
+    unit_scale: 0.025
+
+An example `.meta` file for an event dataset:
+
+    ---
+    filetype: csv
+    units: s
+    offset: 1.01
+    offset_units: s
