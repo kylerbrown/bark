@@ -249,11 +249,8 @@ The following attributes are defined by the spec, but are optional:
 - **`offset`:** Indicates the start time of the dataset relative to the
   timestamp of the entry. For discrete timebases, the units must be in samples;
   for continuous timebases, the units must be the same as the units of the
-  dataset. If this attribute is missing, the offset is assumed to be zero. If
-  it is present, it must be accompanied by the `offset_units` attribute. Note
+  dataset. If this attribute is missing, the offset is assumed to be zero. Note
   that two datasets in the same entry may have different offsets.
-- **`offset_units`:** Indicates the units necessary to interpret the `offset`
-  attribute. Must be present if `offset` is present.
 - **`uuid`:** A universally unique ID for the dataset (see
   [RFC 4122](http://tools.ietf.org/html/rfc4122.html)). Multiple datasets in
   different entries of the same file may have the same `uuid`, indicating that
