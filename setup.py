@@ -30,6 +30,7 @@ setup(name='bark',
               'bark-convert-openephys=bark.io.openephys.kwik2dat:kwd_to_entry',
               'bark-split=bark.tools.barksplit:_main',
               'dat-decimate=bark.tools.barkutils:rb_decimate',
+              'dat-segment=bark.tools.datsegment:_run',
               ]
           }
       )

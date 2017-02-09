@@ -88,10 +88,13 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
 - `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
 - `dat-decimate` -- downsamples a raw binary data file by an integer factor, likely want to low-pass filter your data first.
+- `dat-segment` -- segments a file based on a band of spectral power, based on [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 
 For processing continuously sampled data, try the included python moduled `bark.stream` or the 
 [datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
 for common data pipelines and adhere to the Bark/ARF standard.
+
+Over time, tools from `datutils` will migrate into `bark`.
 
 There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
 
