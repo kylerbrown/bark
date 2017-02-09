@@ -165,12 +165,9 @@ be stored in an entry, and may have different lengths or timebases (i.e.,
 Sampled data are stored in raw binary files as outlined in
 [the Neurosuite documentation](http://neurosuite.sourceforge.net/formats.html).
 
-These data shall be represented as 2-dimensional arrays of scalar values,
+These data shall be represented as arrays of scalar values,
 corresponding to the measurement during each sampling interval. The first  
 dimension of the array must correspond to time, and the second to channels.
-
-(The spec as written does not accommodate vector-valued time series such as
-video, but does not disallow them.)
 
 For multi-channel files, samples are interleaved, so files should be written
 in C (or row-major) order.
