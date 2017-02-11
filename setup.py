@@ -31,6 +31,7 @@ setup(name='bark',
               'bark-split=bark.tools.barksplit:_main',
               'dat-decimate=bark.tools.barkutils:rb_decimate',
               'dat-segment=bark.tools.datsegment:_run',
+              'bark-label-view=bark.tools.labelview:_run',
               ]
           }
       )

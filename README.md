@@ -89,6 +89,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
 - `dat-decimate` -- downsamples a raw binary data file by an integer factor, likely want to low-pass filter your data first.
 - `dat-segment` -- segments a file based on a band of spectral power, based on [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
+- `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 
 For processing continuously sampled data, try the included python moduled `bark.stream` or the 
 [datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
