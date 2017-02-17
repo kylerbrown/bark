@@ -30,14 +30,17 @@ Library versions:
 _Units = collections.namedtuple('_Units', ['TIME_UNITS'])
 UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
-_pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1),
-          ('EXTRAC_HP', 2), ('EXTRAC_LF', 3), ('EXTRAC_EEG', 4),
-          ('INTRAC_CC', 5), ('INTRAC_VC', 6),
-          ('EVENT', 1000), ('SPIKET', 1001), ('BEHAVET', 1002),
-          ('INTERVAL', 2000), ('STIMI', 2001), ('COMPONENTL', 2002))
+_pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1), ('EXTRAC_HP', 2),
+          ('EXTRAC_LF', 3), ('EXTRAC_EEG', 4), ('INTRAC_CC', 5),
+          ('INTRAC_VC', 6), ('EVENT', 1000), ('SPIKET', 1001),
+          ('BEHAVET', 1002), ('INTERVAL', 2000), ('STIMI', 2001),
+          ('COMPONENTL', 2002))
 _dt = collections.namedtuple('_dt', ['name_to_code', 'code_to_name'])
-DATATYPES = _dt(name_to_code={name: code for name, code in _pairs},
-                code_to_name={code: name for name, code in _pairs})
+DATATYPES = _dt(name_to_code={name: code
+                              for name, code in _pairs},
+                code_to_name={code: name
+                              for name, code in _pairs})
+
 
 # hierarchical classes
 class Root():
@@ -99,7 +102,7 @@ class Data():
 
     def __getitem__(self, item):
         return self.data[item]
-    
+
     @property
     def datatype_name(self):
         """Returns the dataset's datatype name, or None if unspecified."""
@@ -192,25 +195,18 @@ def read_metadata(metafile):
         return params
     except IOError as err:
         fname = os.path.splitext(metafile)[0]
-        if fname == "meta":
+        if fname == "meta":  # this was a root or entry metafile
             return {}
-        print("""
-{dat} is missing an associated .meta file, which should be named {dat}.meta
-
-The .meta is plaintext YAML file of the following format:
-
----
-dtype: int16
-n_channels: 4
-sampling_rate: 30000.0
-
-(you may include any other metadata you like, such as experimenter, date etc.)
-
-to create a .meta file interactively, type:
-
-$ dat-meta {dat}
-        """.format(dat=metafile))
+        elif os.path.splitext(fname)[-1] == '.meta':
+            print("Tried to open metadata file instead of data file.")
+        elif os.path.exists(fname):
+            print(
+                "{} is missing an associated .meta file, should named {}.meta"
+                .format(fname, fname))
+        else:
+            print("{} does not exist".format(fname))
         sys.exit(0)
+
 
 def write_metadata(filename, **params):
     for k, v in params.items():
