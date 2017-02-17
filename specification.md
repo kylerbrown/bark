@@ -172,10 +172,6 @@ dimension of the array must correspond to time, and the second to channels.
 For multi-channel files, samples are interleaved, so files should be written
 in C (or row-major) order.
 
-ARF allows user-specified endianness, but Bark does not. All sampled data files
-**must** be little-endian. This is the default for Intel x86 architectures, and
-thus the vast majority of modern systems.
-
 A raw binary file with N channels and M samples looks like this:
 
     c1s1, c2s1, c3s1, ..., cNs1, c1s2, c2s2, c3s2, ..., c1sM, c2sM, c3sM,...,cNsM 
@@ -230,7 +226,11 @@ The following attributes are **required** for all sampled datasets:
   of the data, in samples per second (Hz). May be either an integer or a
   floating-point value.
 - **`dtype`:** the numeric type of the data, such as 16-bit integer or 32-bit
-  float
+  float. The value must be a string that uses
+  [numpy's datatype notation format.](https://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html)
+  For example `<i2` is a little endian 16 bit signed integer, and `>f8` would
+  be a big endian 64-bit floating point number.
+  
 - **`n_channels`:** the number of channels in the dataset
 
 The following attribute is **required** for event datasets with `units` of

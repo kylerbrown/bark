@@ -133,7 +133,7 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
         params["n_channels"] = 1
     else:
         params["n_channels"] = data.shape[1]
-    params["dtype"] = data.dtype.name
+    params["dtype"] = data.dtype.str
     shape = data.shape
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
