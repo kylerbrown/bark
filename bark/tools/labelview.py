@@ -281,6 +281,8 @@ class SegmentReviewer:
                                                             self.on_key_press)
         self.cid_mouse_press = self.canvas.mpl_connect(
             'button_press_event', self.on_mouse_press)
+        self.cid_mouse_motion = self.canvas.mpl_connect(
+            'motion_notify_event', self.on_mouse_motion)
         self.cid_mouse_release = self.canvas.mpl_connect(
             'button_release_event', self.on_mouse_release)
 
@@ -310,6 +312,12 @@ class SegmentReviewer:
             if self.selected_boundary:
                 self.selected_boundary.set_color('y')
                 self.canvas.draw()
+
+    def on_mouse_motion(self, event):
+        if self.selected_boundary is None:
+            return
+        self.selected_boundary.set_xdata((event.xdata, event.xdata))
+        self.canvas.draw()
 
     def on_mouse_release(self, event):
         if self.selected_boundary == self.osc_boundary_start:
@@ -364,8 +372,8 @@ class SegmentReviewer:
 
     def save(self):
         'Writes out labels to file.'
-        import pandas as pd
-        label_data = pd.DataFrame(self.labels)
+        from pandas import DataFrame
+        label_data = DataFrame(self.labels)
         bark.write_events(self.outfile, label_data, **self.label_attrs)
         print(self.outfile, 'written')
 
