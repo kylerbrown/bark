@@ -90,12 +90,8 @@ def test_entry_sort(tmpdir):
     assert mylist[1] == entry2
 
 def test_datatypes():
-    assert bark.DataTypes.is_timeseries(0)
-    assert bark.DataTypes.is_timeseries(1)
-    assert (not bark.DataTypes.is_timeseries(1000))
-    assert (not bark.DataTypes.is_timeseries(2002))
-    assert bark.DataTypes.is_pointproc(1000)
-    assert bark.DataTypes._fromstring('UNDEFINED') == 0
-    assert bark.DataTypes._fromstring('EVENT') == 1000
-    assert bark.DataTypes._fromcode(1) == 'ACOUSTIC'
-    assert bark.DataTypes._fromcode(2002) == 'COMPONENTL'
+    assert bark.DATATYPES.name_to_code['UNDEFINED'] == 0
+    assert bark.DATATYPES.name_to_code['EVENT'] == 1000
+    assert bark.DATATYPES.code_to_name[1] == 'ACOUSTIC'
+    assert bark.DATATYPES.code_to_name[2002] == 'COMPONENTL'
+    assert bark.DATATYPES.code_to_name[None] is None

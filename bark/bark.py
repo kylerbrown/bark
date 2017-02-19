@@ -30,58 +30,17 @@ Library versions:
 _Units = collections.namedtuple('_Units', ['TIME_UNITS'])
 UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
-class DataTypes:
-    """
-    Available ARF data types, by name and integer code.
-    
-    Copied, with some modifications, from Dan Meliza's ARF repo.
-    """
+_pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1), ('EXTRAC_HP', 2),
+          ('EXTRAC_LF', 3), ('EXTRAC_EEG', 4), ('INTRAC_CC', 5),
+          ('INTRAC_VC', 6), ('EVENT', 1000), ('SPIKET', 1001),
+          ('BEHAVET', 1002), ('INTERVAL', 2000), ('STIMI', 2001),
+          ('COMPONENTL', 2002))
+_dt = collections.namedtuple('_dt', ['name_to_code', 'code_to_name'])
+DATATYPES = _dt(name_to_code={name: code
+                              for name, code in _pairs},
+                code_to_name={code: name
+                              for name, code in _pairs})
 
-    UNDEFINED = 0
-    ACOUSTIC = 1
-    EXTRAC_HP, EXTRAC_LF, EXTRAC_EEG = range(2, 5)
-    INTRAC_CC, INTRAC_VC = range(5, 7)
-    EVENT, SPIKET, BEHAVET = range(1000, 1003)
-    INTERVAL, STIMI, COMPONENTL = range(2000, 2003)
-
-    @classmethod
-    def _doc(cls):
-        out = str(cls.__doc__)
-        for code,name in sorted(cls._todict().items()):
-            out += '\n{%s}:{%d}'.format(name, code)
-        return out
-
-    @classmethod
-    def is_timeseries(cls, code):
-        """Indicates whether the code corresponds to time series data."""
-        if cls._fromcode(code) is None:
-            raise KeyError('bad datatype code: {}'.format(code))
-        else:
-            if code < cls.EVENT:
-                return True
-            else:
-                return False
-    @classmethod
-    def is_pointproc(cls, code):
-        """Indicates whether the code corresponds to point process data."""
-        return (not cls.is_timeseries(code))
-
-    @classmethod
-    def _todict(cls):
-        """Generate a dictionary keyed by datatype code."""
-        return dict((getattr(cls, attr), attr)
-                     for attr in dir(cls)
-                     if not attr.startswith('_'))
-
-    @classmethod
-    def _fromstring(cls, name):
-        """Returns datatype code given the name, or None if undefined."""
-        return getattr(cls, name.upper(), None)
-
-    @classmethod
-    def _fromcode(cls, code):
-        """Returns datatype name given the code, or None if undefined."""
-        return cls._todict().get(code, None)
 
 # hierarchical classes
 class Root():
@@ -96,9 +55,9 @@ class Root():
 
     def read(self, name):
         self.path = os.path.abspath(name)
-        self.name = os.path.split(path)[-1]
-        self.attrs = read_metadata(os.path.join(path, "meta"))
-        all_sub = [os.path.join(name, x) for x in listdir(path)]
+        self.name = os.path.split(self.path)[-1]
+        self.attrs = read_metadata(os.path.join(self.path, "meta"))
+        all_sub = [os.path.join(name, x) for x in listdir(self.path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
         self.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
 
@@ -143,11 +102,11 @@ class Data():
 
     def __getitem__(self, item):
         return self.data[item]
-    
+
     @property
     def datatype_name(self):
-        """Returns the name of the dataset's datatype, or None if unspecified."""
-        return DataTypes._fromcode(self.attrs.get('datatype', None))
+        """Returns the dataset's datatype name, or None if unspecified."""
+        return DATATYPES.name_to_code[self.attrs.get('datatype', None)]
 
 
 class SampledData(Data):
@@ -161,7 +120,7 @@ class SampledData(Data):
     def write(self, path=None):
         if path is None:
             path = self.path
-        write_sampled(self.path, self.data, **self.attrs)
+        write_sampled(path, self.data, **self.attrs)
 
 
 class EventData(Data):
@@ -177,7 +136,7 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
         params["n_channels"] = 1
     else:
         params["n_channels"] = data.shape[1]
-    params["dtype"] = data.dtype.name
+    params["dtype"] = data.dtype.str
     shape = data.shape
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
@@ -190,19 +149,6 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
     params['units'] = units
     return SampledData(mdata, datfile, params)
 
-
-def load_dat(datfile, mode="r"):
-    """ loads raw binary file
-
-    mode may be "r" or "r+"; use "r+" for modifiying the data (not
-    recommended).
-
-    does NOT return a SampledData object - use read_sampled instead.
-    """
-    params = read_metadata(datfile)
-    data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
-    data = data.reshape(-1, params["n_channels"])
-    return data, params
 
 def read_sampled(datfile, mode="r"):
     """ loads raw binary file
@@ -249,25 +195,18 @@ def read_metadata(metafile):
         return params
     except IOError as err:
         fname = os.path.splitext(metafile)[0]
-        if fname == "meta":
+        if fname == "meta":  # this was a root or entry metafile
             return {}
-        print("""
-{dat} is missing an associated .meta file, which should be named {dat}.meta
-
-The .meta is plaintext YAML file of the following format:
-
----
-dtype: int16
-n_channels: 4
-sampling_rate: 30000.0
-
-(you may include any other metadata you like, such as experimenter, date etc.)
-
-to create a .meta file interactively, type:
-
-$ dat-meta {dat}
-        """.format(dat=metafile))
+        elif os.path.splitext(fname)[-1] == '.meta':
+            print("Tried to open metadata file instead of data file.")
+        elif os.path.exists(fname):
+            print(
+                "{} is missing an associated .meta file, should named {}.meta"
+                .format(fname, fname))
+        else:
+            print("{} does not exist".format(fname))
         sys.exit(0)
+
 
 def write_metadata(filename, **params):
     for k, v in params.items():
@@ -288,16 +227,11 @@ def create_root(name, parents=False, **attrs):
     else:
         os.makedirs(path)
     write_metadata(os.path.join(path, "meta"), **attrs)
-    return read_root(name)
+    return Root(name)
 
 
 def read_root(name):
-    path = os.path.abspath(name)
-    attrs = read_metadata(os.path.join(path, "meta"))
-    all_sub = [os.path.join(name, x) for x in listdir(path)]
-    subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
-    entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
-    return Root(path, entries, attrs)
+    return Root(name)
 
 
 def create_entry(name, timestamp, parents=False, **attributes):
@@ -402,8 +336,3 @@ def parse_timestamp_string(string):
     else:
         timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
     return timestamp
-
-
-def get_uuid(obj):
-    """Returns the uuid for obj, or None if none is set"""
-    return obj.attrs.get('uuid', None)
