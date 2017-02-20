@@ -9,25 +9,23 @@ import hashlib
 import collections
 import functools as ft
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 class EditStack:
-    def __init__(self, labels, ops_file, load, apply=False):
+    def __init__(self, labels, ops_file, load):
         """Creates an EditStack.
         
            labels -- a list of dicts denoted event data
            ops_file -- filename string to save operations
-           load -- bool; if True, load from ops_file
-           apply -- bool; if True and if load, apply corrections in ops_file"""
+           load -- bool; if True, load from ops_file and apply to labels"""
         self.labels = labels
         self.file = ops_file
         if load:
-            self.read_from_file(apply=apply)
+            self.read_from_file()
         else:
             self.undo_stack = collections.deque()
             self.redo_stack = collections.deque()
-            self.hash_pre = self.event_hash()
-            self.hash_post = self.event_hash()
+            self.hash_pre = event_hash(self.labels)
     
     def __enter__(self):
         return self
@@ -40,30 +38,25 @@ class EditStack:
             self.write_to_file(self.file + '.bak')
             return False
     
-    def event_hash(self):
-        """Returns SHA-1 hash of current event list state."""
-        return hashlib.sha1(repr(self.labels).encode()).hexdigest()
-    
-    def read_from_file(self, file=None, apply=False):
+    def read_from_file(self, file=None):
         """Read a stack of corrections plus metadata from file.
            
            file -- if not present, use self.file
-           apply -- bool; if True, apply loaded corrections
-                          if False, assume corrections already applied"""
+           
+           Raises ValueError if pre-operation hashes don't match."""
         if file:
             self.file = file
+        with codecs.open((self.file + '.yaml'), 'r', encoding='utf-8') as mdfp:
+            file_data = yaml.safe_load(mdfp)
+            self.hash_pre = file_data['hash_pre']
+        if self.hash_pre != event_hash(self.labels):
+            raise ValueError('label file hash does not match op file hash_pre')
         with codecs.open(self.file, 'r', encoding='utf-8') as fp:
             self.undo_stack = collections.deque()
             self.redo_stack = collections.deque()
             for op in fp:
                 if op != '\n':
-                    if apply:
-                        self._apply(parse(op.strip()))
-                    self.undo_stack.append(parse(op.strip()))
-        with codecs.open((self.file + '.yaml'), 'r', encoding='utf-8') as mdfp:
-            file_data = yaml.safe_load(mdfp)
-            self.hash_pre = file_data['hash_pre']
-            self.hash_post = file_data['hash_post']
+                    self.push(parse(op.strip()))
     
     def write_to_file(self, file=None):
         """Write stack of corrections plus metadata to file.
@@ -75,8 +68,8 @@ class EditStack:
             for op in self.undo_stack:
                 fp.write(deparse(op) + '\n')
         with codecs.open((self.file + '.yaml'), 'w', encoding='utf-8') as mdfp:
-            self.hash_post = self.event_hash()
-            file_data = {'hash_pre': self.hash_pre, 'hash_post': self.hash_post}
+            self.hash_post = event_hash(self.labels)
+            file_data = {'hash_pre': self.hash_pre}
             mdfp.write("""# corrections metadata, YAML syntax\n---\n""")
             mdfp.write(yaml.safe_dump(file_data, default_flow_style=False))
     
@@ -140,77 +133,55 @@ class EditStack:
     
     # code generators
     
-    def _gen_code(self, op, idx, new_vals, old_vals):
-        """Generates an s-expression for the given op.
-           
-           op -- string
-           idx -- integer
-           new_vals -- dict; keys must be valid column names
-           old_vals -- list of strings; must be valid column names"""
-        sxpr = [Symbol(op), KeyArg('target'), [Symbol('interval')]]
-        sxpr[-1].extend([KeyArg('index'), idx])
-        query_keys = (old_vals | set(new_vals.keys())) - set(['next_start'])
-        for c in query_keys:
-            sxpr[-1].extend([KeyArg(c), self.labels[idx][c]])
-        if op == 'merge_next': # include second event's data to allow inversion
-            for c in query_keys:
-                sxpr[-1].extend([KeyArg('next_' + c), self.labels[idx + 1][c]])
-        elif op == 'split': # second child event's data is copied from first
-            for c in query_keys:
-                sxpr[-1].extend([KeyArg('next_' + c), self.labels[idx][c]])
-        for c in new_vals:
-            sxpr.extend([KeyArg('new_' + c), new_vals[c]])
-        return sxpr
-    
     def codegen_rename(self, index, new_name):
         """Generates s-expression to rename an event."""
-        new_values = {'name': new_name}
-        old_values = set()
-        return self._gen_code('set_name', index, new_values, old_values)
+        new_vals = {'name': new_name}
+        old_vals = set()
+        return gen_code(self.labels, 'set_name', index, new_vals, old_vals)
     
     def codegen_set_start(self, index, new_start):
         """Generates s-expression to move an event's start."""
-        new_values = {'start': new_start}
-        old_values = set()
-        return self._gen_code('set_start', index, new_values, old_values)
+        new_vals = {'start': new_start}
+        old_vals = set()
+        return gen_code(self.labels, 'set_start', index, new_vals, old_vals)
     
     def codegen_set_stop(self, index, new_stop):
         """Generates s-expression to move an event's stop."""
-        new_values = {'stop': new_stop}
-        old_values = set()
-        return self._gen_code('set_stop', index, new_values, old_values)
+        new_vals = {'stop': new_stop}
+        old_vals = set()
+        return gen_code(self.labels, 'set_stop', index, new_vals, old_vals)
     
     def codegen_merge_next(self, index):
         """Generates an s-expression to merge an event with its successor.
            The new event inherits all non-boundary column values from the
            first parent."""
-        new_values = {'stop': None, 'next_start': None}
-        old_values = set(self.labels[index].keys())
-        return self._gen_code('merge_next', index, new_values, old_values)
+        new_vals = {'stop': None, 'next_start': None}
+        old_vals = set(self.labels[index].keys())
+        return gen_code(self.labels, 'merge_next', index, new_vals, old_vals)
     
     def codegen_split(self, index, split_pt):
         """Generates an s-expression to split an event in two at a point.
            The child events inherit all non-boundary column values from the
            parent."""
-        new_values = {'stop': split_pt, 'next_start': split_pt}
-        old_values = set(self.labels[index].keys())
-        return self._gen_code('split', index, new_values, old_values)
+        new_vals = {'stop': split_pt, 'next_start': split_pt}
+        old_vals = set(self.labels[index].keys())
+        return gen_code(self.labels, 'split', index, new_vals, old_vals)
     
     def codegen_delete(self, index):
         """Generates an s-expression to delete an event."""
-        new_values = {}
-        old_values = set(self.labels[index].keys())
-        return self._gen_code('delete', index, new_values, old_values)
+        new_vals = {}
+        old_vals = set(self.labels[index].keys())
+        return gen_code(self.labels, 'delete', index, new_vals, old_vals)
     
     def codegen_create(self, index, start, stop, name, **kwargs):
         """Generates an s-expression to create a new event with given values."""
-        new_values = {'start': start, 'stop': stop, 'name': name}
-        new_values.update(kwargs)
-        old_values = set(new_values.keys())
+        new_vals = {'start': start, 'stop': stop, 'name': name}
+        new_vals.update(kwargs)
+        old_vals = set(new_vals.keys())
         # trick: make 'create' s-expr with new_vals, invert to 'delete' s-expr
         # to inject them into #:target, remove the garbage new_values, then
         # invert again to generate the proper 'create' s-expr
-        bad_create = self._gen_code('create', index, new_values, old_values)
+        bad_create = gen_code(self.labels, 'create', index, new_vals, old_vals)
         good_create = invert(invert(bad_create)[:3])
         return good_create
 
@@ -220,7 +191,8 @@ def _set_value(labels, target, column, **kwargs):
     labels[target['index']][column] # raise KeyError if column not present
     labels[target['index']][column] = kwargs['new_' + column]
 
-def _merge_next(labels, target, **kwargs):
+def _merge_next(labels, target, **_):
+    # **_ contains throwaway args needed to allow inversion, but not used here
     index = target['index']
     labels[index]['stop'] = labels[index + 1]['stop']
     labels.pop(index + 1)
@@ -248,6 +220,32 @@ def _create(labels, target):
     del target['index']
     new_point.update(target)
     labels.insert(idx, new_point)
+
+# code generation
+
+def gen_code(labels, op, idx, new_vals, old_vals):
+    """Generates an s-expression for the given op.
+       
+       labels -- list of dicts representing events
+       op -- string
+       idx -- integer
+       new_vals -- dict; keys must be valid column names
+       old_vals -- list of strings; must be valid column names"""
+    sxpr = [Symbol(op), KeyArg('target'), [Symbol('interval')]]
+    sxpr[-1].extend([KeyArg('index'), idx])
+    query_keys = (old_vals | set(new_vals.keys())) - set(['next_start'])
+    for c in query_keys:
+        sxpr[-1].extend([KeyArg(c), labels[idx][c]])
+    if op == 'merge_next': # include second event's data to allow inversion
+        for c in query_keys:
+            sxpr[-1].extend([KeyArg('next_' + c), labels[idx + 1][c]])
+    elif op == 'split': # second child event's data is copied from first
+        for c in query_keys:
+            sxpr[-1].extend([KeyArg('next_' + c), labels[idx][c]])
+    for c in new_vals:
+        sxpr.extend([KeyArg('new_' + c), new_vals[c]])
+    return sxpr
+
 
 # invert operations
 
@@ -435,3 +433,7 @@ def _grouper(iterable, n):
         return itertools.izip_longest(*args)
     except AttributeError: # python 2/3 support
         return itertools.zip_longest(*args)
+
+def event_hash(events):
+    """Returns SHA-1 hash of given event list (assumed to be list of dicts)."""
+    return hashlib.sha1(repr(events).encode()).hexdigest()
