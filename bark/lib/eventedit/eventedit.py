@@ -9,7 +9,7 @@ import hashlib
 import collections
 import functools as ft
 
-__version__ = "0.4"
+__version__ = "0.4.1"
 
 class EditStack:
     def __init__(self, labels, ops_file, load):
@@ -135,6 +135,8 @@ class EditStack:
     
     def codegen_rename(self, index, new_name):
         """Generates s-expression to rename an event."""
+        if '"' in new_name:
+            raise ValueError('" character disallowed in event names')
         new_vals = {'name': new_name}
         old_vals = set()
         return gen_code(self.labels, 'set_name', index, new_vals, old_vals)
@@ -326,15 +328,20 @@ def tokenize(cmd):
     second_pass = []
     in_string = False
     for token in cmd.split():
-        num_quotes = token.count('"')
-        if num_quotes % 2 == 1 and not in_string: # open quote
+        if token[0] == '"' and not in_string: # open quote
             second_pass.append(token)
-            in_string = True
-        elif num_quotes % 2 == 1 and in_string: # close quote
+            if token.count('"') != 2:
+                in_string = True
+        elif '"' in token and in_string: # close quote
+            if all(c == ')' for c in token[(token.index('"') + 1):]):
+                second_pass[-1] += ' ' + token
+                in_string = False
+            else:
+                raise ValueError('unexpected " character in command: ' + cmd)
+        elif '"' not in token and in_string: # middle words in quote
             second_pass[-1] += ' ' + token
-            in_string = False
-        elif num_quotes == 0 and in_string: # middle words in quote
-            second_pass[-1] += ' ' + token
+        elif '"' in token:
+            raise ValueError('unexpected " character in command: ' + cmd)
         else:
             second_pass.append(token)
     third_pass = []
@@ -344,10 +351,11 @@ def tokenize(cmd):
             if len(token) > 1:
                 third_pass.append(token[1:])
         elif token[-1] == ')':
-            ct = token.count(')')
-            third_pass.append(token[:-ct])
-            for _ in range(ct):
-                third_pass.append(')')
+            pps = []
+            while token[-1] == ')':
+                pps.append(')')
+                token = token[:-1]
+            third_pass.extend([token] + pps)
         else:
             third_pass.append(token)
     return third_pass

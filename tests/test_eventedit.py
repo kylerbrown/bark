@@ -1,6 +1,6 @@
 import pytest
 import copy
-from bark.lib.eventedit import eventedit as eved
+import eventedit.eventedit as eved
 import os
 import tempfile
 import yaml
@@ -99,6 +99,10 @@ def test_tokenize():
     assert len(tkns) == 2
     assert tkns[0] == 'string'
     assert tkns[1] == '"spaces preserved"'
+    
+    tkns = eved.tokenize('string "(can) contain parentheses"')
+    assert len(tkns) == 2
+    assert tkns[1] == '"(can) contain parentheses"'
 
 def test_atomize():
     assert eved.atomize('1') == 1
@@ -527,6 +531,9 @@ def test_CS_rename():
     cs = eved.EditStack(labels=labels,
                             ops_file=tf.name,
                             load=False)
+
+    with pytest.raises(ValueError):
+        cs.rename(0, '"cannot use double-quotes"')
     
     cs.rename(0, 'q')
     assert len(cs.undo_stack) == 1
