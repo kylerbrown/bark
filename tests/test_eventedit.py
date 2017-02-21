@@ -1,6 +1,6 @@
 import pytest
 import copy
-import eventedit.eventedit as eved
+from bark.lib.eventedit import eventedit as eved
 import os
 import tempfile
 import yaml
