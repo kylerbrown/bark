@@ -13,7 +13,6 @@ setup(name='bark',
           'bark.io',
           'bark.io.rhd',
           'bark.io.openephys',
-          'bark.lib.eventedit',
           ],
       zip_safe=False,
       entry_points = {
