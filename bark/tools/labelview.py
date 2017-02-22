@@ -1,13 +1,16 @@
 import os
 import sys
-import warnings
 import string
 import yaml
 import numpy as np
 from scipy.signal import spectrogram
 import matplotlib.pyplot as plt
 import bark
-from bark.io.eventops import OpStack, write_stack, read_stack
+from bark.io.eventops import (OpStack, write_stack, read_stack,
+        Update, Merge, Split, Delete)
+
+import warnings
+warnings.filterwarnings('ignore') # suppress matplotlib warnings
 
 help_string = '''
 Pressing any number or letter (uppercase or lowercase) will mark a segment.
@@ -24,6 +27,7 @@ ctrl+m : merge current syllable with previous
 ctrl+x : delete segment
 ctrl+z : undo last operation
 ctrl+y : redo
+ctrl+w : close
 click on segment boundary : move boundary
 ctrl+click inside a segment : split segment
 ctrl+click outside a segment : new segment (TODO)
@@ -33,6 +37,7 @@ The bottom panel is a map of all label locations.
 Click on a label to travel to that location.
 
 On close, an operation file and the final event file will be written.
+Do not kill from terminal unless you want to prevent a save.
 '''
 
 # kill all the shorcuts
@@ -44,7 +49,7 @@ def kill_shortcuts(plt):
     plt.rcParams['keymap.grid'] = ''
     plt.rcParams['keymap.home'] = ''
     plt.rcParams['keymap.pan'] = ''
-    plt.rcParams['keymap.quit'] = ''
+    #plt.rcParams['keymap.quit'] = ''
     plt.rcParams['keymap.save'] = ''
     plt.rcParams['keymap.xscale'] = ''
     plt.rcParams['keymap.yscale'] = ''
@@ -95,6 +100,7 @@ def plot_spectrogram(data,
     start_samp = int(start * sr) - nfft // 2
     stop_samp = int(stop * sr) - nfft // 2
     x = data[start_samp:stop_samp]
+    
     f, t, Sxx = spectrogram(x,
                             sr,
                             nperseg=nfft,
@@ -129,7 +135,10 @@ class SegmentReviewer:
         self.opsfile = opsfile
         self.outfile = outfile
         self.keymap = keymap
-        self.i = 0
+        if opstack.ops:
+            self.i = opstack.ops[-1].index
+        else:
+            self.i = 0
         self.N_points = 20000
         self.initialize_plots()
         self.update_plot_data()
@@ -236,7 +245,7 @@ class SegmentReviewer:
         if i == 0:
             self.osc_ax.set_title('ctrl+h for help, prints to terminal')
         else:
-            self.osc_ax.set_title('{} of {}, last op: {}'.format(i + 1, len(self.opstack.events), last_command))
+            self.osc_ax.set_title('{}/ {} {}'.format(i + 1, len(self.opstack.events), last_command))
         self.canvas.draw()
 
     def update_spectrogram(self):
@@ -278,7 +287,7 @@ class SegmentReviewer:
         # sylable splitting
         elif (event.key == 'control' and event.xdata > start_pos and
               event.xdata < stop_pos):
-            self.opstack.split(self.i, event.xdata)
+            self.opstack.push(Split(self.i, event.xdata))
             self.update_plot_data()
         # boundary updates
         else:
@@ -300,9 +309,9 @@ class SegmentReviewer:
 
     def on_mouse_release(self, event):
         if self.selected_boundary == self.osc_boundary_start:
-            self.opstack.update(self.i, 'start', event.xdata)
+            self.opstack.push(Update(self.i, 'start', event.xdata))
         elif self.selected_boundary == self.osc_boundary_stop:
-            self.opstack.update(self.i, 'stop', event.xdata)
+            self.opstack.push(Update(self.i, 'stop', event.xdata))
         if self.selected_boundary:
             self.selected_boundary.set_color('r')
             self.update_syl_boundaries()
@@ -329,7 +338,7 @@ class SegmentReviewer:
             self.dec_i()
         elif event.key in self.keymap:
             newlabel = self.keymap[event.key]
-            self.opstack.update(self.i, 'name', newlabel)
+            self.opstack.push(Update(self.i, 'name', newlabel))
             self.inc_i()
         elif event.key == 'ctrl+i':
             if self.N_points > 5000:
@@ -344,10 +353,10 @@ class SegmentReviewer:
             print(help_string)
         elif event.key == 'ctrl+m' and self.i > 0:
             self.i -= 1
-            self.opstack.merge(self.i)
+            self.opstack.push(Merge(self.i))
             self.update_plot_data()
         elif event.key == 'ctrl+x':
-            self.opstack.delete(self.i)
+            self.opstack.push(Delete(self.i))
             self.update_plot_data()
         elif event.key == 'ctrl+z' and self.opstack.ops:
             self.opstack.undo()
@@ -455,8 +464,4 @@ def _run():
 
 
 if __name__ == '__main__':
-    # The spectrogram function prints a harmless warning.
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore',
-                                r'overflow encountered in short_scalars')
-        _run()
+    _run()
