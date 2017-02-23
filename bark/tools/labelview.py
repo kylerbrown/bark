@@ -409,10 +409,16 @@ def load_opstack(opsfile, labelfile, labeldata, use_ops):
     load_ops = os.path.exists(opsfile) and use_ops
     if load_ops:
         opstack = read_stack(opsfile)
-        if opstack.original_events != labeldata:
-            print("{} has been updated does not match operations in {}"
-                    .format(labelfile, opsfile))
+        print('Reading operations from {}.'.format(opsfile))
+        if len(opstack.original_events) != len(labeldata):
+            print("The number of segments in autosave file is incorrect.")
             sys.exit(0)
+        for stack_event, true_event in zip(opstack.original_events, labeldata):
+            if (stack_event['name'] != true_event['name'] or 
+                    not np.allclose(stack_event['start'], true_event['start']) or
+                    not np.allclose(stack_event['stop'], true_event['stop'])):
+                print("Warning! Autosave:\n {}\n Original:\n{}"
+                        .format(stack_event, true_event))
     else:
         opstack = OpStack(labeldata)
     return opstack
