@@ -173,7 +173,7 @@ def write_events(eventsfile, data, **params):
 
 def read_events(eventsfile):
     import pandas as pd
-    data = pd.read_csv(eventsfile)
+    data = pd.read_csv(eventsfile).fillna('')
     params = read_metadata(eventsfile + ".meta")
     return EventData(data, eventsfile, params)
 
