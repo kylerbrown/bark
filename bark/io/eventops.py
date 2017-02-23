@@ -75,7 +75,7 @@ def write_stack(filename, opstack):
     ops_dump = [x.dump() for x in opstack.ops]
     save_data = {'operations': ops_dump,
                  'original_events': opstack.original_events}
-    json.dump(save_data, open(filename, 'w'))
+    json.dump(save_data, open(filename, 'w'), indent=4)
 
 
 operations = {k: v
