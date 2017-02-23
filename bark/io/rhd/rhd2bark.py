@@ -1,3 +1,4 @@
+import sys
 import os.path
 from datetime import datetime
 import numpy as np
@@ -46,6 +47,7 @@ def bark_rhd_to_entry():
         default=default_max_gaps)
     args = p.parse_args()
     attrs = dict(args.keyvalues) if args.keyvalues else {}
+    check_exists(args.rhdfiles)
     rhds_to_entry(args.rhdfiles, args.out, args.timestamp, args.parents,
                   args.maxgaps, **attrs)
 
@@ -124,6 +126,12 @@ def check_timestamp_gaps(data, max_gaps):
     if num_gaps > max_gaps:
         raise Exception("{} data gaps exceeds maximum limit {}".format(
             num_gaps, max_gaps))
+
+def check_exists(rhd_paths):
+    for filepath in rhd_paths:
+        if not os.path.exists(filepath):
+            print("file {} does not exist".format(filepath))
+            sys.exit(0)
 
 
 def rhds_to_entry(rhd_paths,

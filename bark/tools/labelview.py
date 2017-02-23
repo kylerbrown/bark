@@ -1,10 +1,16 @@
-import warnings
+import os
+import sys
 import string
 import yaml
 import numpy as np
 from scipy.signal import spectrogram
 import matplotlib.pyplot as plt
 import bark
+from bark.io.eventops import (OpStack, write_stack, read_stack,
+        Update, Merge, Split, Delete)
+
+import warnings
+warnings.filterwarnings('ignore') # suppress matplotlib warnings
 
 help_string = '''
 Pressing any number or letter (uppercase or lowercase) will mark a segment.
@@ -19,6 +25,9 @@ ctrl+o : zoom out
 ctrl+i : zoom in
 ctrl+m : merge current syllable with previous
 ctrl+x : delete segment
+ctrl+z : undo last operation
+ctrl+y : redo
+ctrl+w : close
 click on segment boundary : move boundary
 ctrl+click inside a segment : split segment
 ctrl+click outside a segment : new segment (TODO)
@@ -27,53 +36,24 @@ click on segment boundaries to adjust them.
 The bottom panel is a map of all label locations.
 Click on a label to travel to that location.
 
-On close, you'll be prompted to save your work. Hit 'y <enter>' to save.
+On close, an operation file and the final event file will be written.
+Do not kill from terminal unless you want to prevent a save.
 '''
 
 # kill all the shorcuts
-plt.rcParams['keymap.all_axes'] = ''
-plt.rcParams['keymap.back'] = ''
-plt.rcParams['keymap.forward'] = ''
-plt.rcParams['keymap.fullscreen'] = ''
-plt.rcParams['keymap.grid'] = ''
-plt.rcParams['keymap.home'] = ''
-plt.rcParams['keymap.pan'] = ''
-plt.rcParams['keymap.quit'] = ''
-plt.rcParams['keymap.save'] = ''
-plt.rcParams['keymap.xscale'] = ''
-plt.rcParams['keymap.yscale'] = ''
-plt.rcParams['keymap.zoom'] = ''
-
-SPLIT_PAD = 0.005
-
-
-def seg_name(labels, idx, name):
-    labels[idx]['name'] = name
-
-
-def seg_delete(labels, idx):
-    del labels[idx]
-
-
-def seg_start(labels, idx, start):
-    labels[idx]['start'] = start
-
-
-def seg_stop(labels, idx, stop):
-    labels[idx]['stop'] = stop
-
-
-def seg_split(labels, idx, split_time):
-    labels.insert(idx + 1, labels[idx].copy())
-    seg_stop(labels, idx, split_time - SPLIT_PAD)
-    seg_start(labels, idx + 1, split_time + SPLIT_PAD)
-
-
-def seg_merge_prev(labels, idx):
-    if idx > 0:
-        labels[idx - 1]['stop'] = labels[idx]['stop']
-        seg_delete(labels, idx)
-
+def kill_shortcuts(plt):
+    plt.rcParams['keymap.all_axes'] = ''
+    plt.rcParams['keymap.back'] = ''
+    plt.rcParams['keymap.forward'] = ''
+    plt.rcParams['keymap.fullscreen'] = ''
+    plt.rcParams['keymap.grid'] = ''
+    plt.rcParams['keymap.home'] = ''
+    plt.rcParams['keymap.pan'] = ''
+    #plt.rcParams['keymap.quit'] = ''
+    plt.rcParams['keymap.save'] = ''
+    plt.rcParams['keymap.xscale'] = ''
+    plt.rcParams['keymap.yscale'] = ''
+    plt.rcParams['keymap.zoom'] = ''
 
 def labels_to_scatter_coords(labels):
     times = [x['start'] for x in labels]
@@ -120,6 +100,7 @@ def plot_spectrogram(data,
     start_samp = int(start * sr) - nfft // 2
     stop_samp = int(stop * sr) - nfft // 2
     x = data[start_samp:stop_samp]
+    
     f, t, Sxx = spectrogram(x,
                             sr,
                             nperseg=nfft,
@@ -140,21 +121,24 @@ def plot_spectrogram(data,
     plt.ylim(lowfreq, highfreq)
     return image
 
-
 class SegmentReviewer:
-    def __init__(self, osc_ax, spec_ax, map_ax, sampled, labels,
-                 shortcuts, outfile):
+    def __init__(self, osc_ax, spec_ax, map_ax, sampled, opstack,
+                 keymap, outfile, out_attrs, opsfile=None):
         self.canvas = osc_ax.get_figure().canvas
         self.osc_ax = osc_ax
         self.spec_ax = spec_ax
         self.map_ax = map_ax
         self.data = sampled.data.ravel()
         self.sr = sampled.sampling_rate
-        self.labels = labels.data.to_dict('records')
-        self.label_attrs = labels.attrs
+        self.label_attrs = out_attrs
+        self.opstack = opstack
+        self.opsfile = opsfile
         self.outfile = outfile
-        self.shortcuts = shortcuts
-        self.i = 0
+        self.keymap = keymap
+        if opstack.ops:
+            self.i = opstack.ops[-1].index
+        else:
+            self.i = 0
         self.N_points = 20000
         self.initialize_plots()
         self.update_plot_data()
@@ -182,7 +166,7 @@ class SegmentReviewer:
         self.osc_ax.figure.tight_layout()
 
     def initialize_minimap(self):
-        times, values = labels_to_scatter_coords(self.labels)
+        times, values = labels_to_scatter_coords(self.opstack.events)
         self.map_ax.set_axis_bgcolor('k')
         self.map_ax.scatter(times,
                             values,
@@ -191,7 +175,7 @@ class SegmentReviewer:
                             vmax=37,
                             cmap=plt.get_cmap('hsv'),
                             edgecolors='none')
-        self.map_ax.vlines(self.labels[self.i]['start'],
+        self.map_ax.vlines(self.opstack.events[self.i]['start'],
                            -1,
                            38,
                            zorder=0.5,
@@ -208,10 +192,10 @@ class SegmentReviewer:
         'labels for current syl and two on either side'
         for i in range(-10 + self.i, 11 + self.i):
             label_i = i - self.i
-            if i >= 0 and i < len(self.labels):
+            if i >= 0 and i < len(self.opstack.events):
                 text = self.syl_labels[label_i]
-                x = (self.labels[i]['start'] + self.labels[i]['stop']) / 2
-                name = self.labels[i]['name']
+                x = (self.opstack.events[i]['start'] + self.opstack.events[i]['stop']) / 2
+                name = self.opstack.events[i]['name']
                 if isinstance(name, str):
                     text.set_x(x)
                     text.set_visible(True)
@@ -222,8 +206,8 @@ class SegmentReviewer:
                 self.syl_labels[label_i].set_visible(False)
 
     def update_syl_boundaries(self):
-        start = self.labels[self.i]['start']
-        stop = self.labels[self.i]['stop']
+        start = self.opstack.events[self.i]['start']
+        stop = self.opstack.events[self.i]['stop']
         self.osc_boundary_start.set_xdata((start, start))
         self.osc_boundary_stop.set_xdata((stop, stop))
 
@@ -238,10 +222,10 @@ class SegmentReviewer:
         self.selected_boundary = None
         i = self.i
         sr = self.sr
-        labels = self.labels
-        start = self.labels[i]['start']
+        labels = self.opstack.events
+        start = self.opstack.events[i]['start']
         start_samp = int(start * sr)
-        stop = self.labels[i]['stop']
+        stop = self.opstack.events[i]['stop']
         stop_samp = int(stop * sr)
         syl_samps = stop_samp - start_samp
         self.buffer_start_samp = start_samp - (self.N_points - syl_samps) // 2
@@ -254,10 +238,14 @@ class SegmentReviewer:
         self.update_spectrogram()
         self.update_oscillogram()
         self.update_minimap()
+        if self.opstack.ops: 
+            last_command = str(self.opstack.ops[-1])
+        else:
+            last_command = 'none'
         if i == 0:
             self.osc_ax.set_title('ctrl+h for help, prints to terminal')
         else:
-            self.osc_ax.set_title('{} of {}'.format(i + 1, len(self.labels)))
+            self.osc_ax.set_title('{}/ {} {}'.format(i + 1, len(self.opstack.events), last_command))
         self.canvas.draw()
 
     def update_spectrogram(self):
@@ -293,13 +281,13 @@ class SegmentReviewer:
         stop_pos = self.osc_boundary_stop.get_xdata()[0]
         # jump to syllable from map click
         if event.inaxes == self.map_ax:
-            i = nearest_label(self.labels, event.xdata)
+            i = nearest_label(self.opstack.events, event.xdata)
             self.i = i
             self.update_plot_data()
         # sylable splitting
         elif (event.key == 'control' and event.xdata > start_pos and
               event.xdata < stop_pos):
-            seg_split(self.labels, self.i, event.xdata)
+            self.opstack.push(Split(self.i, event.xdata))
             self.update_plot_data()
         # boundary updates
         else:
@@ -321,9 +309,9 @@ class SegmentReviewer:
 
     def on_mouse_release(self, event):
         if self.selected_boundary == self.osc_boundary_start:
-            seg_start(self.labels, self.i, event.xdata)
+            self.opstack.push(Update(self.i, 'start', event.xdata))
         elif self.selected_boundary == self.osc_boundary_stop:
-            seg_stop(self.labels, self.i, event.xdata)
+            self.opstack.push(Update(self.i, 'stop', event.xdata))
         if self.selected_boundary:
             self.selected_boundary.set_color('r')
             self.update_syl_boundaries()
@@ -332,7 +320,7 @@ class SegmentReviewer:
 
     def inc_i(self):
         'Go to next syllable.'
-        if self.i < len(self.labels) - 1:
+        if self.i < len(self.opstack.events) - 1:
             self.i += 1
         self.update_plot_data()
 
@@ -348,9 +336,9 @@ class SegmentReviewer:
             self.inc_i()
         elif event.key in ('pageup', 'backspace'):
             self.dec_i()
-        elif event.key in self.shortcuts:
-            newlabel = self.shortcuts[event.key]
-            seg_name(self.labels, self.i, newlabel)
+        elif event.key in self.keymap:
+            newlabel = self.keymap[event.key]
+            self.opstack.push(Update(self.i, 'name', newlabel))
             self.inc_i()
         elif event.key == 'ctrl+i':
             if self.N_points > 5000:
@@ -363,27 +351,37 @@ class SegmentReviewer:
             self.save()
         elif event.key == 'ctrl+h':
             print(help_string)
-        elif event.key == 'ctrl+m':
-            seg_merge_prev(self.labels, self.i)
+        elif event.key == 'ctrl+m' and self.i > 0:
+            self.i -= 1
+            self.opstack.push(Merge(self.i))
             self.update_plot_data()
         elif event.key == 'ctrl+x':
-            seg_delete(self.labels, self.i)
+            self.opstack.push(Delete(self.i))
+            self.update_plot_data()
+        elif event.key == 'ctrl+z' and self.opstack.ops:
+            self.opstack.undo()
+            self.i = self.opstack.undo_ops[-1].index
+            self.update_plot_data()
+        elif event.key == 'ctrl+y' and self.opstack.undo_ops:
+            self.opstack.redo()
+            self.i = self.opstack.ops[-1].index
             self.update_plot_data()
 
     def save(self):
         'Writes out labels to file.'
         from pandas import DataFrame
-        label_data = DataFrame(self.labels)
+        label_data = DataFrame(self.opstack.events)
         bark.write_events(self.outfile, label_data, **self.label_attrs)
         print(self.outfile, 'written')
+        if self.opsfile:
+            write_stack(self.opsfile, self.opstack)
+            print(self.opsfile, 'written')
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        response = input('Save to file {}? '.format(self.outfile))
-        if response.lower() in ('y', 'yes', 'obvs bro'):
-            self.save()
+        self.save()
 
 
 def build_shortcut_map(mapfile=None):
@@ -407,12 +405,34 @@ def to_seconds(dset):
     return dset
 
 
-def main(datfile, labelfile, outfile, shortcutfile=None):
+def load_opstack(opsfile, labelfile, labeldata, use_ops):
+    load_ops = os.path.exists(opsfile) and use_ops
+    if load_ops:
+        opstack = read_stack(opsfile)
+        print('Reading operations from {}.'.format(opsfile))
+        if len(opstack.original_events) != len(labeldata):
+            print("The number of segments in autosave file is incorrect.")
+            sys.exit(0)
+        for stack_event, true_event in zip(opstack.original_events, labeldata):
+            if (stack_event['name'] != true_event['name'] or 
+                    not np.allclose(stack_event['start'], true_event['start']) or
+                    not np.allclose(stack_event['stop'], true_event['stop'])):
+                print("Warning! Autosave:\n {}\n Original:\n{}"
+                        .format(stack_event, true_event))
+    else:
+        opstack = OpStack(labeldata)
+    return opstack
+def main(datfile, labelfile, outfile=None, shortcutfile=None, use_ops=True):
+    kill_shortcuts(plt)
     sampled = bark.read_sampled(datfile)
     assert sampled.attrs['n_channels'] == 1
     labels = bark.read_events(labelfile)
-    labes = to_seconds(labels)
+    labeldata = to_seconds(labels).data.to_dict('records')
     shortcuts = build_shortcut_map(shortcutfile)
+    opsfile = labelfile + '.ops.json'
+    opstack = load_opstack(opsfile, labelfile, labeldata, use_ops)
+    if not outfile:
+        outfile = os.path.splitext(labelfile)[0] + '_edit.csv'
     f = plt.figure()
     # Oscillogram and Spectrogram get 
     # three times the vertical space as the minimap.
@@ -421,8 +441,8 @@ def main(datfile, labelfile, outfile, shortcutfile=None):
     map_ax = plt.subplot2grid((7, 1), (6, 0))
     # Segement review is a context manager to ensure a save prompt
     # on exit. see SegmentReviewer.__exit__
-    with SegmentReviewer(osc_ax, spec_ax, map_ax, sampled, labels,
-                         shortcuts, outfile) as reviewer:
+    with SegmentReviewer(osc_ax, spec_ax, map_ax, sampled, opstack,
+                         shortcuts, outfile, labels.attrs, opsfile) as reviewer:
         reviewer.connect()
         plt.show()
 
@@ -438,19 +458,16 @@ def _run():
                    '--labelfile',
                    required=True,
                    help='associated event dataset containing segments')
-    p.add_argument('-o', '--out', help='output label file', required=True)
+    p.add_argument('-o', '--out', help='output label file')
+    p.add_argument('-i', '--ignore', help='ignore operations from LABELFILE.ops.json', action='store_true')
     p.add_argument('-k',
                    '--shortcut-keys',
                    help='''YAML file with keyboard shortcuts.
         Keys are digits, lowercase and uppercase characters''')
 
     args = p.parse_args()
-    main(args.dat, args.labelfile, args.out, args.shortcut_keys)
+    main(args.dat, args.labelfile, args.out, args.shortcut_keys, not args.ignore)
 
 
 if __name__ == '__main__':
-    # The spectrogram function prints a harmless warning.
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore',
-                                r'overflow encountered in short_scalars')
-        _run()
+    _run()
