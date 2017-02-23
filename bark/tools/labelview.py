@@ -85,6 +85,7 @@ def plot_spectrogram(data,
                      ax=None,
                      lowfreq=300,
                      highfreq=8000,
+                     window=('kaiser', 8),
                      **kwargs):
     '''
     data : a vector of samples, first sample starts at time = 0
@@ -101,14 +102,21 @@ def plot_spectrogram(data,
     stop_samp = int(stop * sr) - nfft // 2
     x = data[start_samp:stop_samp]
     
+    # determine overlap based on screen size. We don't need more points than pixels
+    pixels = 600
+    samples_per_pixel = int((stop - start) * sr / pixels)
+    noverlap = max( nfft - samples_per_pixel, 0) #, nfft - (int(sr * .001))) # minimum stepsize of 1 ms
     f, t, Sxx = spectrogram(x,
                             sr,
                             nperseg=nfft,
-                            noverlap=nfft - (int(sr * .001)),
-                            mode='magnitude')
+                            noverlap=noverlap,
+                            mode='magnitude',
+                            window=window,
+                            )
     freq_mask = (f > lowfreq) & (f < highfreq)
     fsub = f[freq_mask]
     Sxxsub = Sxx[freq_mask, :]
+    vmax = np.percentile(Sxxsub, 99)
     t += start
     if ax is None:
         ax = plt.gca()
@@ -116,6 +124,7 @@ def plot_spectrogram(data,
                           fsub,
                           Sxxsub,
                           cmap=plt.get_cmap('inferno'),
+                          vmax=vmax,
                           **kwargs)
     plt.sca(ax)
     plt.ylim(lowfreq, highfreq)
