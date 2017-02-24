@@ -2,6 +2,18 @@ from itertools import chain
 import numpy as np
 import bark
 
+def array_iterator(data, chunksize):
+    index = 0
+    while True:
+        try:
+            result = data[index:index + chunksize]
+        except IndexError:
+            raise StopIteration
+        if result.shape[0] == 0:
+            raise StopIteration
+        yield result
+        index += chunksize
+
 
 class Stream():
     def __init__(self, data, sr=None, attrs=None, chunksize=2e6):
@@ -13,7 +25,11 @@ class Stream():
         however any operations that span time (filters, resampling)
         may be compromized by having too low of chunksize.
         """
-        self.data = data
+        self.chunksize = int(chunksize)
+        if isinstance(data, np.ndarray):  # note: memmap is an ndarray subclass too
+            self.data = array_iterator(data, self.chunksize)
+        else:
+            self.data = data
         if sr is None and attrs and "sampling_rate" in attrs:
             self.sr = attrs["sampling_rate"]
         elif sr is None:
@@ -22,25 +38,24 @@ class Stream():
             self.sr = sr
         if attrs:
             self.attrs = attrs.copy()
+            attrs['columns']
         else:
             self.attrs = {}
-        self.chunksize = int(chunksize)
-        self.index = 0
+        if 'columns' not in self.attrs:
+            self.attrs['columns'] = bark.template_columns(range(self.peek().shape[1]))
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if hasattr(self.data, "__next__"):
-            return next(self.data)
-        try:
-            result = self.data[self.index:self.index + self.chunksize]
-        except IndexError:
-            raise StopIteration
-        if result.shape[0] == 0:
-            raise StopIteration
-        self.index += self.chunksize
-        return result
+        return next(self.data)
+
+    def peek(self):
+        "Returns the first buffer without removing it from the stream"
+        x = next(self)
+        self.data = chain((x,), self.data)
+        return x
+
 
     def __add__(self, other):
         return self._binary_operator(other, lambda x, y: x + y)
@@ -93,7 +108,11 @@ class Stream():
                     fp.write(data.tobytes())
             dtype = data.dtype.name
         attrs["dtype"] = dtype
-        attrs["n_channels"] = data.shape[1]
+        try:
+            bark.sampled_columns(data, attrs['columns'])
+        except (ValueError, KeyError):
+            print('warning, column attribute was mangled ... reseting')
+            attrs['columns'] = bark.sampled_columns(data)
         attrs.update(new_attrs)
         bark.write_metadata(filename + ".meta", **attrs)
 
@@ -110,10 +129,6 @@ class Stream():
             func = np.vectorize(func)
         newdata = (func(x) for x in self)
         return self.new_stream(newdata)
-
-    def __getitem__(self, key):
-        """ use python syntax for splitting columns out of the stream """
-        return self.new_stream((x[:, key]) for x in self)
 
     def vector_map(self, func):
         """
@@ -157,14 +172,38 @@ class Stream():
         except IndexError:
             raise StopIteration
 
+    def __getitem__(self, ix):
+        """ use python syntax for splitting columns out of the stream """
+        n_cols = self.peek().shape[1]
+        if isinstance(ix, slice):
+            #  convert a slice object to indices
+            return self.split(*list(range(*ix.indices(n_cols))))
+        if hasattr(ix, '__iter__'):
+            return self.split(*[i % n_cols for i in ix])
+        return self.split(ix % n_cols)
+
     def split(self, *args):
-        return self.new_stream((x[:, args] for x in self))
+        if 'columns' in self.attrs:
+            self.attrs['columns'] = {i: self.attrs['columns'][x] for i, x in enumerate(args)}
+        return self.new_stream((x[:, args]) for x in self)
 
     def merge(*streams):
         "Concatenate columns from streams"
-        return streams[0].new_stream((np.hstack(data) for data in zip(*streams)
+        s = streams[0].new_stream((np.hstack(data) for data in zip(*streams)
                                       ))
+        i = 0
+        newcols = {}
+        if 'columns' in s.attrs:
+            for oldstream in streams:
+                oldcols = oldstream.attrs['columns']
+                for oldi in range(len(oldcols)):
+                    newcols[i] = oldcols[oldi]
+                    i += 1
+            s.attrs['columns'] = newcols
+        return s 
 
+
+        
     def chain(*streams):
         self = streams[0]
         return self.new_stream((data
@@ -290,18 +329,6 @@ def rechunk(stream, chunksize):
     yield buffer  # leftover samples at end of stream
 
 
-class FileStream(Stream):
-    def __next__(self):
-        try:
-            result = self.data[self.index:self.index + self.chunksize]
-        except IndexError:
-            raise StopIteration
-        if result.shape[0] == 0:
-            raise StopIteration
-        self.index += self.chunksize
-        return result
-
-
 def read(fname, **kwargs):
     """ input: the filename of a raw binary file
         should have an associated .meta file
@@ -311,4 +338,4 @@ def read(fname, **kwargs):
     data = bark_obj.data
     sr = bark_obj.attrs["sampling_rate"]
     kwargs.update(bark_obj.attrs)
-    return FileStream(data, sr=sr, attrs=kwargs)
+    return Stream(data, sr=sr, attrs=kwargs)

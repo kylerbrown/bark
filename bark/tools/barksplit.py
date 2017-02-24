@@ -152,7 +152,6 @@ def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
         new_ds = bark.write_sampled(path,
                                     data,
                                     sr,
-                                    units,
                                     **attrs)
         new_ds_list.append(new_ds)
     return new_ds_list

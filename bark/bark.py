@@ -130,12 +130,40 @@ class EventData(Data):
             path = self.path
         write_events(path, self.data, **self.attrs)
 
+def template_columns(fields):
+    return {f: {'units': None} for f in fields}
 
-def write_sampled(datfile, data, sampling_rate, units, **params):
+def event_columns(dataframe, columns=None):
+    if columns is None:
+        return template_columns(dataframe.columns)
+    for fieldkey in columns:
+        if fieldkey not in datafram.columns:
+            del columns[fieldkey]
+    for col in dataframe.columns:
+        if col not in columns:
+            columns[col] = {'units': None}
+        if 'units' not in columns[field]:
+            columns[field]['units'] = None
+
+def sampled_columns(data, columns=None):
+    'If columns=None, create new columns attribute, otherwise verify columns.'
     if len(data.shape) == 1:
-        params["n_channels"] = 1
+        n_channels = 1
     else:
-        params["n_channels"] = data.shape[1]
+        n_channels = data.shape[1]
+    if columns is None:
+        return template_columns(range(n_channels))
+    if len(columns) != n_channels:
+        raise ValueError('the columns attribute does not match the number of columns')
+    for i in range(n_channels):
+        if i not in columns:
+            raise ValueError('the columns attribute is missing column {}'.format(i))
+        if 'units' not in columns[i]:
+            columns[i]['units'] = None
+
+def write_sampled(datfile, data, sampling_rate, **params):
+    if 'columns' not in params:
+        params['columns'] = sampled_columns(data)
     params["dtype"] = data.dtype.str
     shape = data.shape
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
@@ -143,10 +171,8 @@ def write_sampled(datfile, data, sampling_rate, units, **params):
     params["filetype"] = "rawbinary"
     write_metadata(datfile + ".meta",
                    sampling_rate=sampling_rate,
-                   units=units,
                    **params)
     params['sampling_rate'] = sampling_rate
-    params['units'] = units
     return SampledData(mdata, datfile, params)
 
 
@@ -159,12 +185,13 @@ def read_sampled(datfile, mode="r"):
     path = os.path.abspath(datfile)
     params = read_metadata(datfile + ".meta")
     data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
-    data = data.reshape(-1, params["n_channels"])
+    data = data.reshape(-1, len(params['columns']))
     return SampledData(data, path, params)
 
 
 def write_events(eventsfile, data, **params):
-    assert "units" in params and params["units"] in UNITS.TIME_UNITS
+    if 'columns' not in params:
+        params['columns'] = event_columns(data)
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
     write_metadata(eventsfile + ".meta", **params)
@@ -181,10 +208,12 @@ def read_events(eventsfile):
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname + ".meta")
-    if "units" in params and params["units"] in UNITS.TIME_UNITS:
+    if params["filetype"] == "csv":
         dset = read_events(fname)
-    else:
+    elif params["filetype"] == "rawbinary":
         dset = read_sampled(fname)
+    else:
+        raise ValueError('Unrecognized file format {}'.format(params['filetype']))
     return dset
 
 

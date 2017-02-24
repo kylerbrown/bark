@@ -65,45 +65,32 @@ def chan_names(result, key):
         return []
 
 
-amp_chan_names = lambda result: chan_names(result, 'amplifier_channels')
-adc_chan_names = lambda result: chan_names(result, 'board_adc_channels')
+def amp_chan_names(result): return chan_names(result, 'amplifier_channels')
+def adc_chan_names(result): return chan_names(result, 'board_adc_channels')
 
 
 def board_adc_metadata(result, dsetname):
-    attrs = dict(dtype=str(result['board_adc_data'].dtype),
-                 n_channels=len(result['board_adc_channels']),
+    import pdb; pdb.set_trace()
+    attrs = dict(dtype=result['board_adc_data'].dtype.str,
                  sampling_rate=result['frequency_parameters'][
-                     'board_adc_sample_rate'],
-                 unit_scale=result['ADC_input_bit_volts'],
-                 units="V")
-    channel_attrs = {k: [] for k, v in result['amplifier_channels'][0].items()}
-    for chan in result['board_adc_channels']:
-        for key, value in chan.items():
-            channel_attrs[key].append(value)
-    attrs.update(channel_attrs)
-    write_metadata(dsetname + ".meta", **attrs)
+                     'board_adc_sample_rate'],)
+    columns = {i: chan_attrs for i, chan_attrs in enumerate(result['amplifier_channels'])}
+    for k in columns:
+        columns[k]['units']='V'
+        columns[k]['unit_scale']=result['ADC_input_bit_volts']
+    write_metadata(dsetname + ".meta", columns=columns, **attrs)
 
 
 def amplifier_metadata(result, dsetname):
-    attrs = dict(dtype=str(result['amplifier_data'].dtype),
-                 n_channels=len(result['amplifier_channels']),
+    attrs = dict(dtype=result['amplifier_data'].dtype.str,
                  sampling_rate=result['frequency_parameters'][
-                     'amplifier_sample_rate'],
-                 unit_scale=result['amplifier_bit_microvolts'],
-                 units="uV")
-    spike_triggers = {'spike_trigger_' + k: []
-                      for k, v in result['spike_triggers'][0].items()}
-    for chan in result['spike_triggers']:
-        for key, value in chan.items():
-            spike_triggers['spike_trigger_' + key].append(value)
-    channel_attrs = {k: [] for k, v in result['amplifier_channels'][0].items()}
-    for chan in result['amplifier_channels']:
-        for key, value in chan.items():
-            channel_attrs[key].append(value)
-    attrs.update(spike_triggers)
-    attrs.update(channel_attrs)
+                     'amplifier_sample_rate'],)
     attrs.update(result['frequency_parameters'])
-    write_metadata(dsetname + ".meta", **attrs)
+    columns = {i: chan_attrs for i, chan_attrs in enumerate(result['amplifier_channels'])}
+    for k in columns:
+        columns[k]['units']='uV'
+        columns[k]['unit_scale']=result['amplifier_bit_microvolts']
+    write_metadata(dsetname + ".meta", columns=columns, **attrs)
 
 
 def not_implemented_warnings(result):

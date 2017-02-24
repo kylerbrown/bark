@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='bark',
-      version='0.1.1',
+      version='0.2',
       description='tools for reading and writing BARK formatted data',
       url='http://github.com/kylerbrown/bark',
       author='Kyler Brown',
@@ -31,6 +31,7 @@ setup(name='bark',
               'bark-split=bark.tools.barksplit:_main',
               'dat-decimate=bark.tools.barkutils:rb_decimate',
               'dat-resample=bark.tools.barkutils:rb_resample',
+              'dat-select=bark.tools.barkutils:rb_select',
               'dat-segment=bark.tools.datsegment:_run',
               'bark-label-view=bark.tools.labelview:_run',
               ]

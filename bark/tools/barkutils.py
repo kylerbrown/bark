@@ -181,3 +181,33 @@ def rb_resample():
     # send to file
     stream.resample(new_rate).write(out_file, dtype=stream.attrs['dtype'])
 
+
+def rb_select():
+    p = argparse.ArgumentParser(description='''
+    Select a subset of channels from a sampled dataset
+    ''')
+    p.add_argument('dat', help='dat file')
+    p.add_argument('-o', '--out', help='name of output datfile')
+    p.add_argument('-c',
+                   '--channels',
+                   help='''channels to extract, 
+                   zero indexed channel numbers
+                   unless --col-attr is set, in which case
+                   channels are metadata values''',
+                   nargs='+',
+                   required=True)
+    p.add_argument('--col-attr',
+                   help='name of column attribute to select channels with')
+    args = p.parse_args()
+    fname, outfname, channels, col_attr = (args.dat, args.out, args.channels,
+                                           args.col_attr)
+    stream = bark.read_sampled(fname).toStream()
+    if col_attr:
+        columns = stream.attrs['columns']
+        channels = [i
+                    for i in range(len(columns))
+                    if columns[i][col_attr] in channels]
+    else:
+        channels = [int(c) for c in channels]
+    stream[channels].write(outfname)
+
