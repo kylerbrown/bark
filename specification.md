@@ -231,8 +231,8 @@ The following attributes are defined by the spec, but are optional:
 
 - **`unit_scale`:** A multiplier to scale the raw data to match the **units**.
   Useful when raw integer data must be converted to a floating point number to
-  match the correct units. If `units` is an array, `unit_scale` must be an
-  array of the same shape.
+  match the correct units. Like `units`, `unit_scale` is also an attribute
+  of the `columns` dictionary.
 - **`offset`:** Indicates the start time of the dataset relative to the
   timestamp of the entry. For discrete timebases, the units must be in samples;
   for continuous timebases, the units must be the same as the units of the
