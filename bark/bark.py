@@ -210,9 +210,9 @@ def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname)
     if 'dtype' in params:
-        dset = read_events(fname)
-    else:
         dset = read_sampled(fname)
+    else:
+        dset = read_events(fname)
     return dset
 
 
