@@ -37,15 +37,12 @@ from the specification, but gives Bark a few advantages:
 ## The elements of Bark
 Bark trees are made from the following elements:
 
-- A **Root** directory grouping a set of Entries together. This is a standard
-  filesystem directory containing one file named "meta", which contains top-
-  level metadata, and any number of Entry subdirectories.
 - **Entries** (often trials) are directories containing Datasets that share a
-  common time base. These directories also contain a "meta" file and any number
+  common time base. These directories contain a `meta.yaml` file and any number
   of Datasets.
 - **SampledData** stored as raw binary arrays. Metadata is stored in another
-  file with ".meta" appended to the dataset's filename.
-- **EventData** stored in CSV files. As above, metadata is stored in a ".meta"
+  file with ".meta.yaml" appended to the dataset's filename.
+- **EventData** stored in CSV files. As above, metadata is stored in a "X.meta.yaml"
   file.
 - Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated UTF-8-encoded YAML files.
 
@@ -79,7 +76,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
-- `bark-clean-orphan-metas` -- remove orphan `.meta` files without associated datafiles
+- `bark-clean-orphan-metas` -- remove orphan `.meta.yaml` files without associated datafiles
 - `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
@@ -93,6 +90,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `dat-join` -- combine the channels of two or more sampled datasets
 - `dat-filter` -- apply zero-phase Butterworth or Bessel filters to a sampled dataset
 - `dat-diff` -- subtract one sampled dataset channel from another
+- `dat-cat` -- concatentate sampled datasets, adding more samples
 - `dat-to-wave-clus` -- convert a sampled dataset to a [wave_clus](https://github.com/csn-le/wave_clus)
   compatible Matlab file
 - `dat-to-wav` -- convert a sampled dataset to a WAVE file.
@@ -133,9 +131,9 @@ Example usage:
 
 ## Other common tasks
 
-- Recursively search for datafile by metadata: `grep -R --include "*.meta" "source: hvc" PATH/TO/DATA`
-- Recursively search for an entry or root by metadata: `grep -R --include "meta" "experimenter: kjbrown" PATH/TO/DATA`
-- Add new metadata to file: `echo "condition: control" >> FILE.meta`
+- Recursively search for datafile by metadata: `grep -R --include "*.meta.yaml" "source: hvc" PATH/TO/DATA`
+- Recursively search for an entry by metadata: `grep -R --include "meta.yaml" "experimenter: kjbrown" PATH/TO/DATA`
+- Add new metadata to file: `echo "condition: control" >> FILE.meta.yaml`
 
 # Related projects
 

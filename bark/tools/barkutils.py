@@ -8,27 +8,6 @@ from bark import parse_timestamp_string
 from bark import stream
 
 
-def mk_root():
-    p = argparse.ArgumentParser(description="create a bark root directory")
-    p.add_argument("name", help="name of bark root directory")
-    p.add_argument("-a",
-                   "--attributes",
-                   action='append',
-                   type=lambda kv: kv.split("="),
-                   dest='keyvalues',
-                   help="extra metadata in the form of KEY=VALUE")
-    p.add_argument("-p",
-                   "--parents",
-                   help="no error if already exists, new meta-data written",
-                   action="store_true")
-    args = p.parse_args()
-    if args.keyvalues:
-        attrs = dict(args.keyvalues)
-    else:
-        attrs = {}
-    bark.create_root(args.name, args.parents, **attrs)
-
-
 def mk_entry():
     p = argparse.ArgumentParser(description="create a bark entry")
     p.add_argument("name", help="name of bark entry")
@@ -52,36 +31,6 @@ def mk_entry():
     else:
         attrs = {}
     bark.create_entry(args.name, timestamp, args.parents, **attrs)
-
-
-def entry_from_glob():
-    """
-    given a string prefix, find all the matching files and stuff them in an entry,
-    trimming the redundant prefix off the file name.
-    """
-    p = argparse.ArgumentParser(
-        description="create a bark entry from matching files")
-    p.add_argument("name", help="name of bark entry")
-    p.add_argument("-a",
-                   "--attributes",
-                   action='append',
-                   type=lambda kv: kv.split("="),
-                   dest='keyvalues',
-                   help="extra metadata in the form of KEY=VALUE")
-    p.add_argument("-t",
-                   "--timestamp",
-                   help="format: YYYY-MM-DD or YYYY-MM-DD_HH-MM-SS.S")
-    args = p.parse_args()
-    matching_files = glob(args.name + "*")
-    timestamp = parse_timestamp_string(args.timestamp)
-    print(matching_files)
-    if args.keyvalues:
-        attrs = dict(args.keyvalues)
-    else:
-        attrs = {}
-    bark.create_entry(args.name, timestamp, **attrs)
-    for fname in matching_files:
-        move(fname, os.path.join(args.name, fname[len(args.name):]))
 
 
 def _clean_metafiles(path, recursive):
@@ -249,7 +198,7 @@ def rb_diff():
 def rb_join():
     p = argparse.ArgumentParser(description="""
             Combines dat files by adding new channels with the same number
-            samples. To add additional samples, use the unix utility 'cat'.""")
+            samples. To add additional samples, use dat-cat"""
     p.add_argument("dat", help="dat files", nargs="+")
     p.add_argument("-o", "--out", help="name of output dat file")
     opt = p.parse_args()
