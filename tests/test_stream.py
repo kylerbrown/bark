@@ -12,7 +12,7 @@ data1 = np.arange(30).reshape(10, 3)
 data2 = np.arange(500).reshape(100, 5)
 data3 = np.arange(1000).reshape(500, 2)
 data4 = np.arange(11111).reshape(-1, 1)
-dummyf = lambda x: x
+def dummyf(x): return x
 
 
 def test_stream():
@@ -151,15 +151,29 @@ def test_decimate():
 
 
 def test_getitem():
-    y = Stream(data1, sr=1)[-1].call()
-    assert eq(data1[:, -1], y)
-    y = Stream(data1, sr=1)[-1].call()
-    assert eq(data1[:, -1], y)
+    columns = {i: {'units': None, 'name': str(i)} for i in range(5)}
+    y = Stream(data1, sr=1, attrs={'columns': columns})[-1:].call()
+    assert eq(data1[:, -1].reshape(-1, 1), y)
+def test_getitem2():
+    columns = {i: {'units': None, 'name': str(i)} for i in range(5)}
+    y = Stream(data1, sr=1, attrs={'columns': columns})[-1].call()
+    assert eq(data1[:, -1].reshape(-1, 1), y)
+def test_getitem3():
+    columns = {i: {'units': None, 'name': str(i)} for i in range(5)}
+    y = Stream(data1, sr=1, attrs={'columns': columns})[0, -1].call()
+    assert eq(data1[:, [0, -1]], y)
 
 
 def test_split():
-    y = Stream(data2, sr=1).split(1, 3).call()
+    columns = {i: {'units': None, 'name': str(i)} for i in range(5)}
+    attrs = {'columns': columns}
+    s = Stream(data2, sr=1, attrs=attrs).split(1, 3)
+    y = s.call()
     assert eq(data2[:, (1, 3)], y)
+    assert len(s.attrs['columns']) == 2
+    assert s.attrs['columns'][0]['name'] == '1'
+    assert s.attrs['columns'][1]['name'] == '3'
+
 
 
 def test_rechunk():
@@ -173,7 +187,6 @@ def test_rechunk2():
 
 
 def test_merge():
-
     assert eq(
         np.hstack((data1, data1)),
         Stream(data1,
@@ -189,6 +202,28 @@ def test_merge():
                chunksize=10).merge(Stream(data1,
                                           sr=1,
                                           chunksize=11)).call())
+def test_merge_columns():
+    dat1 = np.arange(20).reshape(10,2)
+    dat1attrs = {'columns': {0: {'units': None, 'name': 'a'},
+                            1: {'units': None, 'name': 'b'}}}
+    dat2 = np.arange(10).reshape(10,1)
+    dat2attrs = {'columns': {0: {'units': None, 'name': 'c'}}}
+    s1 = Stream(dat1, sr=1, attrs=dat1attrs)
+    s2 = Stream(dat2, sr=1, attrs=dat2attrs)
+    s3 = s1.merge(s2)
+    for index, name in zip(range(3), 'abc'):
+        assert s3.attrs['columns'][index]['name'] == name
+
+
+def test_peek():
+    data = np.arange(10).reshape(5,2)
+    s = Stream(data, chunksize=3)
+    xpeek = s.peek()
+    assert eq(xpeek, data[:3, :])
+    xfull = s.call()
+    assert eq(xfull, data)
+
+
 
 
 def test_chain():
@@ -203,7 +238,8 @@ def test_chain():
 
 def test_write(tmpdir):
     fname = os.path.join(tmpdir.strpath, "mydat")
-    attrs = dict(sampling_rate=100, n_channels=data1.shape[1], fluffy="cat")
+    columns = bark.sampled_columns(data1)
+    attrs = dict(sampling_rate=100, columns=columns, fluffy="cat")
     a = Stream(data1, attrs=attrs)
     a.write(fname)
     sdataset = bark.read_sampled(fname)
@@ -216,7 +252,8 @@ def test_write(tmpdir):
 
 def test_write_read(tmpdir):
     fname = os.path.join(tmpdir.strpath, "mydat")
-    attrs = dict(sampling_rate=100, n_channels=data1.shape[1], fluffy="cat")
+    columns = bark.sampled_columns(data1)
+    attrs = dict(sampling_rate=100, columns=columns, fluffy="cat")
     a = Stream(data1, attrs=attrs)
     a.write(fname)
     b = read(fname)

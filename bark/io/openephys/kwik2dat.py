@@ -48,15 +48,16 @@ def eofolder2entry(oefolder, entry_name, timestamp=None, parents=False, **attrs)
 
 def write_from_kwd(kwd, dat):
     all_data = load_all(kwd)
-    sampling_rate = all_data[0]["info"]["sample_rate"]
     n_channels = all_data[0]['data'].shape[1]
     for group_i, data in enumerate(all_data):
         write_binary(dat, data["data"])
-    # reopen to deterimine number of samples
-    temp  = np.memmap(dat, dtype="int16", mode="r").reshape(-1, n_channels)
-    n_samples = temp.shape[0]
-    write_metadata(dat + ".meta", sampling_rate=sampling_rate, 
-            n_samples=n_samples, n_channels=n_channels, dtype="int16")
+        assert data["data"].shape[1] == n_channels
+    sampling_rate = data["info"]["sample_rate"]
+    columns = {i: {'units': 'uV', 
+                   'unit_scale': float(data['app_attrs']['channel_bit_volts'][i])} 
+                   for i in range(n_channels)}
+    write_metadata(dat, sampling_rate=sampling_rate, 
+            dtype=data['data'].dtype.str, columns=columns)
 
 
 def kwd_to_entry():

@@ -89,7 +89,7 @@ def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
     """
     Generates new sampled datasets, constructed by splitting the original
     sampled dataset according to the intervals described in splits. Also
-    produces .meta files for each new dataset.
+    produces meta files for each new dataset.
     
     To reduce the likelihood of filename collisions across successive uses
     of the splitting tool, the following format is used:
@@ -152,7 +152,6 @@ def gen_split_files(entry, sampled_ds, event_ds, splits, split_on, point_mode):
         new_ds = bark.write_sampled(path,
                                     data,
                                     sr,
-                                    units,
                                     **attrs)
         new_ds_list.append(new_ds)
     return new_ds_list

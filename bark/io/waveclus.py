@@ -20,10 +20,11 @@ def _waveclus2csv():
     p = argparse.ArgumentParser(description="""
     Converts a wave_clus times_*.m file to a bark csv.
     """)
-    p.add_argument("name", help="""Name of wave_clus times*.m file(s),
+    p.add_argument("name",
+                   help="""Name of wave_clus times*.m file(s),
             if mutltiple files, assume they are ordered by channel.
             """,
-            nargs="+")
+                   nargs="+")
     p.add_argument("-o", "--out", help="name of output csv file")
     p.add_argument("-a",
                    "--attributes",
@@ -36,12 +37,8 @@ def _waveclus2csv():
         attrs = dict(args.keyvalues)
     else:
         attrs = {}
-    if "units" not in attrs:
-        attrs["units"] = "s"
     attrs["filetype"] = "csv"
     attrs["creator"] = "wave_clus"
-
+    attrs["columns"] = {"name": {"units": None}, "start": {"units": "s"}}
     data = pd.concat(load_clusters(x, i) for i, x in enumerate(args.name))
-    bark.write_events(args.out,
-                      data,
-                      **attrs)
+    bark.write_events(args.out, data, **attrs)

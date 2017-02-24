@@ -27,7 +27,7 @@ def test_read_sampled(tmpdir):
     test_write_sampled(tmpdir)  # create 'test_sampled'
     path = os.path.join(tmpdir.strpath, "test_sampled")
     assert os.path.exists(path)
-    assert os.path.exists(path + ".meta")
+    assert os.path.exists(path + ".meta.yaml")
     dset = bark.read_sampled(path)
     assert isinstance(dset, bark.SampledData)
     assert isinstance(dset.path, str)
@@ -61,14 +61,6 @@ def test_read_dataset(tmpdir):
     samp_written = bark.write_sampled(path, data=data, **params)
     samp_read = bark.read_dataset(path)
     assert samp_read.attrs['units'] == params['units']
-
-def test_create_root(tmpdir):
-    path = os.path.join(tmpdir.strpath, "mybark")
-    root = bark.create_root(path, experimenter="kjbrown",
-            experiment="testbark")
-    assert isinstance(root, bark.Root)
-    assert root.attrs["experimenter"] == "kjbrown"
-    assert root.attrs["experiment"] == "testbark"
 
 def test_create_entry(tmpdir):
     path = os.path.join(tmpdir.strpath, "myentry")
