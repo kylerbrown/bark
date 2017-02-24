@@ -6,6 +6,8 @@ Version: 0.2
 What is Bark? Bark is a standard for electrophysiology data. By emphasizing filesystem 
 directories, plain text files and simple binary arrays, Bark data can leverage a broad tool set that includes Unix commands.
 
+This system is discussed in detail in the [Bark specification](specification.md).
+
 Bark is also the fibrous outer layer of [ARF](https://github.com/melizalab/arf), wrapped around a few standard
 file types.
 

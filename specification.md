@@ -132,15 +132,14 @@ be present in an entry's `meta` file if not applicable.
 Any other attributes may be included in an entry's `meta` file.
 
 Example `meta` file for an entry:
-
-    ---
-    timestamp:
-    - 1452891725
-    - 0
-    uuid: b05c865d-fb68-44de-86fc-1e95b273159c
-    animal: bk196
-    experimenter: Student T
-
+```yaml
+timestamp:
+- 1452891725
+- 0
+uuid: b05c865d-fb68-44de-86fc-1e95b273159c
+animal: bk196
+experimenter: Student T
+```
 ### Datasets
 
 A *dataset* is a concrete time series or point process.  Multiple datasets may
