@@ -85,7 +85,7 @@ def entry_from_glob():
 
 
 def _clean_metafiles(path, recursive):
-    metafiles = glob(os.path.join(path, "*.meta"))
+    metafiles = glob(os.path.join(path, "*.meta.yaml"))
     for mfile in metafiles:
         if not os.path.isfile(mfile[:-5]):
             os.remove(mfile)
@@ -99,10 +99,10 @@ def _clean_metafiles(path, recursive):
 
 def clean_metafiles():
     """
-    remove x.meta files with no associated file (x)
+    remove x.meta.yaml files with no associated file (x)
     """
     p = argparse.ArgumentParser(
-        description="remove x.meta files with no associated file (x)")
+        description="remove x.meta.yaml files with no associated file (x)")
     p.add_argument("path", help="name of bark entry", default=".")
     p.add_argument("-r",
                    "--recursive",

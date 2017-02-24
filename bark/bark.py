@@ -44,7 +44,7 @@ DATATYPES = _dt(name_to_code={name: code
 
 # hierarchical classes
 class Root():
-    def __init__(self, path, entries=None, attrs=None):
+    def __init__(self, path, entries=None):
         if entries is None or attrs is None:
             self.read(path)
         else:
@@ -56,7 +56,6 @@ class Root():
     def read(self, name):
         self.path = os.path.abspath(name)
         self.name = os.path.split(self.path)[-1]
-        self.attrs = read_metadata(os.path.join(self.path, "meta"))
         all_sub = [os.path.join(name, x) for x in listdir(self.path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
         self.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
@@ -169,7 +168,7 @@ def write_sampled(datfile, data, sampling_rate, **params):
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
     params["filetype"] = "rawbinary"
-    write_metadata(datfile + ".meta",
+    write_metadata(datfile,
                    sampling_rate=sampling_rate,
                    **params)
     params['sampling_rate'] = sampling_rate
@@ -183,7 +182,7 @@ def read_sampled(datfile, mode="r"):
     recommended).
     """
     path = os.path.abspath(datfile)
-    params = read_metadata(datfile + ".meta")
+    params = read_metadata(datfile)
     data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
     data = data.reshape(-1, len(params['columns']))
     return SampledData(data, path, params)
@@ -194,20 +193,20 @@ def write_events(eventsfile, data, **params):
         params['columns'] = event_columns(data)
     data.to_csv(eventsfile, index=False)
     params["filetype"] = "csv"
-    write_metadata(eventsfile + ".meta", **params)
+    write_metadata(eventsfile, **params)
     return read_events(eventsfile)
 
 
 def read_events(eventsfile):
     import pandas as pd
     data = pd.read_csv(eventsfile)
-    params = read_metadata(eventsfile + ".meta")
+    params = read_metadata(eventsfile)
     return EventData(data, eventsfile, params)
 
 
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
-    params = read_metadata(fname + ".meta")
+    params = read_metadata(fname)
     if params["filetype"] == "csv":
         dset = read_events(fname)
     elif params["filetype"] == "rawbinary":
@@ -217,46 +216,33 @@ def read_dataset(fname):
     return dset
 
 
-def read_metadata(metafile):
-    try:
-        with codecs.open(metafile, 'r', encoding='utf-8') as fp:
-            params = yaml.safe_load(fp)
-        return params
-    except IOError as err:
-        fname = os.path.splitext(metafile)[0]
-        if fname == "meta":  # this was a root or entry metafile
-            return {}
-        elif os.path.splitext(fname)[-1] == '.meta':
+def read_metadata(path, meta='meta.yaml'):
+    if os.path.isdir(path):
+        metafile = os.path.join(path, meta)
+        return yaml.safe_load(open(metafile, 'r'))
+    if os.path.isfile(path):
+        metafile = path + '.' + meta
+        if os.path.isfile(metafile):
+            return yaml.safe_load(open(metafile, 'r'))
+        elif os.path.splitext(fname)[-1] == '.' + meta:
             print("Tried to open metadata file instead of data file.")
-        elif os.path.exists(fname):
-            print(
-                "{} is missing an associated .meta file, should named {}.meta"
-                .format(fname, fname))
-        else:
-            print("{} does not exist".format(fname))
-        sys.exit(0)
+        if os.path.exists(fname):
+            print(f"{path} is missing an associated meta file, should named {meta}")
+    else:
+        print("{} does not exist".format(fname))
+    sys.exit(0)
 
 
-def write_metadata(filename, **params):
+def write_metadata(path, meta='meta.yaml', **params):
+    if os.path.isdir(path):
+        metafile = os.path.join(path, meta)
+    else:
+        metafile = path + '.' + meta
     for k, v in params.items():
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
-    with codecs.open(filename, 'w', encoding='utf-8') as yaml_file:
-        header = """# metadata using YAML syntax\n---\n"""
-        yaml_file.write(header)
+    with codecs.open(metafile, 'w', encoding='utf-8') as yaml_file:
         yaml_file.write(yaml.safe_dump(params, default_flow_style=False))
-
-
-def create_root(name, parents=False, **attrs):
-    """creates a new BARK top-level directory"""
-    path = os.path.abspath(name)
-    if os.path.isdir(path):
-        if not parents:
-            raise IOError("{} already exists".format(path))
-    else:
-        os.makedirs(path)
-    write_metadata(os.path.join(path, "meta"), **attrs)
-    return Root(name)
 
 
 def read_root(name):
@@ -294,16 +280,16 @@ def create_entry(name, timestamp, parents=False, **attributes):
     if "uuid" not in attributes:
         attributes["uuid"] = str(uuid4())
     attributes["timestamp"] = convert_timestamp(timestamp)
-    write_metadata(os.path.join(name, "meta"), **attributes)
+    write_metadata(os.path.join(name), **attributes)
     return read_entry(name)
 
 
 def read_entry(name):
     path = os.path.abspath(name)
     dsets = {}
-    attrs = read_metadata(os.path.join(path, "meta"))
+    attrs = read_metadata(os.path.join(path))
     # load only files with associated metadata files
-    dset_metas = glob(os.path.join(path, "*.meta"))
+    dset_metas = glob(os.path.join(path, "*.meta.yaml"))
     dset_full_names = [x[:-5] for x in dset_metas]
     dset_names = [os.path.split(x)[-1] for x in dset_full_names]
     datasets = {name: read_dataset(full_name)

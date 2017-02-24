@@ -56,7 +56,7 @@ def write_from_kwd(kwd, dat):
     columns = {i: {'units': 'uV', 
                    'unit_scale': float(data['app_attrs']['channel_bit_volts'][i])} 
                    for i in range(n_channels)}
-    write_metadata(dat + ".meta", sampling_rate=sampling_rate, 
+    write_metadata(dat, sampling_rate=sampling_rate, 
             dtype=data['data'].dtype.str, columns=columns)
 
 

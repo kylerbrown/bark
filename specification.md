@@ -19,21 +19,21 @@ By ignoring extra files, this system flexibly allows the inclusion of non-standa
 
 An example Bark tree:
 
-    experiment.bark/            <- root directory, optional extension
-        meta                    <- top level YAML metadata
+    experiment/                 <- root directory
         day1/                   <- first entry; all datasets within have the same timebase
-            meta                <- first entry metadata
+            meta.yaml           <- first entry metadata
             emg.dat             <- a first dataset
-            emg.dat.meta        <- the metadata (ARF attributes) of emg.dat in YAML format
+            emg.dat.meta.yaml   <- the metadata (ARF attributes) of emg.dat in YAML format
             mic.dat             <- a second dataset
-            mic.dat.meta        <- metadata for the second dataset
-            mic.flac            <- a file with no corresponding .meta file - it is thus ignored
-            song.label          <- a third dataset, in CSV format
-            song.label.meta     <- metadata for the third dataset
+            mic.dat.meta.yaml   <- metadata for the second dataset
+            mic.flac            <- a file with no corresponding .meta.yaml file - it is thus ignored
+            song.csv            <- a third dataset, in CSV format
+            song.csv.meta.yaml  <- metadata for the third dataset
         
         day2_session2/          <- second entry
+            meta.yaml           <- second entry metadata
             emg.dat             <- a dataset in the second entry
-            emg.dat.meta    
+            emg.dat.meta.yaml    
         ... etc ...
 
 
@@ -95,19 +95,6 @@ within this framework, plus a minimal set of metadata necessary to make sense of
 while allowing the user to add metadata specific to an application.
 
 
-### Roots
-
-A *root* is a top-level directory containing a `meta` file and zero or more
-*entries*.
-
-Root directories must not contain datasets.
-
-#### Root metadata
-
-There are no required attributes in the root `meta` file.
-
-Any attributes the user finds helpful may be included.
-
 ### Entries
 
 An *entry* is an abstract grouping of zero or more *datasets* that
@@ -115,12 +102,11 @@ all share a common start time. Each entry shall be represented by a directory.
 The directory shall contain all the data objects associated with that entry, 
 and all the metadata associated with the entry.
 
-Entry directories must not contain root or entry directories.
 Any subdirectories are ignored.
 
 #### Entry metadata
 
-An entry's metadata must be stored in a file named `meta`.
+An entry's metadata must be stored in a file named `meta.yaml`.
 
 The following attributes are **required**:
 
@@ -153,6 +139,7 @@ Example `meta` file for an entry:
     - 0
     uuid: b05c865d-fb68-44de-86fc-1e95b273159c
     animal: bk196
+    experimenter: Student T
 
 ### Datasets
 
@@ -167,7 +154,8 @@ Sampled data are stored in raw binary files as outlined in
 
 These data shall be represented as arrays of scalar values,
 corresponding to the measurement during each sampling interval. The first  
-dimension of the array must correspond to time, and the second to channels.
+dimension of the array must correspond to time, and the second to channels,
+i.e. the *rows* are samples and the *columns* are channels.
 
 For multi-channel files, samples are interleaved, so files should be written
 in C (or row-major) order.
@@ -203,22 +191,26 @@ the only method the Bark standard guarantees relies on the `units` attribute
 #### Dataset metadata
 
 Datasets must have a corresponding YAML file containing metadata in the same
-folder/entry. The name of this metadata file must be `<dataset_filename>.meta`.
+folder/entry. The name of this metadata file must be `<dataset_filename>.meta.yaml`.
 
 The following attributes are **required** for all datasets:
 
-- **`filetype`:** A string specifying the format of the data. The currently
-  accepted formats are "csv" and "rawbinary", though others may be added
-  in the future.
-- **`units`:** A string giving the units of the data. `units` must, with two 
-  exceptions, be an SI unit abbreviation. Inference of its meaning is case-
-  sensitive (e.g., `s` means seconds, but `S` means Siemens). The first
-  exception to this rule is the value `samples`, which is dimensionless in SI
-  notation. The second exception is a null value, to be used if the units are
-  unknown. The null value in YAML is `null`; in Python, use `None`. An empty
-  string is also treated as a `null` value. For complex event data, this
-  attribute must be an array. Event datasets **must** have units of either "s"
-  or "samples"; sampled datasets **must not** use those units.
+- **`columns`:** A dictionary (hashtable) with keys that represent each
+  column of the dataset. Values are dictionaries of column specific
+  attributes. In a sampled dataset, columns represent channels, and
+  the keys of the `columns` dictionary are zero-based integers column
+  indexes. In an event dataset, columns are fields such as `name` or `start`.
+  The keys for an event dataset are the names of fields in the dataset.
+    - **`units`:** The only required attribute for each column.
+    A string giving the units of the data. `units` must, with two 
+    exceptions, be an SI unit abbreviation. Inference of its meaning is case-
+    sensitive (e.g., `s` means seconds, but `S` means Siemens). The first
+    exception to this rule is the value `samples`, which is dimensionless in SI
+    notation. The second exception is a null value, to be used if the units are
+    unknown. The null value in YAML is `null`; in Python, use `None`. An empty
+    string is also treated as a `null` value.
+    Event datasets **must** have at least one column with units of either "s"
+    or "samples"; sampled datasets **must not** use those units.
 
 The following attributes are **required** for all sampled datasets:
 
@@ -231,8 +223,6 @@ The following attributes are **required** for all sampled datasets:
   For example `<i2` is a little endian 16 bit signed integer, and `>f8` would
   be a big endian 64-bit floating point number.
   
-- **`n_channels`:** the number of channels in the dataset
-
 The following attribute is **required** for event datasets with `units` of
 "samples":
 
@@ -249,29 +239,33 @@ The following attributes are defined by the spec, but are optional:
   for continuous timebases, the units must be the same as the units of the
   dataset. If this attribute is missing, the offset is assumed to be zero. Note
   that two datasets in the same entry may have different offsets.
-- **`uuid`:** A universally unique ID for the dataset (see
-  [RFC 4122](http://tools.ietf.org/html/rfc4122.html)). Multiple datasets in
-  different entries of the same file may have the same `uuid`, indicating that
-  they were obtained from the same source and experimental conditions. Must be
-  stored as a string.
 
 All other attributes are optional, and may be specified by the user.
 
 An example `.meta` file for a sampled dataset:
-
-    ---
-    filetype: rawbinary
-    sampling_rate: 30000
-    dtype: int16
-    n_channels: 8
-    trial: 1
-    units: V
-    unit_scale: 0.025
-
+```yaml
+sampling_rate: 30000
+dtype: <i2
+columns:
+    0:
+        units: V
+        unit_scale: 0.025
+        name: microphone
+    1:
+        units: uV
+        unit_scale: 0.195
+        name: hvc_electrode1
+trial: 1
+```
 An example `.meta` file for an event dataset:
-
-    ---
-    filetype: csv
-    units: s
-    offset: 1.01
-    offset_units: s
+```yaml
+columns:
+    name:
+        units: null
+    start:
+        units: s
+    stop:
+        units: s
+offset: 1.01
+offset_units: s
+```

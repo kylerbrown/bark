@@ -78,7 +78,7 @@ def board_adc_metadata(result, dsetname):
     for k in columns:
         columns[k]['units']='V'
         columns[k]['unit_scale']=result['ADC_input_bit_volts']
-    write_metadata(dsetname + ".meta", columns=columns, **attrs)
+    write_metadata(dsetname, columns=columns, **attrs)
 
 
 def amplifier_metadata(result, dsetname):
@@ -90,7 +90,7 @@ def amplifier_metadata(result, dsetname):
     for k in columns:
         columns[k]['units']='uV'
         columns[k]['unit_scale']=result['amplifier_bit_microvolts']
-    write_metadata(dsetname + ".meta", columns=columns, **attrs)
+    write_metadata(dsetname, columns=columns, **attrs)
 
 
 def not_implemented_warnings(result):

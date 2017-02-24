@@ -114,7 +114,7 @@ class Stream():
             print('warning, column attribute was mangled ... reseting')
             attrs['columns'] = bark.sampled_columns(data)
         attrs.update(new_attrs)
-        bark.write_metadata(filename + ".meta", **attrs)
+        bark.write_metadata(filename, **attrs)
 
     def map(self, func, vectorize=False):
         """ Maps a function to data,
@@ -331,7 +331,7 @@ def rechunk(stream, chunksize):
 
 def read(fname, **kwargs):
     """ input: the filename of a raw binary file
-        should have an associated .meta file
+        should have an associated meta file
         returns FileStream
         """
     bark_obj = bark.read_sampled(fname)
