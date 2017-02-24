@@ -1,6 +1,8 @@
 # Bark
 [![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
+Version: 0.2
+
 What is Bark? Bark is a standard for electrophysiology data. By emphasizing filesystem 
 directories, plain text files and simple binary arrays, Bark data can leverage a broad tool set that includes Unix commands.
 

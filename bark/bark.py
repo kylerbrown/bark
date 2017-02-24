@@ -173,7 +173,6 @@ def write_sampled(datfile, data, sampling_rate, **params):
     shape = data.shape
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
-    params["filetype"] = "rawbinary"
     write_metadata(datfile, sampling_rate=sampling_rate, **params)
     params['sampling_rate'] = sampling_rate
     return SampledData(mdata, datfile, params)
@@ -196,7 +195,6 @@ def write_events(eventsfile, data, **params):
     if 'columns' not in params:
         params['columns'] = event_columns(data)
     data.to_csv(eventsfile, index=False)
-    params["filetype"] = "csv"
     write_metadata(eventsfile, **params)
     return read_events(eventsfile)
 
@@ -211,13 +209,10 @@ def read_events(eventsfile):
 def read_dataset(fname):
     "determines if file is sampled or event data and reads accordingly"
     params = read_metadata(fname)
-    if params["filetype"] == "csv":
+    if 'dtype' in params:
         dset = read_events(fname)
-    elif params["filetype"] == "rawbinary":
-        dset = read_sampled(fname)
     else:
-        raise ValueError('Unrecognized file format {}'.format(params[
-            'filetype']))
+        dset = read_sampled(fname)
     return dset
 
 
