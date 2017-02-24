@@ -129,8 +129,10 @@ class EventData(Data):
             path = self.path
         write_events(path, self.data, **self.attrs)
 
+
 def template_columns(fields):
     return {f: {'units': None} for f in fields}
+
 
 def event_columns(dataframe, columns=None):
     if columns is None:
@@ -144,6 +146,7 @@ def event_columns(dataframe, columns=None):
         if 'units' not in columns[field]:
             columns[field]['units'] = None
 
+
 def sampled_columns(data, columns=None):
     'If columns=None, create new columns attribute, otherwise verify columns.'
     if len(data.shape) == 1:
@@ -153,12 +156,15 @@ def sampled_columns(data, columns=None):
     if columns is None:
         return template_columns(range(n_channels))
     if len(columns) != n_channels:
-        raise ValueError('the columns attribute does not match the number of columns')
+        raise ValueError(
+            'the columns attribute does not match the number of columns')
     for i in range(n_channels):
         if i not in columns:
-            raise ValueError('the columns attribute is missing column {}'.format(i))
+            raise ValueError(
+                'the columns attribute is missing column {}'.format(i))
         if 'units' not in columns[i]:
             columns[i]['units'] = None
+
 
 def write_sampled(datfile, data, sampling_rate, **params):
     if 'columns' not in params:
@@ -168,9 +174,7 @@ def write_sampled(datfile, data, sampling_rate, **params):
     mdata = np.memmap(datfile, dtype=params["dtype"], mode="w+", shape=shape)
     mdata[:] = data[:]
     params["filetype"] = "rawbinary"
-    write_metadata(datfile,
-                   sampling_rate=sampling_rate,
-                   **params)
+    write_metadata(datfile, sampling_rate=sampling_rate, **params)
     params['sampling_rate'] = sampling_rate
     return SampledData(mdata, datfile, params)
 
@@ -212,7 +216,8 @@ def read_dataset(fname):
     elif params["filetype"] == "rawbinary":
         dset = read_sampled(fname)
     else:
-        raise ValueError('Unrecognized file format {}'.format(params['filetype']))
+        raise ValueError('Unrecognized file format {}'.format(params[
+            'filetype']))
     return dset
 
 
@@ -227,7 +232,8 @@ def read_metadata(path, meta='meta.yaml'):
         elif os.path.splitext(fname)[-1] == '.' + meta:
             print("Tried to open metadata file instead of data file.")
         if os.path.exists(fname):
-            print(f"{path} is missing an associated meta file, should named {meta}")
+            print("{} is missing an associated meta file, should named {}"
+                  .format(path, meta))
     else:
         print("{} does not exist".format(fname))
     sys.exit(0)

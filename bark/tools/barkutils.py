@@ -211,3 +211,70 @@ def rb_select():
         channels = [int(c) for c in channels]
     stream[channels].write(outfname)
 
+def rb_filter():
+    p = argparse.ArgumentParser(description="""
+    filter a sampled dataset
+    """)
+    p.add_argument("dat", help="dat file")
+    p.add_argument("-o", "--out", help="name of output dat file")
+    p.add_argument("--order", help="filter order", default=3, type=int)
+    p.add_argument("--highpass", help="highpass frequency", type=float)
+    p.add_argument("--lowpass", help="lowpass frequency", type=float)
+    p.add_argument("-f",
+                   "--filter",
+                   help="filter type: butter or bessel",
+                   default="bessel")
+
+    opt = p.parse_args()
+    stream.read(dat)._analog_filter(opt.filter, highpass=opt.highpass, lowpass=opt.lowpass,
+            order=opt.order).write(opt.out)
+
+def rb_diff():
+    p = argparse.ArgumentParser(description="""
+    Subtracts one channel from another
+    """)
+    p.add_argument("dat", help="dat file")
+    p.add_argument("-c", "--channels",
+            help="channels to difference, zero indexed, default: 0 1, subtracts second channel from first.",
+            type=int, nargs="+")
+    p.add_argument("-o", "--out",
+                   help="name of output dat file")
+    opt = p.parse_args() 
+    dat, out, channels = opt.dat, opt.out, opt.channels
+    if not channels:
+        channels = (0, 1)
+    (stream.read(dat)[channels[0]] - stream.read(dat)[channels[1]]).write(out)
+
+
+def rb_join():
+    p = argparse.ArgumentParser(description="""
+            Combines dat files by adding new channels with the same number
+            samples. To add additional samples, use the unix utility 'cat'.""")
+    p.add_argument("dat", help="dat files", nargs="+")
+    p.add_argument("-o", "--out", help="name of output dat file")
+    opt = p.parse_args()
+    streams = [stream.read(fname) for fname in opt.dat]
+    streams[0].merge(streams[1:]).write(opt.out)
+
+def rb_to_wav():
+    p = argparse.ArgumentParser()
+    p.add_argument("dat", help="dat file to convert to wav, can be any number of channels but you probably want 1 or 2")
+    p.add_argument("-o", "--out", help="name of output wav file")
+    opt = p.parse_args()
+    #dat2wav(opt.dat, opt.out)
+    stream.to_wav(stream.read(opt.dat), opt.out)
+    
+
+def rb_to_wave_clus()
+    import argparse
+    p = argparse.ArgumentParser(prog="dat2wave_clus",
+                                description="""
+    Converts a raw binary file to a wav_clus compatible matlab file
+    """)
+    p.add_argument("dat", help="dat file")
+    p.add_argument("-o", "--out", help="name of output .mat file")
+    opt = p.parse_args()
+    #dat2wave_clus(opt.dat, opt.out)
+    from scipy.io import savemat
+    dataset = bark.read_sampled(opt.dat)
+    savemat(opt.out, {'data': dataset.data.T, 'sr': dataset.attrs['sampling_rate'], appendmat=False) 

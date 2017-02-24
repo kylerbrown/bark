@@ -32,7 +32,13 @@ setup(name='bark',
               'dat-decimate=bark.tools.barkutils:rb_decimate',
               'dat-resample=bark.tools.barkutils:rb_resample',
               'dat-select=bark.tools.barkutils:rb_select',
+              'dat-join=bark.tools.barkutils:rb_join',
               'dat-segment=bark.tools.datsegment:_run',
+              'dat-filter=bark.tools.barkutils:rb_filter',
+              'dat-diff=bark.tools.barkutils:rb_diff',
+              'dat-ref=bark.tools.datref:main',
+              'dat-artifact=bark.tools.datartifact:main',
+              'dat-enrich=bark.tools.datenrich:main',
               'bark-label-view=bark.tools.labelview:_run',
               ]
           }

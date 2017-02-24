@@ -7,7 +7,8 @@ directories, plain text files and simple binary arrays, Bark data can leverage a
 Bark is also the fibrous outer layer of [ARF](https://github.com/melizalab/arf), wrapped around a few standard
 file types.
 
-Finally **BARK** is also an acronym for **B**ark is **A**rf **R**einterpreted by **K**yler.
+**BARK** is also an acronym for **B**ark is **A**rf **R**einterpreted by **K**yler.
+
 
 ## Why use Bark instead of ARF?
 
@@ -79,7 +80,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `bark-entry` -- create entry directories for datasets
 - `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 - `bark-clean-orphan-metas` -- remove orphan `.meta` files without associated datafiles
-- `bark-scope` -- opens a Bark SampledData file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
+- `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
 - `bark-split` -- splits a dataset according to the split times in a label file, either in a single entry or in an entire bark tree
@@ -89,36 +90,39 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
 - `dat-decimate` -- downsamples a sampled dataset by an integer factor, you want to low-pass filter your data first.
 - `dat-select` -- extract a subset of channels from a sampled dataset
-- `dat-segment` -- segments a file based on a band of spectral power, based on [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
+- `dat-join` -- combine the channels of two or more sampled datasets
+- `dat-filter` -- apply zero-phase Butterworth or Bessel filters to a sampled dataset
+- `dat-diff` -- subtract one sampled dataset channel from another
+- `dat-to-wave-clus` -- convert a sampled dataset to a [wave_clus](https://github.com/csn-le/wave_clus)
+  compatible Matlab file
+- `dat-to-wav` -- convert a sampled dataset to a WAVE file.
+- `dat-ref` -- for each channel: subtract the mean of all other channels, scaled by a coefficient such that the total power is minimized
+- `dat-artifact` -- removes sections of a sampled dataset that exceed a threshold
+- `dat-enrich` -- concatenates subsets of a sampled dataset based on events in an events dataset
+- `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
-
-For processing continuously sampled data, try the included python moduled `bark.stream` or the 
-[datutils](https://github.com/kylerbrown/datutils) project, which provide a command line interface
-for common data pipelines and adhere to the Bark/ARF standard.
-
-Over time, tools from `datutils` will migrate into `bark`.
 
 There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
 
 # Python interface
-
-    import bark
-    root = bark.read_root("black5")
-    root.entries.keys()
-    # dict_keys(['2016-01-18', '2016-01-19', '2016-01-17', '2016-01-20', '2016-01-21'])
-    entry = root['2016-01-18']
-    entry.attrs
-    # {'bird': 'black5',
-    # 'experiment': 'hvc_syrinx_screwdrive',
-    # 'experimenter': 'kjbrown',
-    # 'timestamp': [1453096800, 0],
-    # 'uuid': 'a53d24af-ac13-4eb3-b5f4-0600a14bb7b0'}
-    entry.datasets.keys()
-    # dict_keys(['enr_emg.dat', 'enr_mic.dat', 'enr_emg_times.csv', 'enr_hvc.dat', 'raw.label', 'enr_hvc_times.csv', 'enr.label'])
-    hvc = entry['enr_hvc.dat']
-    hvc.data.shape
-    # (7604129, 3)
-
+```python
+import bark
+root = bark.read_root("black5")
+root.entries.keys()
+# dict_keys(['2016-01-18', '2016-01-19', '2016-01-17', '2016-01-20', '2016-01-21'])
+entry = root['2016-01-18']
+entry.attrs
+# {'bird': 'black5',
+# 'experiment': 'hvc_syrinx_screwdrive',
+# 'experimenter': 'kjbrown',
+# 'timestamp': [1453096800, 0],
+# 'uuid': 'a53d24af-ac13-4eb3-b5f4-0600a14bb7b0'}
+entry.datasets.keys()
+# dict_keys(['enr_emg.dat', 'enr_mic.dat', 'enr_emg_times.csv', 'enr_hvc.dat', 'raw.label', 'enr_hvc_times.csv', 'enr.label'])
+hvc = entry['enr_hvc.dat']
+hvc.data.shape
+# (7604129, 3)
+```
 
 
 The `Stream` object in the `bark.stream` module exposes a powerful data pipeline design system for sampled data.
@@ -141,3 +145,8 @@ Example usage:
 -   neuroshare (<http://neuroshare.org>) is a set of routines for reading and
     writing data in various proprietary and open formats.
 
+# Authors
+
+Dan Meliza created ARF.
+Bark was was written by Kyler Brown so he could finish his damn thesis in 2017. Graham Fetterman also made
+considerable contributions.

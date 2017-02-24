@@ -339,3 +339,17 @@ def read(fname, **kwargs):
     sr = bark_obj.attrs["sampling_rate"]
     kwargs.update(bark_obj.attrs)
     return Stream(data, sr=sr, attrs=kwargs)
+
+def to_wav(stream, filename):
+    import ewave
+    data = stream.peek()
+    dtype = data.dtype.str,
+    nchannels = data.size[1]
+    with ewave.open(wavfile,
+                    "w+",
+                    sampling_rate=stream.sr,
+                    dtype=dtype,
+                    nchannels=nchannels) as wavfp:
+        for x in stream:
+            wavfp.write(x)
+
