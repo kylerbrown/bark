@@ -3,27 +3,23 @@
 
 Version: 0.2
 
-What is Bark? Bark is a standard for electrophysiology data. By emphasizing filesystem 
-directories, plain text files and simple binary arrays, Bark data can leverage a broad tool set that includes Unix commands.
+Bark is a standard for electrophysiology data. 
 
-This system is discussed in detail in the [Bark specification](specification.md).
+## The Bark philosophy
+1. **simple file formats** 
+2. **minimal specification and implementation** 
+3. **small, chainable utilities**
 
-Bark is also the fibrous outer layer of [ARF](https://github.com/melizalab/arf), wrapped around a few standard
-file types.
+By emphasizing filesystem directories, plain text files and a common binary array format, Bark makes it easy to use both
+large external projects and simple command-line utilites.
 
-**BARK** is also an acronym for **B**ark is **A**rf **R**einterpreted by **K**yler.
+Bark's [small specification](specification.md) and Python implementation are easy to use in costum tools.
 
+These tools can be chained together using GNU Make to build data pipelines.
 
-## Why use Bark instead of ARF?
+## Why use Bark?
 
-Both systems have their advantages. Because ARF datasets are encapsulated 
-within HDF5, they are harder to access without using ARF-specific tools.
-This protects ARF datasets from accidental loss of metadata, and helps ensure
-datasets conform to the ARF specification.
-
-Bark takes the architecture of ARF and replaces HDF5 with common data storage formats.
-This makes Bark files more susceptible to losing metadata and deviating
-from the specification, but gives Bark a few advantages:
+Bark takes the architecture of ARF and replaces HDF5 with common data storage formats, the advantages of this approach are:
 
 + Use standard Unix tools to explore your data (cd, ls, grep, find, mv)
 + Build robust data processing pipelines with shell scripting or
@@ -32,8 +28,7 @@ from the specification, but gives Bark a few advantages:
 + Leverage any third party tools that use Bark's common data formats.
   + Raw binary tools: [Aplot](https://github.com/melizalab/aplot), [Neuroscope](http://neurosuite.sourceforge.net/), 
 [Plexon Offline Sorter](http://www.plexon.com/products/offline-sorter), [Wave_clus](https://github.com/csn-le/wave_clus), 
-[spyking circus](https://spyking-circus.readthedocs.io), [phy](https://github.com/kwikteam/phy), 
-[datutils](https://github.com/kylerbrown/datutils), [sox](http://sox.sourceforge.net/sox.html).
+[spyking circus](https://spyking-circus.readthedocs.io), [phy](https://github.com/kwikteam/phy), [sox](http://sox.sourceforge.net/sox.html).
   + CSV tools: R, Pandas (Python), Excel, csvkit and Unix tools like sed and
       awk.
 + Include non-standard data such as images or video in Bark entries.
@@ -48,10 +43,6 @@ Bark trees are made from the following elements:
   file with ".meta.yaml" appended to the dataset's filename.
 - **EventData** stored in CSV files. As above, metadata is stored in a "X.meta.yaml"
   file.
-- Every Bark element (Root, Entry, SampledData, EventData) has metadata stored in associated UTF-8-encoded YAML files.
-
-Roots must only have Entries and Entries must only have Datasets.
-However, Datasets can exist outside of Entries, and Entries can exist without Roots.
 
 This repository contains:
 
@@ -61,7 +52,7 @@ This repository contains:
 
 ## Installation
 
-The python interface is tested against Python 3.5. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
+The python interface requires Python 3.5+. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
 
     git clone https://github.com/kylerbrown/bark
     cd bark
@@ -73,13 +64,12 @@ The python interface is tested against Python 3.5. Installation with [Conda](htt
     pytest -v
 
 
+You'll also probably want to install [Neuroscope](http://neurosuite.sourceforge.net/). [Sox](http://sox.sourceforge.net/sox.html) is also useful.
 # Shell Commands
 
-Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
+Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 
-- `bark-root` -- create root directories for experiments
 - `bark-entry` -- create entry directories for datasets
-- `bark-entry-from-prefix` -- create an entry from datasets with matching file prefixes
 - `bark-clean-orphan-metas` -- remove orphan `.meta.yaml` files without associated datafiles
 - `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
@@ -104,7 +94,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-root -h`).
 - `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 
-There are many tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
+There are many external tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
 
 # Python interface
 ```python
@@ -132,8 +122,14 @@ Example usage:
 ![Example usage](bark-stream-example.png)
 
 
+# Pipelines with GNU Make
+Some links to get started with Make:
 
-## Other common tasks
++ http://kbroman.org/minimal_make/
++ https://bost.ocks.org/mike/make/
++ https://swcarpentry.github.io/make-novice/
+
+# Other common tasks
 
 - Recursively search for datafile by metadata: `grep -R --include "*.meta.yaml" "source: hvc" PATH/TO/DATA`
 - Recursively search for an entry by metadata: `grep -R --include "meta.yaml" "experimenter: kjbrown" PATH/TO/DATA`
