@@ -13,7 +13,7 @@ Bark is a standard for electrophysiology data.
 By emphasizing filesystem directories, plain text files and a common binary array format, Bark makes it easy to use both
 large external projects and simple command-line utilites.
 
-Bark's [small specification](specification.md) and Python implementation are easy to use in costum tools.
+Bark's [small specification](specification.md) and Python implementation are easy to use in custom tools.
 
 These tools can be chained together using GNU Make to build data pipelines.
 
