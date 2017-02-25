@@ -1,9 +1,9 @@
 # Bark
+Bark is a standard for electrophysiology data. 
+
 [![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
 Version: 0.2
-
-Bark is a standard for electrophysiology data. 
 
 ## The Bark philosophy
 1. **simple file formats** 

@@ -94,57 +94,34 @@ datasets, and plaintext YAML files provide metadata attributes. BARK specifies t
 within this framework, plus a minimal set of metadata necessary to make sense of the datasets,
 while allowing the user to add metadata specific to an application.
 
-
-### Entries
-
-An *entry* is an abstract grouping of zero or more *datasets* that
-all share a common start time. Each entry shall be represented by a directory.
-The directory shall contain all the data objects associated with that entry, 
-and all the metadata associated with the entry.
-
-Any subdirectories are ignored.
-
-#### Entry metadata
-
-An entry's metadata must be stored in a file named `meta.yaml`.
-
-The following attributes are **required**:
-
--   **timestamp:** The start time of the entry. This attribute shall consist of a
-    two-element array, with the first element indicating the POSIX time (number of
-    seconds since January 1, 1970 UTC), and the second element
-    indicating the rest of the elapsed time, in microseconds. Must
-    have at least 64-bit integer precision.
--   **uuid:** A universally unique ID for the entry (see [RFC 4122](http://tools.ietf.org/html/rfc4122.html)).
-    Must be stored as a string in the `meta` file. The string is set of 16 octets in five groupings separated by hyphens.
-    For example: `6ba7b814-9dad-11d1-80b4-00c04fd430c8`.
-    
-    
-In addition, the following optional attributes are defined. They do not need to
-be present in an entry's `meta` file if not applicable.
-
--   **animal:** Indicates the name or ID of the experimental subject.
--   **experimenter:** Indicates the name or ID of the experimenter.
--   **protocol:** Comment field indicating the treatment, stimulus, or any other
-    user-specified data.
--   **recuri:** The URI of an external database where `uuid` can be looked up.
-
-Any other attributes may be included in an entry's `meta` file.
-
-Example `meta` file for an entry:
-```yaml
-timestamp:
-- 1452891725
-- 0
-uuid: b05c865d-fb68-44de-86fc-1e95b273159c
-animal: bk196
-experimenter: Student T
-```
 ### Datasets
 
 A *dataset* is a concrete time series or point process.  Multiple datasets may
 be stored in an entry, and may have different lengths or timebases (i.e.,
 *offset* and *sampling rate*).
+
+There are no requirements for dataset names. By convention, datasets with the same name 
+and sharing a common root are considered to share a common "source". Datasets with the same
+filename until the first period or underscore are considered to be part of the same "group".
+
+For example:
+```
+root/
+    session1/
+    meta.yaml
+    tetrode.dat
+    tetrode.dat.meta.yaml
+    tetrode_spikes.csv
+    tetrode_spikes.csv.meta.yaml
+    session2/
+    meta.yaml
+    tetrode.dat
+    tetrode.dat.meta.yaml
+    tetrode_spikes.csv
+    tetrode_spikes.csv.meta.yaml
+
+```
+Here there are two sources: `tetrode.dat` and `tetrode_spikes.csv` and one group: `tetrode`.
 
 #### Sampled data
 
@@ -268,3 +245,68 @@ columns:
 offset: 1.01
 offset_units: s
 ```
+
+### Entries
+
+An *entry* is an abstract grouping of zero or more *datasets* that
+all share a common start time. Each entry shall be represented by a directory.
+The directory shall contain all the data objects associated with that entry, 
+and all the metadata associated with the entry.
+
+Any subdirectories are ignored.
+
+#### Entry metadata
+
+An entry's metadata must be stored in a file named `meta.yaml`.
+
+The following attributes are **required**:
+
+-   **timestamp:** The start time of the entry. This attribute shall consist of a
+    two-element array, with the first element indicating the POSIX time (number of
+    seconds since January 1, 1970 UTC), and the second element
+    indicating the rest of the elapsed time, in microseconds. Must
+    have at least 64-bit integer precision.
+-   **uuid:** A universally unique ID for the entry (see [RFC 4122](http://tools.ietf.org/html/rfc4122.html)).
+    Must be stored as a string in the `meta` file. The string is set of 16 octets in five groupings separated by hyphens.
+    For example: `6ba7b814-9dad-11d1-80b4-00c04fd430c8`.
+    
+    
+In addition, the following optional attributes are defined. They do not need to
+be present in an entry's `meta` file if not applicable.
+
+-   **animal:** Indicates the name or ID of the experimental subject.
+-   **experimenter:** Indicates the name or ID of the experimenter.
+-   **protocol:** Comment field indicating the treatment, stimulus, or any other
+    user-specified data.
+-   **recuri:** The URI of an external database where `uuid` can be looked up.
+
+Any other attributes may be included in an entry's `meta` file.
+
+Example `meta` file for an entry:
+```yaml
+timestamp:
+- 1452891725
+- 0
+uuid: b05c865d-fb68-44de-86fc-1e95b273159c
+animal: bk196
+experimenter: Student T
+```
+### Roots
+
+A *root* is a grouping of entries, containing all data from an entire recording session. 
+Entries should be grouped together within roots when their datasets refer to the same 
+experimental sources. For exampled, if `trial1/eeg.dat` and `trial2/eeg.dat` are data 
+collected from the same biosignal at two different times, they should be placed within 
+the same root.
+
+Like entries, roots are represented by directories. Roots may contain data, but unlike 
+entries, the data is not expected to be timeseries data or have a common timebase. Root 
+datasets describe common items across entries. For example if the entries have spike 
+event datasets, a root dataset may group spike events across entries into units or 
+neurons. If stimulus events are presented in the entries, the root may contain the 
+stimulus data files, such as sound files or videos.
+
+Top-level CSV datasets are loaded into the root object's `datasets` attribute. By 
+convention, a field named `path` may be used to reference Bark Datasets. This enables 
+relating datasets across entries. 
+

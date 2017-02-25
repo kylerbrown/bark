@@ -224,14 +224,14 @@ def read_metadata(path, meta='meta.yaml'):
         metafile = path + '.' + meta
         if os.path.isfile(metafile):
             return yaml.safe_load(open(metafile, 'r'))
-        elif os.path.splitext(fname)[-1] == '.' + meta:
+        elif os.path.splitext(path)[-1] == '.' + meta:
             print("Tried to open metadata file instead of data file.")
-        if os.path.exists(fname):
+        if os.path.exists(path):
             print("{} is missing an associated meta file, should named {}"
                   .format(path, meta))
     else:
-        print("{} does not exist".format(fname))
-    sys.exit(0)
+        print("{} does not exist".format(path))
+    sys.exit(1)
 
 
 def write_metadata(path, meta='meta.yaml', **params):
@@ -242,6 +242,7 @@ def write_metadata(path, meta='meta.yaml', **params):
     for k, v in params.items():
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
+    print(metafile)
     with codecs.open(metafile, 'w', encoding='utf-8') as yaml_file:
         yaml_file.write(yaml.safe_dump(params, default_flow_style=False))
 

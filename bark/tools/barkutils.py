@@ -198,7 +198,7 @@ def rb_diff():
 def rb_join():
     p = argparse.ArgumentParser(description="""
             Combines dat files by adding new channels with the same number
-            samples. To add additional samples, use dat-cat"""
+            samples. To add additional samples, use dat-cat""")
     p.add_argument("dat", help="dat files", nargs="+")
     p.add_argument("-o", "--out", help="name of output dat file")
     opt = p.parse_args()
@@ -214,7 +214,7 @@ def rb_to_wav():
     stream.to_wav(stream.read(opt.dat), opt.out)
     
 
-def rb_to_wave_clus()
+def rb_to_wave_clus():
     import argparse
     p = argparse.ArgumentParser(prog="dat2wave_clus",
                                 description="""
@@ -226,4 +226,4 @@ def rb_to_wave_clus()
     #dat2wave_clus(opt.dat, opt.out)
     from scipy.io import savemat
     dataset = bark.read_sampled(opt.dat)
-    savemat(opt.out, {'data': dataset.data.T, 'sr': dataset.attrs['sampling_rate'], appendmat=False) 
+    savemat(opt.out, {'data': dataset.data.T, 'sr': dataset.attrs['sampling_rate']}, appendmat=False) 
