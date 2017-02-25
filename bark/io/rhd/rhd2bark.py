@@ -70,11 +70,10 @@ def adc_chan_names(result): return chan_names(result, 'board_adc_channels')
 
 
 def board_adc_metadata(result, dsetname):
-    import pdb; pdb.set_trace()
     attrs = dict(dtype=result['board_adc_data'].dtype.str,
                  sampling_rate=result['frequency_parameters'][
                      'board_adc_sample_rate'],)
-    columns = {i: chan_attrs for i, chan_attrs in enumerate(result['amplifier_channels'])}
+    columns = {i: chan_attrs for i, chan_attrs in enumerate(result['board_adc_channels'])}
     for k in columns:
         columns[k]['units']='V'
         columns[k]['unit_scale']=result['ADC_input_bit_volts']
