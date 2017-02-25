@@ -184,8 +184,8 @@ column plus a column labeled `stop` (plus any others the user desires).
 They are not treated differently by Bark.
 
 Event datasets may be distinguished from sampled datasets in several ways, but
-the only method the Bark standard guarantees relies on the `units` attribute
-(see below).
+the only method the Bark standard guarantees is that sampled datasets have a 
+`dtype` attribute (see below).
 
 #### Dataset metadata
 
@@ -241,7 +241,7 @@ The following attributes are defined by the spec, but are optional:
 
 All other attributes are optional, and may be specified by the user.
 
-An example `.meta` file for a sampled dataset:
+An example `X.meta.yaml` file for a sampled dataset `X`:
 ```yaml
 sampling_rate: 30000
 dtype: <i2
@@ -256,7 +256,7 @@ columns:
         name: hvc_electrode1
 trial: 1
 ```
-An example `.meta` file for an event dataset:
+An example `X.meta.yaml` file for an event dataset `X`:
 ```yaml
 columns:
     name:
