@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(name='bark',
-      version='0.1',
-      description='tools for reading and writing BARK formatted data',
+      version='0.2',
+      description='tools for reading and writing Bark formatted data',
       url='http://github.com/kylerbrown/bark',
       author='Kyler Brown',
       author_email='kylerjbrown@gmail.com',
@@ -17,9 +17,7 @@ setup(name='bark',
       zip_safe=False,
       entry_points = {
           'console_scripts' : [
-              'bark-root=bark.tools.barkutils:mk_root',
               'bark-entry=bark.tools.barkutils:mk_entry',
-              'bark-entry-from-prefix=bark.tools.barkutils:entry_from_glob',
               'bark-clean-orphan-metas=bark.tools.barkutils:clean_metafiles',
               'bark-scope=bark.tools.barkscope:main',
               'csv-from-waveclus=bark.io.waveclus:_waveclus2csv',
@@ -29,6 +27,18 @@ setup(name='bark',
               'bark-convert-rhd=bark.io.rhd.rhd2bark:bark_rhd_to_entry',
               'bark-convert-openephys=bark.io.openephys.kwik2dat:kwd_to_entry',
               'bark-split=bark.tools.barksplit:_main',
+              'dat-decimate=bark.tools.barkutils:rb_decimate',
+              'dat-resample=bark.tools.barkutils:rb_resample',
+              'dat-select=bark.tools.barkutils:rb_select',
+              'dat-cat=bark.tools.barkutils:rb_concat',
+              'dat-join=bark.tools.barkutils:rb_join',
+              'dat-segment=bark.tools.datsegment:_run',
+              'dat-filter=bark.tools.barkutils:rb_filter',
+              'dat-diff=bark.tools.barkutils:rb_diff',
+              'dat-ref=bark.tools.datref:main',
+              'dat-artifact=bark.tools.datartifact:main',
+              'dat-enrich=bark.tools.datenrich:main',
+              'bark-label-view=bark.tools.labelview:_run',
               ]
           }
       )

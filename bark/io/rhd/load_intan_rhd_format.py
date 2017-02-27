@@ -90,9 +90,6 @@ def read_data(filename, no_floats=False):
 
     if data_present:
         # Pre-allocate memory for data.
-        print('')
-        print('Allocating memory for data...')
-
         data = {}
         if (header['version']['major'] == 1 and
                 header['version']['minor'] >= 2) or (
@@ -129,9 +126,6 @@ def read_data(filename, no_floats=False):
         data['board_dig_out_raw'] = np.zeros(num_board_dig_out_samples,
                                              dtype=np.uint)
 
-        # Read sampled data from file.
-        print('Reading data from file...')
-
         # Initialize indices used in looping
         indices = {}
         indices['amplifier'] = 0
@@ -156,7 +150,6 @@ def read_data(filename, no_floats=False):
 
             fraction_done = 100 * (1.0 * i / num_data_blocks)
             if fraction_done >= percent_done:
-                print('{}% done...'.format(percent_done))
                 percent_done = percent_done + print_increment
         # Make sure we have read exactly the right amount of data.
         bytes_remaining = filesize - fid.tell()
@@ -168,7 +161,6 @@ def read_data(filename, no_floats=False):
 
     extras = {}  # dictionary for extra parameters
     if (data_present):
-        print('Parsing data...')
 
         # Extract digital input channels to separate variables.
         for i in range(header['num_board_dig_in_channels']):
@@ -222,9 +214,7 @@ def read_data(filename, no_floats=False):
 # Check for gaps in timestamps.
         num_gaps = np.sum(np.not_equal(data['t_amplifier'][1:] - data[
             't_amplifier'][:-1], 1))
-        if num_gaps == 0:
-            print('No missing timestamps in data.')
-        else:
+        if num_gaps != 0:
             print(
                 'Warning: {0} gaps in timestamp data found.  Time scale will not be uniform!'.format(
                     num_gaps))
@@ -253,7 +243,6 @@ def read_data(filename, no_floats=False):
 
                 fraction_done = 100 * (i / header['num_amplifier_channels'])
                 if fraction_done >= percent_done:
-                    print('{}% done...'.format(percent_done))
                     percent_done += print_increment
     else:
         data = []
@@ -261,7 +250,6 @@ def read_data(filename, no_floats=False):
 # Move variables to result struct.
     result = data_to_result(header, data, data_present)
     result.update(extras)
-    print('Done!  Elapsed time: {0:0.1f} seconds'.format(time.time() - tic))
     return result
 
 

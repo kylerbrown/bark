@@ -1,5 +1,6 @@
 import pytest
 import datetime
+import arrow
 import bark
 import numpy as np
 import pandas as pd
@@ -27,7 +28,7 @@ def test_read_sampled(tmpdir):
     test_write_sampled(tmpdir)  # create 'test_sampled'
     path = os.path.join(tmpdir.strpath, "test_sampled")
     assert os.path.exists(path)
-    assert os.path.exists(path + ".meta")
+    assert os.path.exists(path + ".meta.yaml")
     dset = bark.read_sampled(path)
     assert isinstance(dset, bark.SampledData)
     assert isinstance(dset.path, str)
@@ -51,28 +52,22 @@ def test_read_dataset(tmpdir):
     path = os.path.join(tmpdir.strpath, 'test_events')
     data = pd.DataFrame({'start': [0,1,2,3], 'stop': [1,2,3,4],
                          'name': ['a', 'b', 'c', 'd']})
-    event_written = bark.write_events(path, data, units='s')
+    event_written = bark.write_events(path, data, columns={'start': {'units', 's'},
+        'stop':{'units': 's'}, 'name': {'units': None}})
     event_read = bark.read_dataset(path)
-    assert event_read.attrs['units'] == 's'
+    assert isinstance(event_read, bark.EventData)
     
     path = os.path.join(tmpdir.strpath, 'test_samp')
     data = np.zeros((10,3),dtype="int16")
     params = {'sampling_rate': 30000, 'units': 'mV', 'unit_scale': 0.025}
     samp_written = bark.write_sampled(path, data=data, **params)
     samp_read = bark.read_dataset(path)
-    assert samp_read.attrs['units'] == params['units']
-
-def test_create_root(tmpdir):
-    path = os.path.join(tmpdir.strpath, "mybark")
-    root = bark.create_root(path, experimenter="kjbrown",
-            experiment="testbark")
-    assert isinstance(root, bark.Root)
-    assert root.attrs["experimenter"] == "kjbrown"
-    assert root.attrs["experiment"] == "testbark"
+    assert isinstance(samp_read, bark.SampledData)
 
 def test_create_entry(tmpdir):
+    from datetime import tzinfo
     path = os.path.join(tmpdir.strpath, "myentry")
-    dtime = datetime.datetime(2020,1,1,0,0,0,0)
+    dtime = arrow.get("2020-01-02T03:04:05+06:00").datetime
     entry = bark.create_entry(path, dtime, food="pizza")
     assert 'uuid' in entry.attrs
     assert dtime == bark.timestamp_to_datetime(entry.attrs["timestamp"])
@@ -90,12 +85,8 @@ def test_entry_sort(tmpdir):
     assert mylist[1] == entry2
 
 def test_datatypes():
-    assert bark.DataTypes.is_timeseries(0)
-    assert bark.DataTypes.is_timeseries(1)
-    assert (not bark.DataTypes.is_timeseries(1000))
-    assert (not bark.DataTypes.is_timeseries(2002))
-    assert bark.DataTypes.is_pointproc(1000)
-    assert bark.DataTypes._fromstring('UNDEFINED') == 0
-    assert bark.DataTypes._fromstring('EVENT') == 1000
-    assert bark.DataTypes._fromcode(1) == 'ACOUSTIC'
-    assert bark.DataTypes._fromcode(2002) == 'COMPONENTL'
+    assert bark.DATATYPES.name_to_code['UNDEFINED'] == 0
+    assert bark.DATATYPES.name_to_code['EVENT'] == 1000
+    assert bark.DATATYPES.code_to_name[1] == 'ACOUSTIC'
+    assert bark.DATATYPES.code_to_name[2002] == 'COMPONENTL'
+    assert bark.DATATYPES.code_to_name[None] is None

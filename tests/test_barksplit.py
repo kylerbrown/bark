@@ -135,7 +135,7 @@ def test_gen_split_files(tmpdir):
     assert len(output) == len(splits)
     for f in output:
         assert os.path.exists(f.path)
-        assert os.path.exists(f.path + '.meta')
+        assert os.path.exists(f.path + '.meta.yaml')
         fromfile = bark.read_sampled(f.path)
         assert (fromfile.data == f.data).all()
         index = int(fromfile.attrs['split_num'])

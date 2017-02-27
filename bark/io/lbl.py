@@ -20,7 +20,7 @@ def lbl_to_csv(fname, csvname, **attrs):
     lblstruct = read(fname)
     csvdata = pd.DataFrame(lblstruct)
     csvdata.to_csv(csvname, index=False)
-    write_metadata(csvname + ".meta", **attrs)
+    write_metadata(csvname, **attrs)
 
 def _lbl_csv():
     'commandline script for lbl->csv conversion'

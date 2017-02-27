@@ -4,9 +4,12 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree
 from bark import read_metadata
 
 #readable dtypes and their bit depth
-DTYPES = dict(int16='16',
-        int32='32',
-        int64='64')
+DTYPES = {'int16':'16',
+        '<i2':'16',
+        'int32': '32',
+        '<i4':'32',
+        'int64':'64',
+        '<i8':'64'}
 
 def meta_to_neuroscope_xml(meta):
     '''
@@ -21,10 +24,10 @@ def meta_to_neuroscope_xml(meta):
     assert meta['dtype'] in DTYPES
     parameters = Element('parameters')
     parameters.set('version', '1.0')
-    parameters.set('creator', 'bark-0.1')
+    parameters.set('creator', 'bark-0.2')
     acq = SubElement(parameters, 'acquisitionSystem')
     SubElement(acq, 'nBits').text = DTYPES[meta['dtype']]
-    SubElement(acq, 'nChannels').text = str(meta['n_channels'])
+    SubElement(acq, 'nChannels').text = str(len(meta['columns']))
     SubElement(acq, 'samplingRate').text = str(meta['sampling_rate'])
     SubElement(acq, 'voltageRange').text = '20'
     SubElement(acq, 'amplification').text = '1000'
@@ -76,7 +79,7 @@ def main():
     fname = os.path.splitext(args.dat)[0] + ".xml"
     if not os.path.isfile(fname):
         # load metadata
-        meta = read_metadata(args.dat + ".meta")
+        meta = read_metadata(args.dat)
         # convert to neuroscope
         xml_tree = meta_to_neuroscope_xml(meta)
         # save to file

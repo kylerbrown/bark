@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from collections import namedtuple
+import bark
 
 Entry = namedtuple("Entry", ["start",
                              "stop",
@@ -86,8 +87,14 @@ def write_csv(textgrid_list, filename=None, sep=",", header=True, save_gaps=Fals
         f.flush()
         f.close()
     if meta and filename:
-        with open(filename + ".meta", "w") as metaf:
-            metaf.write("""---\nunits: s\ndatatype: 1002\n""")
+        attrs = {'datatype': 1002,
+                'columns':{
+                    'name': {'units': None},
+                    'tier': {'units': None},
+                    'start': {'units': 's'},
+                    'stop': {'units': 's'}}}
+        bark.write_meta(filename, **attrs)
+
         
 def _build_entry(i, content, tier):
     """
