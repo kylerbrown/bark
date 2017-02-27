@@ -434,7 +434,7 @@ def load_opstack(opsfile, labelfile, labeldata, use_ops):
 def main(datfile, labelfile, outfile=None, shortcutfile=None, use_ops=True):
     kill_shortcuts(plt)
     sampled = bark.read_sampled(datfile)
-    assert sampled.attrs['n_channels'] == 1
+    assert len(sampled.attrs['columns']) == 1
     labels = bark.read_events(labelfile)
     labeldata = to_seconds(labels).data.to_dict('records')
     shortcuts = build_shortcut_map(shortcutfile)

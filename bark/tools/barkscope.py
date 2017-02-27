@@ -19,7 +19,7 @@ def meta_to_neuroscope_xml(meta):
     required keys:
     dtype
     sampling_rate
-    n_channels
+    columns
     '''
     assert meta['dtype'] in DTYPES
     parameters = Element('parameters')
@@ -37,7 +37,7 @@ def meta_to_neuroscope_xml(meta):
     anatdes = SubElement(parameters, 'anatomicalDescription')
     chngrp = SubElement(anatdes, 'channelGroup')
     grp = SubElement(chngrp, 'group')
-    for i in range(meta['n_channels']):
+    for i in range(len(meta['columns'])):
             channel = SubElement(grp, 'channel')
             channel.set('skip', '0')
             channel.text = str(i)
@@ -56,7 +56,7 @@ def meta_to_neuroscope_xml(meta):
     SubElement(spikes, 'nSamples').text = '32'
     SubElement(spikes, 'peakSampleIndex').text = '16'
     channels = SubElement(neuroscope, 'channels')
-    for i in range(meta['n_channels']):
+    for i in range(len(meta['columns'])):
         channelcolors = SubElement(channels, 'channelColors')
         SubElement(channelcolors, 'channel').text = str(i)
         SubElement(channelcolors, 'color').text = '#0080ff'
