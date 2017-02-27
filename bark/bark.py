@@ -223,15 +223,15 @@ def read_dataset(fname):
     return dset
 
 
-def read_metadata(path, meta='meta.yaml'):
+def read_metadata(path, meta='.meta.yaml'):
     if os.path.isdir(path):
-        metafile = os.path.join(path, meta)
+        metafile = os.path.join(path, meta[1:])
         return yaml.safe_load(open(metafile, 'r'))
     if os.path.isfile(path):
-        metafile = path + '.' + meta
+        metafile = path + meta
         if os.path.isfile(metafile):
             return yaml.safe_load(open(metafile, 'r'))
-        elif os.path.splitext(path)[-1] == '.' + meta:
+        elif os.path.splitext(path)[-1] == meta:
             print("Tried to open metadata file instead of data file.")
         if os.path.exists(path):
             print("{} is missing an associated meta file, should named {}"
@@ -241,11 +241,11 @@ def read_metadata(path, meta='meta.yaml'):
     sys.exit(1)
 
 
-def write_metadata(path, meta='meta.yaml', **params):
+def write_metadata(path, meta='.meta.yaml', **params):
     if os.path.isdir(path):
-        metafile = os.path.join(path, meta)
+        metafile = os.path.join(path, meta[1:])
     else:
-        metafile = path + '.' + meta
+        metafile = path + meta
     for k, v in params.items():
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
@@ -293,13 +293,13 @@ def create_entry(name, timestamp, parents=False, **attributes):
     return read_entry(name)
 
 
-def read_entry(name):
+def read_entry(name, meta=".meta.yaml"):
     path = os.path.abspath(name)
     dsets = {}
-    attrs = read_metadata(os.path.join(path))
+    attrs = read_metadata(path, meta)
     # load only files with associated metadata files
-    dset_metas = glob(os.path.join(path, "*.meta.yaml"))
-    dset_full_names = [x[:-5] for x in dset_metas]
+    dset_metas = glob(os.path.join(path, "*" + meta))
+    dset_full_names = [x[:-len(meta)] for x in dset_metas]
     dset_names = [os.path.split(x)[-1] for x in dset_full_names]
     datasets = {name: read_dataset(full_name)
                 for name, full_name in zip(dset_names, dset_full_names)}

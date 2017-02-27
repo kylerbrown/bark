@@ -175,7 +175,7 @@ def rb_filter():
                    default="bessel")
 
     opt = p.parse_args()
-    stream.read(dat)._analog_filter(opt.filter, highpass=opt.highpass, lowpass=opt.lowpass,
+    stream.read(opt.dat)._analog_filter(opt.filter, highpass=opt.highpass, lowpass=opt.lowpass,
             order=opt.order).write(opt.out)
 
 def rb_diff():
