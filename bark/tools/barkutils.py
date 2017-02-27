@@ -4,8 +4,9 @@ import os.path
 from glob import glob
 import bark
 import argparse
-from bark import parse_timestamp_string
 from bark import stream
+import arrow
+from dateutil import tz
 
 
 def mk_entry():
@@ -24,12 +25,11 @@ def mk_entry():
                    "--parents",
                    help="no error if already exists, new meta-data written",
                    action="store_true")
+    p.add_argument('--timezone', help="timezone of timestamp, default: America/Chicago",
+            default='America/Chicago')
     args = p.parse_args()
-    timestamp = parse_timestamp_string(args.timestamp)
-    if args.keyvalues:
-        attrs = dict(args.keyvalues)
-    else:
-        attrs = {}
+    timestamp = arrow.get(args.timestamp).replace(tzinfo=tz.gettz(args.timezone)).datetime
+    attrs = dict(args.keyvalues) if args.keyvalues else {}
     bark.create_entry(args.name, timestamp, args.parents, **attrs)
 
 

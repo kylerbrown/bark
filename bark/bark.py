@@ -306,13 +306,14 @@ def read_entry(name):
     return Entry(datasets, path, attrs)
 
 
-def convert_timestamp(obj):
-    """Makes a BARK timestamp from an object."""
+def convert_timestamp(obj, default_tz='America/Chicago'):
+    """Makes a BARK timestamp from an object.
+    If the object is not UTC aware, the timezone is set by default_tz."""
     dt = timestamp_to_datetime(obj)
     if dt.tzinfo:
         return arrow.get(obj).isoformat()
     else:
-        return arrow.get(obj, 'local').isoformat()
+        return arrow.get(obj, default_tz).isoformat()
 
 
 def timestamp_to_datetime(obj):
@@ -350,12 +351,3 @@ def timestamp_to_float(timestamp):
     """Converts a BARK timestamp to a floating point value (sec since epoch) """
     return timestamp_to_datetime(timestamp).timestamp()
 
-
-def parse_timestamp_string(string):
-    if len(string) == len("YYYY-MM-DD"):
-        dt = datetime.strptime(string, "%Y-%m-%d")
-    elif len(string) == len("YYYY-MM-DD_HH-MM-SS"):
-        dt = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S")
-    else:
-        dt = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
-    return timestamp

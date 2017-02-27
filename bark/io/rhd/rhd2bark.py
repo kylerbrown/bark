@@ -1,6 +1,7 @@
 import sys
 import os.path
-from datetime import datetime
+import arrow
+from dateutil import tz
 import numpy as np
 from bark.io.rhd.load_intan_rhd_format import read_data
 from bark import create_entry, write_metadata
@@ -30,8 +31,10 @@ def bark_rhd_to_entry():
         "-t",
         "--timestamp",
         help=
-        """format: YYYY-MM-DD or YYYY-MM-DD_HH-MM-SS.S, if left unspecified
+        """format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.S, if left unspecified
             the timestamp will be inferred from the filename of the first RHD file.""")
+    p.add_argument('--timezone', help="timezone of timestamp, default: America/Chicago",
+            default='America/Chicago')
     p.add_argument(
         "-p",
         "--parents",
@@ -49,14 +52,14 @@ def bark_rhd_to_entry():
     attrs = dict(args.keyvalues) if args.keyvalues else {}
     check_exists(args.rhdfiles)
     rhds_to_entry(args.rhdfiles, args.out, args.timestamp, args.parents,
-                  args.maxgaps, **attrs)
+                  args.maxgaps, args.timestamp, **attrs)
 
 
-def rhd_filename_to_timestamp(fname):
-    datetime_regex = r'\d{6}_\d{6}'
-    tstring = re.findall(datetime_regex, os.path.basename(fname))[0]
-    return datetime.strptime(tstring, "%y%m%d_%H%M%S")
+def rhd_filename_to_timestamp(fname, timezone):
+    return arrow.get(fname, 'YYMMDD_HHmmss').replace(tzinfo=tz.gettz(timezone)).datetime
 
+def input_string_to_timestamp(string, timezone):
+    return arrow.get(string).replace(tzinfo=tz.gettz(timezone)).datetime
 
 def chan_names(result, key):
     if key in result:
@@ -125,12 +128,15 @@ def rhds_to_entry(rhd_paths,
                   timestamp=None,
                   parents=False,
                   max_gaps=10,
+                  timezone='America/Chicago',
                   **attrs):
     """
     Converts a temporally contiguous list of .rhd files to a bark entry.
     """
     if not timestamp:
-        timestamp = rhd_filename_to_timestamp(rhd_paths[0])
+        timestamp = rhd_filename_to_timestamp(rhd_paths[0], timezone)
+    else:
+        timestamp = input_string_to_timestamp(timestamp, timezone)
     # extract data and metadata from first file
     print(rhd_paths[0])
     result = read_data(rhd_paths[0], no_floats=True)
