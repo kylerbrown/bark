@@ -1,5 +1,6 @@
 import pytest
 import datetime
+import arrow
 import bark
 import numpy as np
 import pandas as pd
@@ -64,8 +65,9 @@ def test_read_dataset(tmpdir):
     assert isinstance(samp_read, bark.SampledData)
 
 def test_create_entry(tmpdir):
+    from datetime import tzinfo
     path = os.path.join(tmpdir.strpath, "myentry")
-    dtime = datetime.datetime(2020,1,1,0,0,0,0)
+    dtime = arrow.get("2020-01-02T03:04:05+06:00").datetime
     entry = bark.create_entry(path, dtime, food="pizza")
     assert 'uuid' in entry.attrs
     assert dtime == bark.timestamp_to_datetime(entry.attrs["timestamp"])

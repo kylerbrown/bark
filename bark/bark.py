@@ -8,11 +8,12 @@ import os.path
 from os import listdir
 from glob import glob
 from uuid import uuid4
+import codecs
+from collections import namedtuple
+import arrow
 import yaml
 import numpy as np
 from bark import stream
-import codecs
-import collections
 
 BUFFER_SIZE = 10000
 
@@ -27,7 +28,7 @@ Library versions:
  bark: %s
 """ % (version)
 
-_Units = collections.namedtuple('_Units', ['TIME_UNITS'])
+_Units = namedtuple('_Units', ['TIME_UNITS'])
 UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
 _pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1), ('EXTRAC_HP', 2),
@@ -35,7 +36,7 @@ _pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1), ('EXTRAC_HP', 2),
           ('INTRAC_VC', 6), ('EVENT', 1000), ('SPIKET', 1001),
           ('BEHAVET', 1002), ('INTERVAL', 2000), ('STIMI', 2001),
           ('COMPONENTL', 2002))
-_dt = collections.namedtuple('_dt', ['name_to_code', 'code_to_name'])
+_dt = namedtuple('_dt', ['name_to_code', 'code_to_name'])
 DATATYPES = _dt(name_to_code={name: code
                               for name, code in _pairs},
                 code_to_name={code: name
@@ -105,7 +106,13 @@ class Data():
     @property
     def datatype_name(self):
         """Returns the dataset's datatype name, or None if unspecified."""
-        return DATATYPES.name_to_code[self.attrs.get('datatype', None)]
+        return DATATYPES.name_to_code[self.attrs.get('datatype',
+                                                     default_datatype)]
+
+    def default_datatype(self):
+        if isinstance(self, EventData):
+            return 1000
+        return 0
 
 
 class SampledData(Data):
@@ -300,56 +307,55 @@ def read_entry(name):
 
 
 def convert_timestamp(obj):
-    """Makes a BARK timestamp from an object.
+    """Makes a BARK timestamp from an object."""
+    dt = timestamp_to_datetime(obj)
+    if dt.tzinfo:
+        return arrow.get(obj).isoformat()
+    else:
+        return arrow.get(obj, 'local').isoformat()
 
-    Argument can be a datetime.datetime object, a time.struct_time, an integer,
-    a float, or a tuple of integers. The returned value is a numpy array with
-    the integer number of seconds since the Epoch and any additional
-    microseconds.
+
+def timestamp_to_datetime(obj):
+    """Converts a BARK timestamp to a datetime.datetime object (aware local time)
+
+    Argument can be an ISO 8601 string, a datetime.datetime object, 
+    a time.struct_time, an integer,
+    a float, or a tuple of integers. The returned value is a string in 
+    ISO 8601 format.
 
     Note that because floating point values are approximate, the conversion
     between float and integer tuple may not be reversible.
-
     """
     import numbers
-    from datetime import datetime
     from time import mktime, struct_time
-
-    out = np.zeros(2, dtype='int64')
     if isinstance(obj, datetime):
-        out[0] = mktime(obj.timetuple())
-        out[1] = obj.microsecond
+        dt = obj
+    elif isinstance(obj, arrow.Arrow):
+        dt = obj.datetime
+    elif isinstance(obj, str):
+        dt = arrow.get(obj).datetime
     elif isinstance(obj, struct_time):
-        out[0] = mktime(obj)
-    elif isinstance(obj, numbers.Integral):
-        out[0] = obj
-    elif isinstance(obj, numbers.Real):
-        out[0] = obj
-        out[1] = (obj - out[0]) * 1e6
+        dt = mktime(obj)
+    elif isinstance(obj, numbers.Number):
+        dt = datetime.fromtimestamp(obj)
+    elif hasattr(obj, '__getitem__'):
+        dt = datetime.fromtimestamp(obj[0])
+        dt += timedelta(microseconds=int(obj[1]))
     else:
-        try:
-            out[:2] = obj[:2]
-        except:
-            raise TypeError("unable to convert %s to timestamp" % obj)
-    return out
-
-
-def timestamp_to_datetime(timestamp):
-    """Converts a BARK timestamp to a datetime.datetime object (naive local time)"""
-    obj = datetime.fromtimestamp(timestamp[0])
-    return obj + timedelta(microseconds=int(timestamp[1]))
+        raise TypeError("unable to convert %s to timestamp" % obj)
+    return dt
 
 
 def timestamp_to_float(timestamp):
     """Converts a BARK timestamp to a floating point value (sec since epoch) """
-    return np.dot(timestamp, (1.0, 1e-6))
+    return timestamp_to_datetime(timestamp).timestamp()
 
 
 def parse_timestamp_string(string):
     if len(string) == len("YYYY-MM-DD"):
-        timestamp = datetime.strptime(string, "%Y-%m-%d")
-    elif len(string) == len("YYYY-MM-DD_HH-MM_SS"):
-        timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S")
+        dt = datetime.strptime(string, "%Y-%m-%d")
+    elif len(string) == len("YYYY-MM-DD_HH-MM-SS"):
+        dt = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S")
     else:
-        timestamp = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
+        dt = datetime.strptime(string, "%Y-%m-%d_%H-%M-%S.%f")
     return timestamp

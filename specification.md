@@ -261,11 +261,7 @@ An entry's metadata must be stored in a file named `meta.yaml`.
 
 The following attributes are **required**:
 
--   **timestamp:** The start time of the entry. This attribute shall consist of a
-    two-element array, with the first element indicating the POSIX time (number of
-    seconds since January 1, 1970 UTC), and the second element
-    indicating the rest of the elapsed time, in microseconds. Must
-    have at least 64-bit integer precision.
+-   **timestamp:** The start time of the entry. This attribute shall consist of an ISO 8601 timestamp string.
 -   **uuid:** A universally unique ID for the entry (see [RFC 4122](http://tools.ietf.org/html/rfc4122.html)).
     Must be stored as a string in the `meta` file. The string is set of 16 octets in five groupings separated by hyphens.
     For example: `6ba7b814-9dad-11d1-80b4-00c04fd430c8`.
@@ -284,9 +280,7 @@ Any other attributes may be included in an entry's `meta` file.
 
 Example `meta` file for an entry:
 ```yaml
-timestamp:
-- 1452891725
-- 0
+timestamp: 2017-02-27T11:03:21.095541-06:00
 uuid: b05c865d-fb68-44de-86fc-1e95b273159c
 animal: bk196
 experimenter: Student T

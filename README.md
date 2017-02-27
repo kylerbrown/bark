@@ -107,7 +107,7 @@ entry.attrs
 # {'bird': 'black5',
 # 'experiment': 'hvc_syrinx_screwdrive',
 # 'experimenter': 'kjbrown',
-# 'timestamp': [1453096800, 0],
+# 'timestamp': '2017-02-27T11:03:21.095541-06:00',
 # 'uuid': 'a53d24af-ac13-4eb3-b5f4-0600a14bb7b0'}
 entry.datasets.keys()
 # dict_keys(['enr_emg.dat', 'enr_mic.dat', 'enr_emg_times.csv', 'enr_hvc.dat', 'raw.label', 'enr_hvc_times.csv', 'enr.label'])
