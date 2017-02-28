@@ -18,6 +18,7 @@ setup(name='bark',
       entry_points = {
           'console_scripts' : [
               'bark-entry=bark.tools.barkutils:mk_entry',
+              'bark-attribute=bark.tools.barkutils:meta_attr',
               'bark-clean-orphan-metas=bark.tools.barkutils:clean_metafiles',
               'bark-scope=bark.tools.barkscope:main',
               'csv-from-waveclus=bark.io.waveclus:_waveclus2csv',

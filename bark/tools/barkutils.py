@@ -9,6 +9,20 @@ import arrow
 from dateutil import tz
 
 
+def meta_attr():
+    p = argparse.ArgumentParser(description="Create/Modify a metadata attribute")
+    p.add_argument("name", help="name of bark object (Entry or Dataset)")
+    p.add_argument("attribute", help="name of bark attribute to create or modify")
+    p.add_argument("value", help="value of attribute")
+    args = p.parse_args()
+    name, attr, val = (args.name, args.attribute, args.value)
+    attrs = bark.read_metadata(name)
+    try:
+        attrs[attr] = eval(val)  # try to parse
+    except Exception:
+        attrs[attr] = val  # assign as string
+    bark.write_metadata(name, **attrs)
+
 def mk_entry():
     p = argparse.ArgumentParser(description="create a bark entry")
     p.add_argument("name", help="name of bark entry")

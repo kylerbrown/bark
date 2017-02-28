@@ -36,13 +36,15 @@ Bark takes the architecture of ARF and replaces HDF5 with common data storage fo
 ## The elements of Bark
 Bark trees are made from the following elements:
 
-- **Entries** (often trials) are directories containing Datasets that share a
-  common time base. These directories contain a `meta.yaml` file and any number
-  of Datasets.
 - **SampledData** stored as raw binary arrays. Metadata is stored in another
   file with ".meta.yaml" appended to the dataset's filename.
 - **EventData** stored in CSV files. As above, metadata is stored in a "X.meta.yaml"
   file.
+- **Entries** (often trials) are directories containing Datasets that share a
+  common time base. These directories contain a `meta.yaml` file and any number
+  of Datasets.
+- **Root** is a directory containing a collection of related Entries. often a Root
+  is used to contain all data from an experimental session.
 
 This repository contains:
 
@@ -70,6 +72,7 @@ You'll also probably want to install [Neuroscope](http://neurosuite.sourceforge.
 Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 
 - `bark-entry` -- create entry directories for datasets
+- `bark-attribute` -- create or modify an attribute of a bark entry or dataset
 - `bark-clean-orphan-metas` -- remove orphan `.meta.yaml` files without associated datafiles
 - `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
