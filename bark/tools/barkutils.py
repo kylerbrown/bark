@@ -47,17 +47,17 @@ def mk_entry():
     bark.create_entry(args.name, timestamp, args.parents, **attrs)
 
 
-def _clean_metafiles(path, recursive):
-    metafiles = glob(os.path.join(path, "*.meta.yaml"))
+def _clean_metafiles(path, recursive, meta='.meta.yaml'):
+    metafiles = glob(os.path.join(path, "*" + meta))
     for mfile in metafiles:
-        if not os.path.isfile(mfile[:-5]):
+        if not os.path.isfile(mfile[:-len(meta)]):
             os.remove(mfile)
     if recursive:
         dirs = [x
                 for x in os.listdir(path)
                 if os.path.isdir(os.path.join(path, x))]
         for d in dirs:
-            _clean_metafiles(os.path.join(path, d), True)
+            _clean_metafiles(os.path.join(path, d), True, meta)
 
 
 def clean_metafiles():
