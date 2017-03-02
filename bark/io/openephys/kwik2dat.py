@@ -18,7 +18,7 @@ from dateutil import tz
 BUFFERSIZE = 131072
 
 def filename_to_timestamp(fname, timezone):
-    return arrow.get(fname, 'YYYY-MM-DD_HH-mm-ss').replace(tzinfo=tz.gettz(timezeone)).datetime
+    return arrow.get(fname, 'YYYY-MM-DD_HH-mm-ss').replace(tzinfo=tz.gettz(timezone)).datetime
 
 def input_string_to_timestamp(string, timezone):
     return arrow.get(string).replace(tzinfo=tz.gettz(timezone)).datetime
