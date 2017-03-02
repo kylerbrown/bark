@@ -94,6 +94,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 - `dat-ref` -- for each channel: subtract the mean of all other channels, scaled by a coefficient such that the total power is minimized
 - `dat-artifact` -- removes sections of a sampled dataset that exceed a threshold
 - `dat-enrich` -- concatenates subsets of a sampled dataset based on events in an events dataset
+- `dat-spike-detect` -- detects spike events in the channels of a sampled dataset
 - `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 

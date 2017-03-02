@@ -39,6 +39,7 @@ setup(name='bark',
               'dat-ref=bark.tools.datref:main',
               'dat-artifact=bark.tools.datartifact:main',
               'dat-enrich=bark.tools.datenrich:main',
+              'dat-spike-detect=bark.tools.datspike:_run',
               'bark-label-view=bark.tools.labelview:_run',
               ]
           }

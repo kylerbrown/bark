@@ -106,7 +106,7 @@ class Stream():
             with open(filename, "wb") as fp:
                 for data in self:
                     fp.write(data.tobytes())
-            dtype = data.dtype.name
+            dtype = data.dtype.str
         attrs["dtype"] = dtype
         try:
             bark.sampled_columns(data, attrs['columns'])
@@ -129,6 +129,32 @@ class Stream():
             func = np.vectorize(func)
         newdata = (func(x) for x in self)
         return self.new_stream(newdata)
+    
+    def padded_chunks(self, pad_len, edge_val=0):
+        """
+        returns overlapping chunks of the array.
+
+        each chunk is pad_len + self.chunksize + pad_len
+
+        first chunk's first pad is filled with edge_val
+        last chunk's last pad is filled with edge_val
+        """
+        peek = self.peek()
+        n_columns = peek.shape[1]
+        dtype = peek.dtype
+        edge_pad = np.array(np.ones((pad_len, n_columns)) * edge_val, dtype=dtype)
+        left_pad = edge_pad[:]
+        cur_x = None
+        for next_x in self:
+            if cur_x is None:  # first chunk
+                cur_x = next_x
+            else:
+                right_pad = next_x[:pad_len, :]
+                yield np.vstack((left_pad, cur_x, right_pad))
+                left_pad = cur_x[-pad_len:, :]
+                cur_x = next_x
+        # last chunk
+        yield np.vstack((left_pad, cur_x, edge_pad))
 
     def vector_map(self, func):
         """
