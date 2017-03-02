@@ -6,8 +6,8 @@ Bark is a standard for electrophysiology data.
 Version: 0.2
 
 ## The Bark philosophy
-1. **simple file formats** 
-2. **minimal specification and implementation** 
+1. **minimal specification and implementation** 
+2. **simple file formats** 
 3. **small, chainable utilities**
 
 By emphasizing filesystem directories, plain text files and a common binary array format, Bark makes it easy to use both
@@ -107,8 +107,6 @@ There are many external tools for processing CSV files, including [pandas](http:
   compatible Matlab file
 - `dat-to-wav` -- convert a sampled dataset to a WAVE file.
 
-
-
 # Python interface
 ```python
 import bark
@@ -142,12 +140,6 @@ Some links to get started with Make:
 + https://bost.ocks.org/mike/make/
 + https://swcarpentry.github.io/make-novice/
 
-# Other common tasks
-
-- Recursively search for datafile by metadata: `grep -R --include "*.meta.yaml" "source: hvc" PATH/TO/DATA`
-- Recursively search for an entry by metadata: `grep -R --include "meta.yaml" "experimenter: kjbrown" PATH/TO/DATA`
-- Add new metadata to file: `echo "condition: control" >> FILE.meta.yaml`
-
 # Related projects
 
 -   NEO <https://github.com/NeuralEnsemble/python-neo>
@@ -160,4 +152,4 @@ Some links to get started with Make:
 
 Dan Meliza created ARF.
 Bark was was written by Kyler Brown so he could finish his damn thesis in 2017. Graham Fetterman also made
-considerable contributions.
+significant contributions.

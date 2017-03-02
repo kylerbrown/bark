@@ -1,40 +1,10 @@
 # Bark
-Bark is a minimal implementation of [ARF](https://github.com/melizalab/arf).
+
+Bark is an alternate implementation of [ARF](https://github.com/melizalab/arf).
 
 Much of this specification is adapted directly from the ARF spec. Unless a
 divergence from the ARF spec is explicitly noted, any ambiguities must be
 resolved in favor of the ARF spec.
-
-This implementation leverages the hierarchical nature of the file system and three common data formats:
-
-+ Comma separated values (CSV) text files
-+ YAML
-+ Raw binary arrays
-
-All Bark data files have associated metadata files. Files that do not have
-associated metadata files are ignored. Metadata files must have associated
-datasets.
-
-By ignoring extra files, this system flexibly allows the inclusion of non-standard data such as videos, screenshots and notes.
-
-An example Bark tree:
-
-    experiment/                 <- root directory
-        day1/                   <- first entry; all datasets within have the same timebase
-            meta.yaml           <- first entry metadata
-            emg.dat             <- a first dataset
-            emg.dat.meta.yaml   <- the metadata (ARF attributes) of emg.dat in YAML format
-            mic.dat             <- a second dataset
-            mic.dat.meta.yaml   <- metadata for the second dataset
-            mic.flac            <- a file with no corresponding .meta.yaml file - it is thus ignored
-            song.csv            <- a third dataset, in CSV format
-            song.csv.meta.yaml  <- metadata for the third dataset
-        
-        day2_session2/          <- second entry
-            meta.yaml           <- second entry metadata
-            emg.dat             <- a dataset in the second entry
-            emg.dat.meta.yaml    
-        ... etc ...
 
 
 ## Goals and conceptual framework
@@ -84,15 +54,35 @@ challenge is to organize and annotate the data in such a way that it can
 
 A Bark tree can consist of four elements:
 
-+ Standard filesystem directories
++ Filesystem directories
 + Raw binary files containing numerical data
 + Comma separated value (CSV) plain text files with a header line (see [RFC 4180](https://tools.ietf.org/html/rfc4180))
 + Strictly-named [YAML](https://en.wikipedia.org/wiki/YAML) plain text files, containing metadata following a specific structure and naming format
 
-Standard filesystem directories support hierarchical organization of
-datasets, and plaintext YAML files provide metadata attributes. BARK specifies the layout used to store data
-within this framework, plus a minimal set of metadata necessary to make sense of the datasets,
-while allowing the user to add metadata specific to an application.
+An example Bark tree:
+
+    experiment/                 <- root directory
+        day1/                   <- first entry; all datasets within have the same timebase
+            meta.yaml           <- first entry metadata
+            emg.dat             <- a first dataset
+            emg.dat.meta.yaml   <- the metadata (ARF attributes) of emg.dat in YAML format
+            mic.dat             <- a second dataset
+            mic.dat.meta.yaml   <- metadata for the second dataset
+            mic.flac            <- a file with no corresponding .meta.yaml file - it is thus ignored
+            song.csv            <- a third dataset, in CSV format
+            song.csv.meta.yaml  <- metadata for the third dataset
+        
+        day2_session2/          <- second entry
+            meta.yaml           <- second entry metadata
+            emg.dat             <- a dataset in the second entry
+            emg.dat.meta.yaml    
+        ... etc ...
+
+
+Files that do not have associated metadata files are ignored.
+
+By ignoring extra files, this system flexibly allows the inclusion of non-standard data such as videos, screenshots and notes.
+
 
 ### Datasets
 
