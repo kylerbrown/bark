@@ -11,7 +11,7 @@ Version: 0.2
 3. **small, chainable utilities**
 
 By emphasizing filesystem directories, plain text files and a common binary array format, Bark makes it easy to use both
-large external projects and simple command-line utilites.
+large external projects and simple command-line utilities.
 
 Bark's [small specification](specification.md) and Python implementation are easy to use in custom tools.
 
@@ -43,7 +43,7 @@ Bark trees are made from the following elements:
 - **Entries** (often trials) are directories containing Datasets that share a
   common time base. These directories contain a `meta.yaml` file and any number
   of Datasets.
-- **Root** is a directory containing a collection of related Entries. often a Root
+- **Root** is a directory containing a collection of related Entries. Often a Root
   is used to contain all data from an experimental session.
 
 This repository contains:
@@ -71,36 +71,43 @@ You'll also probably want to install [Neuroscope](http://neurosuite.sourceforge.
 
 Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 
+## Transformations
+
 - `bark-entry` -- create entry directories for datasets
 - `bark-attribute` -- create or modify an attribute of a bark entry or dataset
-- `bark-clean-orphan-metas` -- remove orphan `.meta.yaml` files without associated datafiles
-- `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
-- `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
-- `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
-- `bark-split` -- splits a dataset according to the split times in a label file, either in a single entry or in an entire bark tree
-- `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a csv
-- `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a csv
-- `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a csv
-- `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform csv to a bark csv.
-- `dat-decimate` -- downsamples a sampled dataset by an integer factor, you want to low-pass filter your data first.
+- `bark-clean-orphan-metas` -- remove orphan `.meta.yaml` files without associated data files
 - `dat-select` -- extract a subset of channels from a sampled dataset
 - `dat-join` -- combine the channels of two or more sampled datasets
 - `dat-split` -- extract a subset of samples from a sampled dataset
-- `dat-cat` -- concatentate sampled datasets, adding more samples
+- `dat-cat` -- concatenate sampled datasets, adding more samples
 - `dat-filter` -- apply zero-phase Butterworth or Bessel filters to a sampled dataset
+- `dat-decimate` -- down-sample a sampled dataset by an integer factor, you want to low-pass filter your data first.
 - `dat-diff` -- subtract one sampled dataset channel from another
-- `dat-cat` -- concatentate sampled datasets, adding more samples
-- `dat-to-wave-clus` -- convert a sampled dataset to a [wave_clus](https://github.com/csn-le/wave_clus)
-  compatible Matlab file
-- `dat-to-wav` -- convert a sampled dataset to a WAVE file.
 - `dat-ref` -- for each channel: subtract the mean of all other channels, scaled by a coefficient such that the total power is minimized
 - `dat-artifact` -- removes sections of a sampled dataset that exceed a threshold
 - `dat-enrich` -- concatenates subsets of a sampled dataset based on events in an events dataset
 - `dat-spike-detect` -- detects spike events in the channels of a sampled dataset
 - `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
-- `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 
 There are many external tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
+## Visualizations
+
+- `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
+- `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
+
+## Conversion
+
+- `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
+- `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
+- `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a CSV
+- `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a CSV
+- `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a CSV
+- `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform CSV to a bark CSV
+- `dat-to-wave-clus` -- convert a sampled dataset to a [wave_clus](https://github.com/csn-le/wave_clus)
+  compatible Matlab file
+- `dat-to-wav` -- convert a sampled dataset to a WAVE file.
+
+
 
 # Python interface
 ```python
