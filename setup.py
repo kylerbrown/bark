@@ -40,6 +40,7 @@ setup(name='bark',
               'dat-artifact=bark.tools.datartifact:main',
               'dat-enrich=bark.tools.datenrich:main',
               'dat-spike-detect=bark.tools.datspike:_run',
+              'dat-split=bark.tools.barkutils:_datchunk',
               'bark-label-view=bark.tools.labelview:_run',
               ]
           }

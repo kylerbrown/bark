@@ -242,6 +242,10 @@ def read_metadata(path, meta='.meta.yaml'):
 
 
 def write_metadata(path, meta='.meta.yaml', **params):
+    if 'n_channels' in params:
+        del params['n_channels']
+    if 'n_samples' in params:
+        del params['n_samples']
     if os.path.isdir(path):
         metafile = os.path.join(path, meta[1:])
     else:

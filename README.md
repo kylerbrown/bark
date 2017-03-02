@@ -85,6 +85,8 @@ Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 - `dat-decimate` -- downsamples a sampled dataset by an integer factor, you want to low-pass filter your data first.
 - `dat-select` -- extract a subset of channels from a sampled dataset
 - `dat-join` -- combine the channels of two or more sampled datasets
+- `dat-split` -- extract a subset of samples from a sampled dataset
+- `dat-cat` -- concatentate sampled datasets, adding more samples
 - `dat-filter` -- apply zero-phase Butterworth or Bessel filters to a sampled dataset
 - `dat-diff` -- subtract one sampled dataset channel from another
 - `dat-cat` -- concatentate sampled datasets, adding more samples

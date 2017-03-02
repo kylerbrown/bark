@@ -241,3 +241,25 @@ def rb_to_wave_clus():
     from scipy.io import savemat
     dataset = bark.read_sampled(opt.dat)
     savemat(opt.out, {'data': dataset.data.T, 'sr': dataset.attrs['sampling_rate']}, appendmat=False) 
+
+
+def _datchunk():
+    p = argparse.ArgumentParser(description="split a dat file by samples")
+    p.add_argument("dat", help="datfile")
+    p.add_argument("stride", type=float, help="number of samples to chunk together")
+    p.add_argument("--seconds", help="specify seconds instead of samples",
+            action='store_true')
+    args = p.parse_args()
+    datchunk(args.dat, args.stride, args.seconds)
+
+def datchunk(dat, stride, use_seconds):
+    attrs = bark.read_metadata(dat)
+    sr = attrs['sampling_rate']
+    if use_seconds:
+        stride = stride * sr
+    stride = int(stride) 
+    basename = os.path.splitext(dat)[0]
+    for i, chunk in enumerate(stream.read(dat, chunksize=stride)):
+        filename = "{}-chunk-{}.dat".format(basename, i)
+        attrs['offset'] = stride * i
+        bark.write_sampled(filename, chunk, **attrs)

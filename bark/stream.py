@@ -355,7 +355,7 @@ def rechunk(stream, chunksize):
     yield buffer  # leftover samples at end of stream
 
 
-def read(fname, **kwargs):
+def read(fname, chunksize=2e6, **kwargs):
     """ input: the filename of a raw binary file
         should have an associated meta file
         returns FileStream
@@ -364,7 +364,7 @@ def read(fname, **kwargs):
     data = bark_obj.data
     sr = bark_obj.attrs["sampling_rate"]
     kwargs.update(bark_obj.attrs)
-    return Stream(data, sr=sr, attrs=kwargs)
+    return Stream(data, sr=sr, chunksize=chunksize, attrs=kwargs)
 
 def to_wav(stream, filename):
     import ewave
