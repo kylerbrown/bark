@@ -384,12 +384,12 @@ def read(fname, chunksize=2e6, **kwargs):
 def to_wav(stream, filename):
     import ewave
     data = stream.peek()
-    dtype = data.dtype.str,
-    nchannels = data.size[1]
+    dtype = data.dtype.str
+    nchannels = data.shape[1]
     with ewave.open(filename,
                     "w+",
                     sampling_rate=stream.sr,
-                    dtype=dtype,
+                    dtype=data.dtype.name,
                     nchannels=nchannels) as wavfp:
         for x in stream:
             wavfp.write(x)
