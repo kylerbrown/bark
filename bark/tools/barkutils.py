@@ -193,10 +193,11 @@ def rb_filter():
                    default="bessel")
 
     opt = p.parse_args()
+    dtype = bark.read_metadata(opt.dat)['dtype']
     stream.read(opt.dat)._analog_filter(opt.filter,
                                         highpass=opt.highpass,
                                         lowpass=opt.lowpass,
-                                        order=opt.order).write(opt.out)
+                                        order=opt.order).write(opt.out, dtype)
 
 
 def rb_diff():
@@ -226,7 +227,7 @@ def rb_join():
     p.add_argument("-o", "--out", help="name of output dat file")
     opt = p.parse_args()
     streams = [stream.read(fname) for fname in opt.dat]
-    streams[0].merge(streams[1:]).write(opt.out)
+    streams[0].merge(*streams[1:]).write(opt.out)
 
 
 def rb_to_wav():
