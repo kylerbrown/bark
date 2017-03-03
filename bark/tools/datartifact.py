@@ -1,14 +1,12 @@
-from __future__ import unicode_literals, print_function, division, \
-absolute_import
-
+from bark import read_sampled, BUFFER_SIZE
 from shutil import copyfile
 import numpy as np
+from scipy.signal import argrelmax, argrelmin
 import matplotlib as mpl
-mpl.use('Agg')
+mpl.use('Agg')  # set noninteractive backend
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from scipy.signal import butter, lfilter, argrelmax, argrelmin
-from bark import read_sampled, write_sampled, BUFFER_SIZE
+
 BUF = BUFFER_SIZE
 
 
@@ -23,9 +21,13 @@ def make_artifact_plots(data, outname, pos_arts, neg_arts, stds):
         extrema = np.array(poss + negs, dtype=int)
         for i in extrema:
             ax1.plot(data[i - 10:i + 10, c] / stds[c],
-                     linewidth=0.5, color=colors[c])
+                     linewidth=0.5,
+                     color=colors[c])
             plt.sca(ax2)
-            plt.hist(data[extrema, c] / stds[c], bins=20, fill=None, edgecolor=colors[c])
+            plt.hist(data[extrema, c] / stds[c],
+                     bins=20,
+                     fill=None,
+                     edgecolor=colors[c])
             ax3.vlines(extrema, 0, 1, color=colors[c])
         ax1.set_ylabel("standard deviation")
         ax1.set_title("artifacts")
@@ -97,6 +99,7 @@ def datartifact(datfile, outfile, std_lim):
                 out[t, chan] = 0
                 t -= 1
 
+
 def main():
     import argparse
     p = argparse.ArgumentParser(description="""
@@ -111,6 +114,7 @@ def main():
     p.add_argument("-o", "--out", help="name of output dat file")
     opt = p.parse_args()
     datartifact(opt.dat, opt.out, opt.std)
+
 
 if __name__ == "__main__":
     main()

@@ -18,7 +18,7 @@ def compute_std(dat):
     std = np.zeros(len(s.attrs['columns']))
     for i, x in enumerate(bark.stream.read(dat)[:10]):
         std += np.std(x, 0)
-    return std / (i+1)
+    return std / (i + 1)
 
 
 def spikes(data, start_sample, threshs, pad_len, order):
@@ -48,13 +48,14 @@ def main(dat, csv, std_const, order=5):
     with open(csv, 'w') as fp:
         fp.write('channel,start\n')
         for (channel, sample) in stream_spikes(s, threshs, pad_len, order):
-            fp.write('{},{}\n'.format(channel, sample/s.sr))
-    bark.write_metadata(csv, datatype=1000, 
-            columns={'channel': {'units': None},
-                     'start': {'units', 's'}},
-            thresholds=threshs,
-            order=order,
-            source=dat)
+            fp.write('{},{}\n'.format(channel, sample / s.sr))
+    bark.write_metadata(csv,
+                        datatype=1000,
+                        columns={'channel': {'units': None},
+                                 'start': {'units', 's'}},
+                        thresholds=threshs,
+                        order=order,
+                        source=dat)
 
 
 def _run():
@@ -66,21 +67,18 @@ def _run():
     ''')
     p.add_argument('dat', help='name of a sampled dataset')
     p.add_argument('out', help='name of output event dataset')
-    p.add_argument(
-        '-s',
-        '--std',
-        help=
-        'standard deviation cutoff, sign indicates detection direction, default: '
-        .format(default_std),
-        default=default_std,
-        type=float)
-    p.add_argument(
-        '--order',
-        help=
-        'number of samples on either side to compare to find extrema point, default: '
-        .format(default_order),
-        default=default_order,
-        type=int)
+    p.add_argument('-s',
+                   '--std',
+                   help='''standard deviation cutoff,
+        sign indicates detection direction, default: '''.format(default_std),
+                   default=default_std,
+                   type=float)
+    p.add_argument('--order',
+                   help='number of samples on either \
+                side to compare to find extrema point, default: '
+                   .format(default_order),
+                   default=default_order,
+                   type=int)
     args = p.parse_args()
     main(args.dat, args.out, args.std, args.order)
 

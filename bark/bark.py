@@ -21,8 +21,8 @@ spec_version = "0.1"
 __version__ = version = "0.1"
 
 __doc__ = """
-This is BARK, a python library for storing and accessing audio and ephys data in
-directories and simple file formats.
+This is BARK, a python library for storing and accessing audio and ephys data
+in directories and simple file formats.
 
 Library versions:
  bark: %s
@@ -45,19 +45,10 @@ DATATYPES = _dt(name_to_code={name: code
 
 # hierarchical classes
 class Root():
-    def __init__(self, path, entries=None):
-        if entries is None or attrs is None:
-            self.read(path)
-        else:
-            self.entries = entries
-            self.path = path
-            self.name = os.path.split(path)[-1]
-            self.attrs = attrs
-
-    def read(self, name):
-        self.path = os.path.abspath(name)
+    def __init__(self, path):
+        self.path = os.path.abspath(path)
         self.name = os.path.split(self.path)[-1]
-        all_sub = [os.path.join(name, x) for x in listdir(self.path)]
+        all_sub = [os.path.join(path, x) for x in listdir(self.path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
         self.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
 
@@ -107,7 +98,7 @@ class Data():
     def datatype_name(self):
         """Returns the dataset's datatype name, or None if unspecified."""
         return DATATYPES.name_to_code[self.attrs.get('datatype',
-                                                     default_datatype)]
+                                                     self.default_datatype())]
 
     def default_datatype(self):
         if isinstance(self, EventData):
@@ -145,13 +136,13 @@ def event_columns(dataframe, columns=None):
     if columns is None:
         return template_columns(dataframe.columns)
     for fieldkey in columns:
-        if fieldkey not in datafram.columns:
+        if fieldkey not in dataframe.columns:
             del columns[fieldkey]
     for col in dataframe.columns:
         if col not in columns:
             columns[col] = {'units': None}
-        if 'units' not in columns[field]:
-            columns[field]['units'] = None
+        if 'units' not in columns[col]:
+            columns[col]['units'] = None
 
 
 def sampled_columns(data, columns=None):
@@ -299,7 +290,6 @@ def create_entry(name, timestamp, parents=False, **attributes):
 
 def read_entry(name, meta=".meta.yaml"):
     path = os.path.abspath(name)
-    dsets = {}
     attrs = read_metadata(path, meta)
     # load only files with associated metadata files
     dset_metas = glob(os.path.join(path, "*" + meta))
@@ -323,9 +313,9 @@ def convert_timestamp(obj, default_tz='America/Chicago'):
 def timestamp_to_datetime(obj):
     """Converts a BARK timestamp to a datetime.datetime object (aware local time)
 
-    Argument can be an ISO 8601 string, a datetime.datetime object, 
+    Argument can be an ISO 8601 string, a datetime.datetime object,
     a time.struct_time, an integer,
-    a float, or a tuple of integers. The returned value is a string in 
+    a float, or a tuple of integers. The returned value is a string in
     ISO 8601 format.
 
     Note that because floating point values are approximate, the conversion
@@ -352,6 +342,5 @@ def timestamp_to_datetime(obj):
 
 
 def timestamp_to_float(timestamp):
-    """Converts a BARK timestamp to a floating point value (sec since epoch) """
+    """Converts a BARK timestamp to a floating point value (sec since epoch)"""
     return timestamp_to_datetime(timestamp).timestamp()
-

@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(name='bark',
       version='0.2',
@@ -7,16 +7,14 @@ setup(name='bark',
       author='Kyler Brown',
       author_email='kylerjbrown@gmail.com',
       license='GPL',
-      #packages=find_packages('bark', 'bark.io'),
       packages=['bark',
-          'bark.tools',
-          'bark.io',
-          'bark.io.rhd',
-          'bark.io.openephys',
-          ],
+                'bark.tools',
+                'bark.io',
+                'bark.io.rhd',
+                'bark.io.openephys', ],
       zip_safe=False,
-      entry_points = {
-          'console_scripts' : [
+      entry_points={
+          'console_scripts': [
               'bark-entry=bark.tools.barkutils:mk_entry',
               'bark-attribute=bark.tools.barkutils:meta_attr',
               'bark-clean-orphan-metas=bark.tools.barkutils:clean_metafiles',
@@ -42,6 +40,5 @@ setup(name='bark',
               'dat-spike-detect=bark.tools.datspike:_run',
               'dat-split=bark.tools.barkutils:_datchunk',
               'bark-label-view=bark.tools.labelview:_run',
-              ]
-          }
-      )
+          ]
+      })

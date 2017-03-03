@@ -1,10 +1,7 @@
-from __future__ import unicode_literals, print_function, division, \
-absolute_import
-
 import numpy as np
-from scipy.signal import butter, lfilter
 import bark
 BUF = bark.BUFFER_SIZE
+
 
 def datref(datfile, outfile):
     dataset = bark.read_sampled(datfile)
@@ -52,5 +49,7 @@ def main():
     p.add_argument("-o", "--out", help="name of output dat file")
     opt = p.parse_args()
     datref(opt.dat, opt.out)
+
+
 if __name__ == "__main__":
     main()

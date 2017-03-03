@@ -1,5 +1,3 @@
-from __future__ import unicode_literals, print_function, division, absolute_import
-
 import bark
 
 
@@ -33,8 +31,10 @@ def _plexon_csv_to_bark_csv():
                    help="""Name of plexon csv file.
             Don't foget to export a header column.
             """)
-    p.add_argument("-o", "--out", help="name of output csv file",
-            required=True)
+    p.add_argument("-o",
+                   "--out",
+                   help="name of output csv file",
+                   required=True)
     p.add_argument("-a",
                    "--attributes",
                    action='append',

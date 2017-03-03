@@ -94,7 +94,8 @@ def parse_op(opname, operations=operations, **kwargs):
     '''Parse an operation name string and return EventOperation objects
 
     opname -- a string representation of the class
-    operations -- a dictionary of class strings, values are subclasses of EventOperation
+    operations -- a dictionary of class strings,
+                  values are subclasses of EventOperation
     kwargs -- arguments to initialize the object
     '''
     return operations[opname](**kwargs)

@@ -61,7 +61,7 @@ def datenrich(dat, channels, out, label, window):
     outparams = params.copy()
     outparams["n_samples"] = n_samples
     outparams["n_channels"] = len(channels)
-    #write to new file
+    # write to new file
     with open(out, "wb") as outfp:
         for start, stop in segs:
             outfp.write(data[start:stop, channels].tobytes())
@@ -70,10 +70,9 @@ def datenrich(dat, channels, out, label, window):
         os.path.splitext(out)[0] + ".csv",
         header=True,
         index=False)
-    if os.path.isfile(label+".meta.yaml"):
-        shutil.copyfile(label+".meta.yaml",
-            os.path.splitext(out)[0] + ".csv.meta.yaml")
-
+    if os.path.isfile(label + ".meta.yaml"):
+        shutil.copyfile(label + ".meta.yaml",
+                        os.path.splitext(out)[0] + ".csv.meta.yaml")
 
 
 def main():

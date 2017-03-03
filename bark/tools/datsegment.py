@@ -12,9 +12,10 @@ default_lowcut = 1e3
 
 
 def amplitude_stream(data, sr, fftn, step, lowcut, highcut):
-    'returns an iterator with the start time in seconds and threshold value for each chunk'
+    '''returns an iterator with the start time in seconds
+    and threshold value for each chunk'''
     from scipy.signal import hamming
-    all_fft_freqs = np.fft.fftfreq(fftn, sr** -1)
+    all_fft_freqs = np.fft.fftfreq(fftn, sr ** -1)
     fft_freqs = (all_fft_freqs >= lowcut) & (all_fft_freqs <= highcut)
     window = hamming(fftn)
     data = data.ravel()
@@ -30,11 +31,12 @@ def amplitude_stream_td(data, sr, fftn, step, lowcut, highcut):
     datastream = bark.stream.Stream(data, sr)
     amplitude = (datastream.butter(highpass=lowcut,
                                    lowpass=highcut,
-                                   zerophase=False, order=1).map(abs)
-                 .bessel(lowpass=(step/sr/2)** -1).rechunk(step))
+                                   zerophase=False,
+                                   order=1).map(abs)
+                 .bessel(lowpass=(step / sr / 2) ** -1).rechunk(step))
     i = 0
     for buffer in amplitude:
-        yield i / sr,  np.log(buffer[0])
+        yield i / sr, np.log(buffer[0])
         i += step
 
 
@@ -111,8 +113,8 @@ def main(datname,
     third_pass(start, stop, min_syl)
     bark.write_events(outfile,
                       DataFrame(dict(start=start,
-                                        stop=stop,
-                                        name='')),
+                                     stop=stop,
+                                     name='')),
                       units='s')
 
 
@@ -162,7 +164,7 @@ def _run():
                    type=float)
     p.add_argument('--lowfreq',
                    help='low frequency to use for amplitude, default: {}'
-                   .format(default_highcut),
+                   .format(default_lowcut),
                    default=default_lowcut,
                    type=float)
     p.add_argument('--highfreq',
@@ -171,12 +173,14 @@ def _run():
                    default=default_highcut,
                    type=float)
     p.add_argument('--timedomain',
-                   help='uses a time domain thresholding method instead of spectral, may be faster but less accurate',
+                   help='uses a time domain thresholding method instead of \
+                spectral, may be faster but less accurate',
                    action='store_true')
 
     args = p.parse_args()
     main(args.dat, args.out, args.fftn, args.step, args.min_syl,
-         args.min_silent, args.threshold, args.lowfreq, args.highfreq, args.timedomain)
+         args.min_silent, args.threshold, args.lowfreq, args.highfreq,
+         args.timedomain)
 
 
 if __name__ == '__main__':

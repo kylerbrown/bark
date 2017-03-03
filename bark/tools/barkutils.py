@@ -1,5 +1,3 @@
-from os import listdir, remove
-from shutil import move
 import os.path
 from glob import glob
 import bark
@@ -10,9 +8,11 @@ from dateutil import tz
 
 
 def meta_attr():
-    p = argparse.ArgumentParser(description="Create/Modify a metadata attribute")
+    p = argparse.ArgumentParser(
+        description="Create/Modify a metadata attribute")
     p.add_argument("name", help="name of bark object (Entry or Dataset)")
-    p.add_argument("attribute", help="name of bark attribute to create or modify")
+    p.add_argument("attribute",
+                   help="name of bark attribute to create or modify")
     p.add_argument("value", help="value of attribute")
     args = p.parse_args()
     name, attr, val = (args.name, args.attribute, args.value)
@@ -22,6 +22,7 @@ def meta_attr():
     except Exception:
         attrs[attr] = val  # assign as string
     bark.write_metadata(name, **attrs)
+
 
 def mk_entry():
     p = argparse.ArgumentParser(description="create a bark entry")
@@ -39,10 +40,12 @@ def mk_entry():
                    "--parents",
                    help="no error if already exists, new meta-data written",
                    action="store_true")
-    p.add_argument('--timezone', help="timezone of timestamp, default: America/Chicago",
-            default='America/Chicago')
+    p.add_argument('--timezone',
+                   help="timezone of timestamp, default: America/Chicago",
+                   default='America/Chicago')
     args = p.parse_args()
-    timestamp = arrow.get(args.timestamp).replace(tzinfo=tz.gettz(args.timezone)).datetime
+    timestamp = arrow.get(args.timestamp).replace(
+        tzinfo=tz.gettz(args.timezone)).datetime
     attrs = dict(args.keyvalues) if args.keyvalues else {}
     bark.create_entry(args.name, timestamp, args.parents, **attrs)
 
@@ -77,7 +80,7 @@ def clean_metafiles():
 
 def rb_concat():
     p = argparse.ArgumentParser(
-        description="""Concatenate raw binary files by adding new samples. 
+        description="""Concatenate raw binary files by adding new samples.
     Do not confuse with merge, which combines channels""")
     p.add_argument("input", help="input raw binary files", nargs="+")
     p.add_argument("-a",
@@ -153,7 +156,7 @@ def rb_select():
     p.add_argument('-o', '--out', help='name of output datfile')
     p.add_argument('-c',
                    '--channels',
-                   help='''channels to extract, 
+                   help='''channels to extract,
                    zero indexed channel numbers
                    unless --col-attr is set, in which case
                    channels are metadata values''',
@@ -174,6 +177,7 @@ def rb_select():
         channels = [int(c) for c in channels]
     stream[channels].write(outfname)
 
+
 def rb_filter():
     p = argparse.ArgumentParser(description="""
     filter a sampled dataset
@@ -189,20 +193,25 @@ def rb_filter():
                    default="bessel")
 
     opt = p.parse_args()
-    stream.read(opt.dat)._analog_filter(opt.filter, highpass=opt.highpass, lowpass=opt.lowpass,
-            order=opt.order).write(opt.out)
+    stream.read(opt.dat)._analog_filter(opt.filter,
+                                        highpass=opt.highpass,
+                                        lowpass=opt.lowpass,
+                                        order=opt.order).write(opt.out)
+
 
 def rb_diff():
     p = argparse.ArgumentParser(description="""
     Subtracts one channel from another
     """)
     p.add_argument("dat", help="dat file")
-    p.add_argument("-c", "--channels",
-            help="channels to difference, zero indexed, default: 0 1, subtracts second channel from first.",
-            type=int, nargs="+")
-    p.add_argument("-o", "--out",
-                   help="name of output dat file")
-    opt = p.parse_args() 
+    p.add_argument("-c",
+                   "--channels",
+                   help="""channels to difference, zero indexed, default: 0 1,
+        subtracts second channel from first.""",
+                   type=int,
+                   nargs="+")
+    p.add_argument("-o", "--out", help="name of output dat file")
+    opt = p.parse_args()
     dat, out, channels = opt.dat, opt.out, opt.channels
     if not channels:
         channels = (0, 1)
@@ -219,14 +228,16 @@ def rb_join():
     streams = [stream.read(fname) for fname in opt.dat]
     streams[0].merge(streams[1:]).write(opt.out)
 
+
 def rb_to_wav():
     p = argparse.ArgumentParser()
-    p.add_argument("dat", help="dat file to convert to wav, can be any number of channels but you probably want 1 or 2")
+    p.add_argument("dat",
+                   help="""dat file to convert to wav,
+        can be any number of channels but you probably want 1 or 2""")
     p.add_argument("-o", "--out", help="name of output wav file")
     opt = p.parse_args()
-    #dat2wav(opt.dat, opt.out)
     stream.to_wav(stream.read(opt.dat), opt.out)
-    
+
 
 def rb_to_wave_clus():
     import argparse
@@ -237,27 +248,33 @@ def rb_to_wave_clus():
     p.add_argument("dat", help="dat file")
     p.add_argument("-o", "--out", help="name of output .mat file")
     opt = p.parse_args()
-    #dat2wave_clus(opt.dat, opt.out)
     from scipy.io import savemat
     dataset = bark.read_sampled(opt.dat)
-    savemat(opt.out, {'data': dataset.data.T, 'sr': dataset.attrs['sampling_rate']}, appendmat=False) 
+    savemat(opt.out,
+            {'data': dataset.data.T,
+             'sr': dataset.attrs['sampling_rate']},
+            appendmat=False)
 
 
 def _datchunk():
     p = argparse.ArgumentParser(description="split a dat file by samples")
     p.add_argument("dat", help="datfile")
-    p.add_argument("stride", type=float, help="number of samples to chunk together")
-    p.add_argument("--seconds", help="specify seconds instead of samples",
-            action='store_true')
+    p.add_argument("stride",
+                   type=float,
+                   help="number of samples to chunk together")
+    p.add_argument("--seconds",
+                   help="specify seconds instead of samples",
+                   action='store_true')
     args = p.parse_args()
     datchunk(args.dat, args.stride, args.seconds)
+
 
 def datchunk(dat, stride, use_seconds):
     attrs = bark.read_metadata(dat)
     sr = attrs['sampling_rate']
     if use_seconds:
         stride = stride * sr
-    stride = int(stride) 
+    stride = int(stride)
     basename = os.path.splitext(dat)[0]
     for i, chunk in enumerate(stream.read(dat, chunksize=stride)):
         filename = "{}-chunk-{}.dat".format(basename, i)
