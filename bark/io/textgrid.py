@@ -96,7 +96,7 @@ def write_csv(textgrid_list,
                      'start': {'units': 's'},
                      'stop': {'units': 's'}
                  }}
-        bark.write_meta(filename, **attrs)
+        bark.write_metadata(filename, **attrs)
 
 
 def _build_entry(i, content, tier):
