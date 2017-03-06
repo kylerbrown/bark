@@ -4,7 +4,7 @@ import json
 
 class EventOperation:
     def __init__(self, index):
-        self.index = index
+        self.index = int(index)
 
     def __str__(self):
         name, args = self.dump()

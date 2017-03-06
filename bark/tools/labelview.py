@@ -281,7 +281,13 @@ class SegmentReviewer:
     def update_oscillogram(self):
         x = self.data[self.buffer_start_samp:self.buffer_stop_samp]
         t = np.arange(len(x)) / self.sr + self.buf_start
-        self.osc_line.set_data(t, x)
+        if len(x) > 10000:
+            t_interp = np.linspace(self.buf_start, self.buf_stop, 10000)
+            x_interp = np.interp(t_interp, t, x)
+        else:
+            t_interp = t
+            x_interp = x
+        self.osc_line.set_data(t_interp, x_interp)
         self.osc_ax.set_xlim(self.buf_start, self.buf_stop)
         self.osc_ax.set_ylim(min(x), max(x))
 
@@ -313,14 +319,12 @@ class SegmentReviewer:
             self.update_plot_data()
         # new syllable before
         elif event.key == 'control' and event.xdata < start_pos:
-            print('new syl before!')
             self.opstack.push(New(self.i,
                                   name='',
                                   start=float(event.xdata),
                                   stop=float(event.xdata) + .020))
             self.update_plot_data()
         elif event.key == 'control' and event.xdata > stop_pos:
-            print('new syl after!')
             self.opstack.push(New(self.i + 1,
                                   name='',
                                   start=float(event.xdata),
@@ -331,9 +335,9 @@ class SegmentReviewer:
         else:
             xlim1, xlim2 = self.osc_ax.get_xlim()
             xspan = xlim2 - xlim1
-            if abs(event.xdata - start_pos) / xspan < 0.006:
+            if abs(event.xdata - start_pos) / xspan < 0.007:
                 self.selected_boundary = self.osc_boundary_start
-            elif abs(event.xdata - stop_pos) / xspan < 0.006:
+            elif abs(event.xdata - stop_pos) / xspan < 0.007:
                 self.selected_boundary = self.osc_boundary_stop
             if self.selected_boundary:
                 self.selected_boundary.set_color('y')
