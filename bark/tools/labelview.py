@@ -7,14 +7,14 @@ from scipy.signal import spectrogram
 import matplotlib.pyplot as plt
 import bark
 from bark.io.eventops import (OpStack, write_stack, read_stack, Update, Merge,
-                              Split, Delete)
+                              Split, Delete, New)
 
 import warnings
 warnings.filterwarnings('ignore')  # suppress matplotlib warnings
 
 help_string = '''
 Pressing any number or letter (uppercase or lowercase) will mark a segment.
-To create custom label, create an external file with key: value pairs 
+To create custom label, create an external file with key: value pairs
 like this:
     1: c1
     2: c2
@@ -105,11 +105,11 @@ def plot_spectrogram(data,
     stop_samp = int(stop * sr) - nfft // 2
     x = data[start_samp:stop_samp]
 
-    # determine overlap based on screen size. 
+    # determine overlap based on screen size.
     # We don't need more points than pixels
     pixels = 600
     samples_per_pixel = int((stop - start) * sr / pixels)
-    noverlap = max(nfft - samples_per_pixel, 0) 
+    noverlap = max(nfft - samples_per_pixel, 0)
     f, t, Sxx = spectrogram(x,
                             sr,
                             nperseg=nfft,
@@ -303,13 +303,29 @@ class SegmentReviewer:
         stop_pos = self.osc_boundary_stop.get_xdata()[0]
         # jump to syllable from map click
         if event.inaxes == self.map_ax:
-            i = nearest_label(self.opstack.events, event.xdata)
+            i = nearest_label(self.opstack.events, float(event.xdata))
             self.i = i
             self.update_plot_data()
         # sylable splitting
         elif (event.key == 'control' and event.xdata > start_pos and
               event.xdata < stop_pos):
-            self.opstack.push(Split(self.i, event.xdata))
+            self.opstack.push(Split(self.i, float(event.xdata)))
+            self.update_plot_data()
+        # new syllable before
+        elif event.key == 'control' and event.xdata < start_pos:
+            print('new syl before!')
+            self.opstack.push(New(self.i,
+                                  name='',
+                                  start=float(event.xdata),
+                                  stop=float(event.xdata) + .020))
+            self.update_plot_data()
+        elif event.key == 'control' and event.xdata > stop_pos:
+            print('new syl after!')
+            self.opstack.push(New(self.i + 1,
+                                  name='',
+                                  start=float(event.xdata),
+                                  stop=float(event.xdata) + .020))
+            self.i += 1
             self.update_plot_data()
         # boundary updates
         else:
@@ -331,9 +347,9 @@ class SegmentReviewer:
 
     def on_mouse_release(self, event):
         if self.selected_boundary == self.osc_boundary_start:
-            self.opstack.push(Update(self.i, 'start', event.xdata))
+            self.opstack.push(Update(self.i, 'start', float(event.xdata)))
         elif self.selected_boundary == self.osc_boundary_stop:
-            self.opstack.push(Update(self.i, 'stop', event.xdata))
+            self.opstack.push(Update(self.i, 'stop', float(event.xdata)))
         if self.selected_boundary:
             self.selected_boundary.set_color('r')
             self.update_syl_boundaries()

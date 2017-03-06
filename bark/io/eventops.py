@@ -14,6 +14,20 @@ class EventOperation:
         return (type(self).__name__, self.__dict__)
 
 
+class New(EventOperation):
+    def __init__(self, index, name, start, stop):
+        super().__init__(index)
+        self.name = name
+        self.start = start
+        self.stop = stop
+
+    def on(self, events):
+        events.insert(self.index,
+                      dict(name=self.name,
+                           start=self.start,
+                           stop=self.stop))
+
+
 class Update(EventOperation):
     def __init__(self, index, key, value):
         super().__init__(index)
