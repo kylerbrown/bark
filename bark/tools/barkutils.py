@@ -122,32 +122,6 @@ def rb_decimate():
     stream.read(args.input).decimate(args.factor).write(args.out, **attrs)
 
 
-def rb_resample():
-    p = argparse.ArgumentParser(description="""
-    Resample a raw binary Sampled Dataset
-
-    Uses Sinc-interpolation via the resampy library.
-    """)
-    p.add_argument("dat", help="name of a sampled dataset")
-    p.add_argument("-o",
-                   "--out",
-                   required=True,
-                   help="name of output resampled dataset")
-    p.add_argument("-r",
-                   "--rate",
-                   help="new sampling rate in Hz",
-                   type=float,
-                   required=True)
-    args = p.parse_args()
-    dat_file, out_file, new_rate = args.dat, args.out, args.rate
-    # create stream from dat file
-    stream = bark.read_sampled(dat_file).toStream()
-    # apply resample function across correct dimension
-    # (time is first dimension)
-    # send to file
-    stream.resample(new_rate).write(out_file, dtype=stream.attrs['dtype'])
-
-
 def rb_select():
     p = argparse.ArgumentParser(description='''
     Select a subset of channels from a sampled dataset
@@ -198,6 +172,12 @@ def rb_filter():
                                         highpass=opt.highpass,
                                         lowpass=opt.lowpass,
                                         order=opt.order).write(opt.out, dtype)
+    attrs = bark.read_metadata(opt.out)
+    attrs['highpass'] = opt.highpass
+    attrs['lowpass'] = opt.lowpass
+    attrs['filter'] = opt.filter
+    attrs['filter_order'] = opt.order
+    bark.write_metadata(opt.out, **attrs)
 
 
 def rb_diff():

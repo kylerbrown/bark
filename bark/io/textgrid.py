@@ -89,7 +89,8 @@ def write_csv(textgrid_list,
         f.flush()
         f.close()
     if meta and filename:
-        attrs = {'datatype': 1002,
+        attrs = {'datatype': 2000,
+                 'creator': 'praat',
                  'columns': {
                      'name': {'units': None},
                      'tier': {'units': None},

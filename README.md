@@ -97,6 +97,7 @@ There are many external tools for processing CSV files, including [pandas](http:
 
 ## Conversion
 
+- `bark-db` -- adds the metadata from a Bark tree to a database
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a CSV

@@ -1,7 +1,7 @@
-arrow
 pytest
 pandas
 numpy
 PyYAML
 scipy
-
+arrow==0.10.0
+dataset==0.8.0
