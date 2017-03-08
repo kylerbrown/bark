@@ -38,12 +38,10 @@ def dset_to_record(dset, entry):
 
 
 def dset_columns_to_records(dset):
-    #if 'columns' not in dset.attrs:
-    #    raise StopIteration
     for col in dset.attrs['columns']:
         rec = dset.attrs['columns'][col].copy()
         rec['dataset'] = dset.path
-        rec['name'] = col
+        rec['name'] = str(col)
         yield no_iters(rec)
 
 
@@ -54,11 +52,12 @@ def events_to_records(dset):
         datatype = dset.default_datatype()
     rows = dset.data.to_dict('records')
     print(dset.path)
-    for row in rows:
+    for i, row in enumerate(rows):
         row['dataset'] = dset.path
         row['datatype'] = datatype
         if 'name' in row:
             row['name'] = str(row['name'])
+        row['index'] = i
         yield row
 
 
@@ -70,16 +69,16 @@ def add_root(root, db_connection_string, events=False):
     column_table = db['column']
     if events:
         event_table = db['event']
-    root_table.insert(root_to_record(root))
+    root_table.upsert(root_to_record(root), ['path'])
     for entry in root.entries.values():
-        entry_table.insert(entry_to_record(entry, root))
+        entry_table.upsert(entry_to_record(entry, root), ['path'])
         for dset in entry.datasets.values():
-            dataset_table.insert(dset_to_record(dset, entry))
+            dataset_table.upsert(dset_to_record(dset, entry), ['path'])
             for column in dset_columns_to_records(dset):
-                column_table.insert(column)
+                column_table.upsert(column, ['path', 'name'])
             if events and isinstance(dset, bark.EventData):
                 for event in events_to_records(dset):
-                    event_table.insert(event)
+                    event_table.upsert(event, ['path', 'index'])
 
 
 def format_db_string(path, backend='sqlite', user='', pw='', port='', host=''):
@@ -109,6 +108,9 @@ def _run():
     import argparse
     p = argparse.ArgumentParser(description='''
     Add a bark root to a database. Database is created if it doesn't exist yet.
+    The absolute path of each bark file is the unique key of each record.
+
+    Remake the database if you move your data.
     ''')
     p.add_argument('barkroot', help='path to the bark root directory')
     p.add_argument('path', help='path to database')
