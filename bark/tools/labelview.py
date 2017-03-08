@@ -107,7 +107,7 @@ def plot_spectrogram(data,
 
     # determine overlap based on screen size.
     # We don't need more points than pixels
-    pixels = 600
+    pixels = 1000
     samples_per_pixel = int((stop - start) * sr / pixels)
     noverlap = max(nfft - samples_per_pixel, 0)
     f, t, Sxx = spectrogram(x,
@@ -119,14 +119,14 @@ def plot_spectrogram(data,
     freq_mask = (f > lowfreq) & (f < highfreq)
     fsub = f[freq_mask]
     Sxxsub = Sxx[freq_mask, :]
-    vmax = np.percentile(Sxxsub, 99)
+    vmax = np.percentile(Sxxsub, 98)
     t += start
     if ax is None:
         ax = plt.gca()
     image = ax.pcolorfast(t,
                           fsub,
                           Sxxsub,
-                          cmap=plt.get_cmap('inferno'),
+                          cmap=plt.get_cmap('viridis'),
                           vmax=vmax,
                           **kwargs)
     plt.sca(ax)
@@ -502,6 +502,7 @@ def _run():
     ''')
     p.add_argument('dat', help='name of a sampled dataset')
     p.add_argument('labelfile',
+                   nargs='?',
                    help='Associated event dataset containing segments\
                    defaults to same name as dat but with a .csv extension.')
     p.add_argument('-o', '--out', help='output label file')
