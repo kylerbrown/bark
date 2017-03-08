@@ -468,6 +468,8 @@ def load_opstack(opsfile, labelfile, labeldata, use_ops):
 
 
 def main(datfile, labelfile, outfile=None, shortcutfile=None, use_ops=True):
+    if not labelfile:
+        labelfile = os.path.splitext(datfile)[0] + '.csv'
     kill_shortcuts(plt)
     sampled = bark.read_sampled(datfile)
     assert len(sampled.attrs['columns']) == 1
@@ -489,7 +491,7 @@ def main(datfile, labelfile, outfile=None, shortcutfile=None, use_ops=True):
     with SegmentReviewer(osc_ax, spec_ax, map_ax, sampled, opstack, shortcuts,
                          outfile, labels.attrs, opsfile) as reviewer:
         reviewer.connect()
-        plt.show()
+        plt.show(block=True)
 
 
 def _run():
@@ -499,10 +501,9 @@ def _run():
     Review and annotate segments
     ''')
     p.add_argument('dat', help='name of a sampled dataset')
-    p.add_argument('-l',
-                   '--labelfile',
-                   required=True,
-                   help='associated event dataset containing segments')
+    p.add_argument('labelfile',
+                   help='Associated event dataset containing segments\
+                   defaults to same name as dat but with a .csv extension.')
     p.add_argument('-o', '--out', help='output label file')
     p.add_argument('-i',
                    '--ignore',
