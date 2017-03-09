@@ -14,24 +14,26 @@ warnings.filterwarnings('ignore')  # suppress matplotlib warnings
 
 help_string = '''
 Pressing any number or letter (uppercase or lowercase) will mark a segment.
-To create custom label, create an external file with key: value pairs
-like this:
-    1: c1
-    2: c2
-    z: a*
 
-ctrl+s : saves the annotation data
-ctrl+h : prints this message
-ctrl+o : zoom out
-ctrl+i : zoom in
-ctrl+m : merge current syllable with previous
-ctrl+x : delete segment
-ctrl+z : undo last operation
-ctrl+y : redo
-ctrl+w : close
-click on segment boundary : move boundary
-ctrl+click inside a segment : split segment
-ctrl+click outside a segment : new segment (TODO)
+Shortcuts
+---------
+any letter or number    annotate segment
+ctrl+s                  saves the annotation data
+ctrl+h                  prints this message
+ctrl+o or up arrow      zoom out
+ctrl+i or down arrow    zoom in
+space, right, page down    next segment
+backspace, left, page up   previous segment
+ctrl+m, ctrl+backspace     merge current syllable with previous
+ctrl+x or tab           delete segment
+ctrl+z                  undo last operation
+ctrl+y                  redo
+ctrl+w                  close
+
+click on segment boundary       move boundary
+ctrl+click inside a segment     split segment
+ctrl+click outside a segment    new segment (TODO)
+
 click on segment boundaries to adjust them.
 
 The bottom panel is a map of all label locations.
@@ -39,6 +41,13 @@ Click on a label to travel to that location.
 
 On close, an operation file and the final event file will be written.
 Do not kill from terminal unless you want to prevent a save.
+
+To create custom label, create an external YAML file with key: value pairs
+like this:
+    1: c1
+    2: c2
+    z: a*
+
 '''
 
 
@@ -160,7 +169,7 @@ class SegmentReviewer:
             self.i = opstack.ops[-1].index
         else:
             self.i = 0
-        self.N_points = 20000
+        self.N_points = 35000
         self.initialize_plots()
         self.update_plot_data()
 
@@ -241,6 +250,10 @@ class SegmentReviewer:
 
     def update_plot_data(self):
         'updates plot data on all three axes'
+        if not self.opstack.events:
+            print('no segments')
+            plt.close("all")
+            return
         self.selected_boundary = None
         i = self.i
         sr = self.sr
@@ -374,31 +387,33 @@ class SegmentReviewer:
 
     def on_key_press(self, event):
         #print('you pressed ', event.key)
-        if event.key in ('pagedown', ' '):
+        if event.key in ('pagedown', ' ', 'right'):
             self.inc_i()
-        elif event.key in ('pageup', 'backspace'):
+        elif event.key in ('pageup', 'backspace', 'left'):
             self.dec_i()
         elif event.key in self.keymap:
             newlabel = self.keymap[event.key]
             self.opstack.push(Update(self.i, 'name', newlabel))
             self.inc_i()
-        elif event.key == 'ctrl+i':
+        elif event.key in ('ctrl+i', 'down'):
             if self.N_points > 5000:
                 self.N_points -= 5000
                 self.update_plot_data()
-        elif event.key == 'ctrl+o':
+        elif event.key in ('ctrl+o', 'up'):
             self.N_points += 5000
             self.update_plot_data()
         elif event.key == 'ctrl+s':
             self.save()
         elif event.key == 'ctrl+h':
             print(help_string)
-        elif event.key == 'ctrl+m' and self.i > 0:
+        elif event.key in ('ctrl+m', 'ctrl+backspace') and self.i > 0:
             self.i -= 1
             self.opstack.push(Merge(self.i))
-            self.update_plot_data()
-        elif event.key == 'ctrl+x':
+            self.inc_i()
+        elif event.key in ('ctrl+x', 'tab'):
             self.opstack.push(Delete(self.i))
+            if self.i >= len(self.opstack.events):
+                self.i = len(self.opstack.events) - 1
             self.update_plot_data()
         elif event.key == 'ctrl+z' and self.opstack.ops:
             self.opstack.undo()
@@ -475,6 +490,9 @@ def main(datfile, labelfile, outfile=None, shortcutfile=None, use_ops=True):
     assert len(sampled.attrs['columns']) == 1
     labels = bark.read_events(labelfile)
     labeldata = to_seconds(labels).data.to_dict('records')
+    if len(labeldata) == 0:
+        print('{} has no data'.format(labelfile))
+        return
     shortcuts = build_shortcut_map(shortcutfile)
     opsfile = labelfile + '.ops.json'
     opstack = load_opstack(opsfile, labelfile, labeldata, use_ops)

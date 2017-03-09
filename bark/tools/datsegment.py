@@ -1,4 +1,4 @@
-from __future__ import division
+import os.path
 import numpy as np
 import bark
 
@@ -6,9 +6,9 @@ default_fftn = 512
 default_step_ms = 1
 default_min_syl = 30
 default_min_silent = 20
-default_threshold = 9
-default_highcut = 8e3
-default_lowcut = 1e3
+default_threshold = 6
+default_highcut = 6e3
+default_lowcut = 2e3
 
 
 def amplitude_stream(data, sr, fftn, step, lowcut, highcut):
@@ -33,7 +33,7 @@ def amplitude_stream_td(data, sr, fftn, step, lowcut, highcut):
                                    lowpass=highcut,
                                    zerophase=False,
                                    order=1).map(abs)
-                 .bessel(lowpass=(step / sr / 2) ** -1).rechunk(step))
+                 .bessel(lowpass=(step / sr) ** -1).rechunk(step))
     i = 0
     for buffer in amplitude:
         yield i / sr, np.log(buffer[0])
@@ -82,7 +82,7 @@ def third_pass(starts, stops, min_syl):
 
 
 def main(datname,
-         outfile,
+         outfile=None,
          fftn=default_fftn,
          step_ms=default_step_ms,
          min_syl_ms=default_min_syl,
@@ -92,6 +92,8 @@ def main(datname,
          highcut=default_highcut,
          time_domain=False):
     from pandas import DataFrame
+    if not outfile:
+        outfile = os.path.splitext(datname)[0] + '.csv'
     min_syl = min_syl_ms / 1000
     min_silent = min_silent_ms / 1000
     sampled = bark.read_sampled(datname)
@@ -134,8 +136,8 @@ def _run():
     p.add_argument('dat', help='name of a sampled dataset')
     p.add_argument('-o',
                    '--out',
-                   required=True,
-                   help='name of output event dataset')
+                   help='Name of output event dataset \
+                           defaults to input file with a .csv extension.')
     p.add_argument('-n',
                    '--fftn',
                    help='number of fft coeficients',
