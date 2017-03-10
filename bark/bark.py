@@ -17,8 +17,8 @@ from bark import stream
 
 BUFFER_SIZE = 10000
 
-spec_version = "0.1"
-__version__ = version = "0.1"
+spec_version = "0.2"
+__version__ = version = "0.2"
 
 __doc__ = """
 This is BARK, a python library for storing and accessing audio and ephys data

@@ -15,7 +15,7 @@ def amplitude_stream(data, sr, fftn, step, lowcut, highcut):
     '''returns an iterator with the start time in seconds
     and threshold value for each chunk'''
     from scipy.signal import hamming
-    all_fft_freqs = np.fft.fftfreq(fftn, sr ** -1)
+    all_fft_freqs = np.fft.fftfreq(fftn, sr** -1)
     fft_freqs = (all_fft_freqs >= lowcut) & (all_fft_freqs <= highcut)
     window = hamming(fftn)
     data = data.ravel()
@@ -33,7 +33,7 @@ def amplitude_stream_td(data, sr, fftn, step, lowcut, highcut):
                                    lowpass=highcut,
                                    zerophase=False,
                                    order=1).map(abs)
-                 .bessel(lowpass=(step / sr) ** -1).rechunk(step))
+                 .bessel(lowpass=(step / sr)** -1).rechunk(step))
     i = 0
     for buffer in amplitude:
         yield i / sr, np.log(buffer[0])
@@ -81,6 +81,15 @@ def third_pass(starts, stops, min_syl):
             i += 1
 
 
+def make_attrs(**kwargs):
+    attrs = kwargs.copy()
+    attrs['columns'] = {'start': {'units': 's'},
+                        'stop': {'units': 's'},
+                        'name': {'units': None}}
+    attrs['datatype'] = 2000
+    return attrs
+
+
 def main(datname,
          outfile=None,
          fftn=default_fftn,
@@ -113,11 +122,19 @@ def main(datname,
     start, stop = first_pass(amp_stream, thresh)
     second_pass(start, stop, min_silent)
     third_pass(start, stop, min_syl)
+    attrs = make_attrs(segment_source=outfile,
+                       segment_step_ms=step_ms,
+                       segment_thresh=thresh,
+                       segment_lowcut=lowcut,
+                       segment_highcut=highcut,
+                       segment_time_domain=time_domain,
+                       segment_min_syl_ms=min_syl_ms,
+                       segment_min_silent_ms=min_silent_ms)
     bark.write_events(outfile,
                       DataFrame(dict(start=start,
                                      stop=stop,
                                      name='')),
-                      units='s')
+                      **attrs)
 
 
 def _run():
