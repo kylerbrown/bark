@@ -457,7 +457,7 @@ def to_seconds(dset):
     'TODO Converts bark EventData object to units of seconds.'
     if 'offset' in dset.attrs and dset.attrs['offset'] != 0:
         raise Exception('offsets are not yet supported in event file')
-    if dset.attrs['units'] != 's':
+    if dset.attrs['columns']['start']['units'] != 's':
         raise Exception('only units of s are supported in event file')
     return dset
 
