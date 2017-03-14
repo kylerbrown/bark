@@ -111,6 +111,8 @@ def plot_spectrogram(data,
     '''
     nfft = int(ms_nfft / 1000. * sr)
     start_samp = int(start * sr) - nfft // 2
+    if start_samp < 0:
+        start_samp = 0
     stop_samp = int(stop * sr) - nfft // 2
     x = data[start_samp:stop_samp]
 
@@ -263,7 +265,11 @@ class SegmentReviewer:
         stop_samp = int(stop * sr)
         syl_samps = stop_samp - start_samp
         self.buffer_start_samp = start_samp - (self.N_points - syl_samps) // 2
+        if self.buffer_start_samp < 0:
+            self.buffer_start_samp = 0
         self.buffer_stop_samp = self.buffer_start_samp + self.N_points
+        if self.buffer_stop_samp >= self.data.shape[0]:
+            self.buffer_stop_samp = self.data.shape[0] - 1
         self.buf_start = self.buffer_start_samp / sr
         self.buf_stop = self.buffer_stop_samp / sr
         # update plots
@@ -457,7 +463,11 @@ def to_seconds(dset):
     'TODO Converts bark EventData object to units of seconds.'
     if 'offset' in dset.attrs and dset.attrs['offset'] != 0:
         raise Exception('offsets are not yet supported in event file')
-    if dset.attrs['columns']['start']['units'] != 's':
+    if dset.attrs['columns']['start']['units'] == 's':
+        pass
+    elif 'units' in dset.attrs and dset.attrs['units'] == 's':
+        pass
+    else:
         raise Exception('only units of s are supported in event file')
     return dset
 
