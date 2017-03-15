@@ -23,6 +23,24 @@ def meta_attr():
         attrs[attr] = val  # assign as string
     bark.write_metadata(name, **attrs)
 
+def meta_column_attr():
+    p = argparse.ArgumentParser(
+        description="Create/Modify a metadata attribute for a column of data")
+    p.add_argument("name", help="name of bark object (Entry or Dataset)")
+    p.add_argument("column", help="name of the column of a Dataset")
+    p.add_argument("attribute",
+                   help="name of bark attribute to create or modify")
+    p.add_argument("value", help="value of attribute")
+    args = p.parse_args()
+    name, column, attr, val = (args.name, args.column, args.attribute, args.value)
+    attrs = bark.read_metadata(name)
+    columns = attrs['columns']
+    try:
+        columns[column][attr] = eval(val)  # try to parse
+    except Exception:
+        columns[column][attr] = val  # assign as string
+    bark.write_metadata(name, **attrs)
+
 
 def mk_entry():
     p = argparse.ArgumentParser(description="create a bark entry")

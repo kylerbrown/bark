@@ -75,6 +75,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 
 - `bark-entry` -- create entry directories for datasets
 - `bark-attribute` -- create or modify an attribute of a bark entry or dataset
+- `bark-column-attribute` -- create or modify an attribute of a bark dataset column
 - `bark-clean-orphan-metas` -- remove orphan `.meta.yaml` files without associated data files
 - `dat-select` -- extract a subset of channels from a sampled dataset
 - `dat-join` -- combine the channels of two or more sampled datasets
