@@ -35,6 +35,8 @@ def meta_column_attr():
     name, column, attr, val = (args.name, args.column, args.attribute, args.value)
     attrs = bark.read_metadata(name)
     columns = attrs['columns']
+    if 'dtype' in attrs:
+        column = int(column)
     try:
         columns[column][attr] = eval(val)  # try to parse
     except Exception:
