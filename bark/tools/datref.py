@@ -28,7 +28,8 @@ def datref(datfile, outfile):
         mask = c_power >= np.percentile(c_power, 90)
         best_C[c] = np.mean(c_coefs[mask])
     print("best reference coefficients: {}".format(best_C))
-    outparams["reference_coefficients"] = best_C.tolist()
+    for i, c in enumerate(best_C):
+        outparams['columns'][i]['reference_coefficient'] = float(c)
     for i in range(0, len(out), BUF):
         for c in range(n_channels):
             refs = np.delete(data[i:i + BUF, :], c, axis=1)  # remove col c
