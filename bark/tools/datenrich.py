@@ -61,7 +61,7 @@ def datenrich(dat, channels, out, label, window):
     outparams = params.copy()
     outparams["n_samples"] = n_samples
     outparams["n_channels"] = len(channels)
-    #write to new file
+    # write to new file
     with open(out, "wb") as outfp:
         for start, stop in segs:
             outfp.write(data[start:stop, channels].tobytes())
@@ -70,27 +70,24 @@ def datenrich(dat, channels, out, label, window):
         os.path.splitext(out)[0] + ".csv",
         header=True,
         index=False)
-    if os.path.isfile(label+".meta.yaml"):
-        shutil.copyfile(label+".meta.yaml",
-            os.path.splitext(out)[0] + ".csv.meta.yaml")
-
+    if os.path.isfile(label + ".meta.yaml"):
+        shutil.copyfile(label + ".meta.yaml",
+                        os.path.splitext(out)[0] + ".csv.meta.yaml")
 
 
 def main():
     import argparse
     p = argparse.ArgumentParser(prog="datenrich")
     p.add_argument("dat", help="dat file")
+    p.add_argument("label",
+                   help="label file, a csv in seconds with 'label', 'start', \
+                   'stop' as a header")
+    p.add_argument("out", help="name of output dat file")
     p.add_argument("-c",
                    "--channels",
-                   help="subset of channels",
+                   help="subset of channels, by index",
                    type=int,
                    nargs="+")
-    p.add_argument("-o", "--out", help="name of output dat file")
-    p.add_argument("-l",
-                   "--label",
-                   help="label file, a csv in seconds with 'label', 'start', \
-                   'stop' as a header",
-                   required=True)
     p.add_argument("-w",
                    "--window",
                    type=float,

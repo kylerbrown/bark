@@ -1,12 +1,8 @@
-#!/usr/bin/python
-
 from collections import namedtuple
 import bark
 
-Entry = namedtuple("Entry", ["start",
-                             "stop",
-                             "name",
-                             "tier"])
+Entry = namedtuple("Entry", ["start", "stop", "name", "tier"])
+
 
 def read_textgrid(filename):
     """
@@ -17,7 +13,7 @@ def read_textgrid(filename):
     "name"
     "tier"
 
-    Points and intervals use the same format, 
+    Points and intervals use the same format,
     but the value for "start" and "stop" are the same
     """
     if isinstance(filename, str):
@@ -28,41 +24,47 @@ def read_textgrid(filename):
     else:
         raise TypeError("filename must be a string or a readable buffer")
 
-    interval_lines = [i for i, line in enumerate(content)
-                      if line.startswith("intervals [")
-                      or line.startswith("points [")]
-#    tier_lines, tiers =  [(i, line.split('"')[-2]) 
-#            for i, line in enumerate(content)
-#            if line.startswith("name =")]
+    interval_lines = [
+        i
+        for i, line in enumerate(content)
+        if line.startswith("intervals [") or line.startswith("points [")
+    ]
     tier_lines = []
     tiers = []
     for i, line in enumerate(content):
         if line.startswith("name ="):
             tier_lines.append(i)
-            tiers.append(line.split('"')[-2]) 
+            tiers.append(line.split('"')[-2])
 
-    interval_tiers =  _find_tiers(interval_lines, tier_lines, tiers)
+    interval_tiers = _find_tiers(interval_lines, tier_lines, tiers)
     assert len(interval_lines) == len(interval_tiers)
-    return [_build_entry(i, content, t) for i, t in zip(interval_lines, interval_tiers)]
+    return [_build_entry(i, content, t)
+            for i, t in zip(interval_lines, interval_tiers)]
 
 
 def _find_tiers(interval_lines, tier_lines, tiers):
     tier_pairs = zip(tier_lines, tiers)
-    cur_tline, cur_tier = next(tier_pairs) 
+    cur_tline, cur_tier = next(tier_pairs)
     next_tline, next_tier = next(tier_pairs, (None, None))
     tiers = []
     for il in interval_lines:
         if next_tline is not None and il > next_tline:
             cur_tline, cur_tier = next_tline, next_tier
-            next_tline, next_tier = next(tier_pairs, (None, None))           
+            next_tline, next_tier = next(tier_pairs, (None, None))
         tiers.append(cur_tier)
-    return tiers 
+    return tiers
 
 
 def _read(f):
     return [x.strip() for x in f.readlines()]
 
-def write_csv(textgrid_list, filename=None, sep=",", header=True, save_gaps=False, meta=True):
+
+def write_csv(textgrid_list,
+              filename=None,
+              sep=",",
+              header=True,
+              save_gaps=False,
+              meta=True):
     """
     Writes a list of textgrid dictionaries to a csv file.
     If no filename is specified, csv is printed to standard out.
@@ -87,15 +89,17 @@ def write_csv(textgrid_list, filename=None, sep=",", header=True, save_gaps=Fals
         f.flush()
         f.close()
     if meta and filename:
-        attrs = {'datatype': 1002,
-                'columns':{
-                    'name': {'units': None},
-                    'tier': {'units': None},
-                    'start': {'units': 's'},
-                    'stop': {'units': 's'}}}
-        bark.write_meta(filename, **attrs)
+        attrs = {'datatype': 2000,
+                 'creator': 'praat',
+                 'columns': {
+                     'name': {'units': None},
+                     'tier': {'units': None},
+                     'start': {'units': 's'},
+                     'stop': {'units': 's'}
+                 }}
+        bark.write_metadata(filename, **attrs)
 
-        
+
 def _build_entry(i, content, tier):
     """
     takes the ith line that begin an interval and returns
@@ -105,7 +109,7 @@ def _build_entry(i, content, tier):
     if content[i].startswith("intervals ["):
         offset = 1
     else:
-        offset = 0 # for "point" objects
+        offset = 0  # for "point" objects
     stop = _get_float_val(content[i + 1 + offset])
     label = _get_str_val(content[i + 2 + offset])
     return Entry(start=start, stop=stop, name=label, tier=tier)
@@ -127,16 +131,19 @@ def _get_str_val(string):
 
 def textgrid2csv():
     import argparse
-    parser = argparse.ArgumentParser(description="convert a TextGrid file to a CSV.")
-    parser.add_argument("TextGrid",
-                        help="a TextGrid file to process")
+    parser = argparse.ArgumentParser(
+        description="convert a TextGrid file to a CSV.")
+    parser.add_argument("TextGrid", help="a TextGrid file to process")
     parser.add_argument("-o", "--output", help="(optional) outputfile")
-    parser.add_argument("--sep", help="separator to use in CSV output",
+    parser.add_argument("--sep",
+                        help="separator to use in CSV output",
                         default=",")
-    parser.add_argument("--noheader", help="no header for the CSV",
+    parser.add_argument("--noheader",
+                        help="no header for the CSV",
                         action="store_false")
-    parser.add_argument("--savegaps", help="preserves intervals with no label",
-            action="store_true")
+    parser.add_argument("--savegaps",
+                        help="preserves intervals with no label",
+                        action="store_true")
     args = parser.parse_args()
     tgrid = read_textgrid(args.TextGrid)
     write_csv(tgrid, args.output, args.sep, args.noheader, args.savegaps)
@@ -144,4 +151,3 @@ def textgrid2csv():
 
 if __name__ == "__main__":
     textgrid2csv()
-

@@ -1,4 +1,4 @@
-from __future__ import division
+import os.path
 import numpy as np
 import bark
 
@@ -6,13 +6,14 @@ default_fftn = 512
 default_step_ms = 1
 default_min_syl = 30
 default_min_silent = 20
-default_threshold = 9
-default_highcut = 8e3
-default_lowcut = 1e3
+default_threshold = 6
+default_highcut = 6e3
+default_lowcut = 2e3
 
 
 def amplitude_stream(data, sr, fftn, step, lowcut, highcut):
-    'returns an iterator with the start time in seconds and threshold value for each chunk'
+    '''returns an iterator with the start time in seconds
+    and threshold value for each chunk'''
     from scipy.signal import hamming
     all_fft_freqs = np.fft.fftfreq(fftn, sr** -1)
     fft_freqs = (all_fft_freqs >= lowcut) & (all_fft_freqs <= highcut)
@@ -30,11 +31,12 @@ def amplitude_stream_td(data, sr, fftn, step, lowcut, highcut):
     datastream = bark.stream.Stream(data, sr)
     amplitude = (datastream.butter(highpass=lowcut,
                                    lowpass=highcut,
-                                   zerophase=False, order=1).map(abs)
-                 .bessel(lowpass=(step/sr/2)** -1).rechunk(step))
+                                   zerophase=False,
+                                   order=1).map(abs)
+                 .bessel(lowpass=(step / sr)** -1).rechunk(step))
     i = 0
     for buffer in amplitude:
-        yield i / sr,  np.log(buffer[0])
+        yield i / sr, np.log(buffer[0])
         i += step
 
 
@@ -79,8 +81,17 @@ def third_pass(starts, stops, min_syl):
             i += 1
 
 
+def make_attrs(**kwargs):
+    attrs = kwargs.copy()
+    attrs['columns'] = {'start': {'units': 's'},
+                        'stop': {'units': 's'},
+                        'name': {'units': None}}
+    attrs['datatype'] = 2000
+    return attrs
+
+
 def main(datname,
-         outfile,
+         outfile=None,
          fftn=default_fftn,
          step_ms=default_step_ms,
          min_syl_ms=default_min_syl,
@@ -90,6 +101,8 @@ def main(datname,
          highcut=default_highcut,
          time_domain=False):
     from pandas import DataFrame
+    if not outfile:
+        outfile = os.path.splitext(datname)[0] + '.csv'
     min_syl = min_syl_ms / 1000
     min_silent = min_silent_ms / 1000
     sampled = bark.read_sampled(datname)
@@ -109,11 +122,19 @@ def main(datname,
     start, stop = first_pass(amp_stream, thresh)
     second_pass(start, stop, min_silent)
     third_pass(start, stop, min_syl)
+    attrs = make_attrs(segment_source=outfile,
+                       segment_step_ms=step_ms,
+                       segment_thresh=thresh,
+                       segment_lowcut=lowcut,
+                       segment_highcut=highcut,
+                       segment_time_domain=time_domain,
+                       segment_min_syl_ms=min_syl_ms,
+                       segment_min_silent_ms=min_silent_ms)
     bark.write_events(outfile,
                       DataFrame(dict(start=start,
-                                        stop=stop,
-                                        name='')),
-                      units='s')
+                                     stop=stop,
+                                     name='')),
+                      **attrs)
 
 
 def _run():
@@ -132,8 +153,8 @@ def _run():
     p.add_argument('dat', help='name of a sampled dataset')
     p.add_argument('-o',
                    '--out',
-                   required=True,
-                   help='name of output event dataset')
+                   help='Name of output event dataset \
+                           defaults to input file with a .csv extension.')
     p.add_argument('-n',
                    '--fftn',
                    help='number of fft coeficients',
@@ -162,7 +183,7 @@ def _run():
                    type=float)
     p.add_argument('--lowfreq',
                    help='low frequency to use for amplitude, default: {}'
-                   .format(default_highcut),
+                   .format(default_lowcut),
                    default=default_lowcut,
                    type=float)
     p.add_argument('--highfreq',
@@ -171,12 +192,14 @@ def _run():
                    default=default_highcut,
                    type=float)
     p.add_argument('--timedomain',
-                   help='uses a time domain thresholding method instead of spectral, may be faster but less accurate',
+                   help='uses a time domain thresholding method instead of \
+                spectral, may be faster but less accurate',
                    action='store_true')
 
     args = p.parse_args()
     main(args.dat, args.out, args.fftn, args.step, args.min_syl,
-         args.min_silent, args.threshold, args.lowfreq, args.highfreq, args.timedomain)
+         args.min_silent, args.threshold, args.lowfreq, args.highfreq,
+         args.timedomain)
 
 
 if __name__ == '__main__':

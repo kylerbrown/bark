@@ -7,12 +7,13 @@ For events with no explicit stop, stop = start.
 typical use:
 abcd_intervals = find_seq(read(this/is/a_lbl_file.lbl), 'abcd')
 '''
-from __future__ import unicode_literals, print_function, absolute_import, division
+from functools import reduce
 import numpy as np
 import re
 from bark import write_metadata
 
 __version__ = '0.1.1'
+
 
 def lbl_to_csv(fname, csvname, **attrs):
     import pandas as pd
@@ -22,22 +23,30 @@ def lbl_to_csv(fname, csvname, **attrs):
     csvdata.to_csv(csvname, index=False)
     write_metadata(csvname, **attrs)
 
+
 def _lbl_csv():
     'commandline script for lbl->csv conversion'
     import argparse
     p = argparse.ArgumentParser(
         description="""Converts an lbl file to a bark csv""")
     p.add_argument("lblfile", help="input file")
-    p.add_argument("-o", "--out",
-                   help="name and output bark csv")
-    p.add_argument("-u", "--units", help="the units of the lbl file, default: s",
-            default="s")
-    p.add_argument("-a", "--attributes", action='append',
-            type=lambda kv: kv.split("="), dest='keyvalues',
-            help="extra metadata in the form of KEY=VALUE")
+    p.add_argument("-o", "--out", help="name and output bark csv")
+    p.add_argument("-u",
+                   "--units",
+                   help="the units of the lbl file, default: s",
+                   default="s")
+    p.add_argument("-a",
+                   "--attributes",
+                   action='append',
+                   type=lambda kv: kv.split("="),
+                   dest='keyvalues',
+                   help="extra metadata in the form of KEY=VALUE")
     args = p.parse_args()
     if args.keyvalues:
-        lbl_to_csv(args.lblfile, args.out, units=args.units, **dict(args.keyvalues))
+        lbl_to_csv(args.lblfile,
+                   args.out,
+                   units=args.units,
+                   **dict(args.keyvalues))
     else:
         lbl_to_csv(args.lblfile, args.out, units=args.units)
 
@@ -55,9 +64,9 @@ def read(fname):
         start, label = lbl.pop(0)
         if len(label) > 2 and '-0' in label:
             labels.append(label[:-2])
-            #find and pop end time
-            matches = (i for i, (stop, offlabel)
-                       in enumerate(lbl)
+            # find and pop end time
+            matches = (i
+                       for i, (stop, offlabel) in enumerate(lbl)
                        if offlabel == label[:-2] + '-1')
             stopidx = next(matches, None)
             if stopidx is not None:
@@ -70,8 +79,9 @@ def read(fname):
             times.append([start, start])
     dtype = [('name', 'U' + str(max([len(x) for x in labels]))),
              ('start', float), ('stop', float)]
-    return np.array([(l, sta, sto) for l, (sta, sto) in zip(labels, times)],
-                    dtype=dtype)
+    return np.array(
+        [(l, sta, sto) for l, (sta, sto) in zip(labels, times)],
+        dtype=dtype)
 
 
 def find_seq(lbl_rec, sequence):
@@ -79,7 +89,8 @@ def find_seq(lbl_rec, sequence):
     from lbllist'''
     labels = reduce(lambda x, y: x + y, lbl_rec['name'])
     matches = [m.start() for m in re.finditer('(?=%s)' % (sequence), labels)]
-    if matches == []: return []
+    if matches == []:
+        return []
     starts = lbl_rec['start'][matches]
     stops = lbl_rec['stop'][np.array(matches) + len(sequence) - 1]
     return np.column_stack((starts, stops))
@@ -95,6 +106,7 @@ separator ;
 nfields 1
 #
 '''
+
     f = open(fname, 'w')
     f.write(header)
     for label, start, stop in lbl_rec:

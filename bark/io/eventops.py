@@ -4,7 +4,7 @@ import json
 
 class EventOperation:
     def __init__(self, index):
-        self.index = index
+        self.index = int(index)
 
     def __str__(self):
         name, args = self.dump()
@@ -12,6 +12,20 @@ class EventOperation:
 
     def dump(self):
         return (type(self).__name__, self.__dict__)
+
+
+class New(EventOperation):
+    def __init__(self, index, name, start, stop):
+        super().__init__(index)
+        self.name = name
+        self.start = start
+        self.stop = stop
+
+    def on(self, events):
+        events.insert(self.index,
+                      dict(name=self.name,
+                           start=self.start,
+                           stop=self.stop))
 
 
 class Update(EventOperation):
@@ -94,7 +108,8 @@ def parse_op(opname, operations=operations, **kwargs):
     '''Parse an operation name string and return EventOperation objects
 
     opname -- a string representation of the class
-    operations -- a dictionary of class strings, values are subclasses of EventOperation
+    operations -- a dictionary of class strings,
+                  values are subclasses of EventOperation
     kwargs -- arguments to initialize the object
     '''
     return operations[opname](**kwargs)

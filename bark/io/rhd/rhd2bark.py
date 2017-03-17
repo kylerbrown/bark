@@ -6,8 +6,6 @@ import numpy as np
 from bark.io.rhd.load_intan_rhd_format import read_data
 from bark import create_entry, write_metadata
 
-import re
-
 
 def bark_rhd_to_entry():
     import argparse
@@ -30,16 +28,18 @@ def bark_rhd_to_entry():
     p.add_argument(
         "-t",
         "--timestamp",
-        help=
-        """format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.S, if left unspecified
-            the timestamp will be inferred from the filename of the first RHD file.""")
-    p.add_argument('--timezone', help="timezone of timestamp, default: America/Chicago",
-            default='America/Chicago')
+        help="""format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.S, if left unspecified
+            the timestamp will be inferred from the filename of the
+            first RHD file.""")
+    p.add_argument('--timezone',
+                   help="timezone of timestamp, \
+            default: America/Chicago",
+                   default='America/Chicago')
     p.add_argument(
         "-p",
         "--parents",
-        help=
-        "No error if already exists, new meta-data written, and datasets will be overwritten.",
+        help="No error if already exists, new meta-data written, \
+                and datasets will be overwritten.",
         action="store_true")
     p.add_argument(
         "-g",
@@ -56,10 +56,13 @@ def bark_rhd_to_entry():
 
 
 def rhd_filename_to_timestamp(fname, timezone):
-    return arrow.get(fname, 'YYMMDD_HHmmss').replace(tzinfo=tz.gettz(timezone)).datetime
+    return arrow.get(fname, 'YYMMDD_HHmmss').replace(
+        tzinfo=tz.gettz(timezone)).datetime
+
 
 def input_string_to_timestamp(string, timezone):
     return arrow.get(string).replace(tzinfo=tz.gettz(timezone)).datetime
+
 
 def chan_names(result, key):
     if key in result:
@@ -68,30 +71,36 @@ def chan_names(result, key):
         return []
 
 
-def amp_chan_names(result): return chan_names(result, 'amplifier_channels')
-def adc_chan_names(result): return chan_names(result, 'board_adc_channels')
+def amp_chan_names(result):
+    return chan_names(result, 'amplifier_channels')
+
+
+def adc_chan_names(result):
+    return chan_names(result, 'board_adc_channels')
 
 
 def board_adc_metadata(result, dsetname):
     attrs = dict(dtype=result['board_adc_data'].dtype.str,
                  sampling_rate=result['frequency_parameters'][
-                     'board_adc_sample_rate'],)
-    columns = {i: chan_attrs for i, chan_attrs in enumerate(result['board_adc_channels'])}
+                     'board_adc_sample_rate'], )
+    columns = {i: chan_attrs
+               for i, chan_attrs in enumerate(result['board_adc_channels'])}
     for k in columns:
-        columns[k]['units']='V'
-        columns[k]['unit_scale']=result['ADC_input_bit_volts']
+        columns[k]['units'] = 'V'
+        columns[k]['unit_scale'] = result['ADC_input_bit_volts']
     write_metadata(dsetname, columns=columns, **attrs)
 
 
 def amplifier_metadata(result, dsetname):
     attrs = dict(dtype=result['amplifier_data'].dtype.str,
                  sampling_rate=result['frequency_parameters'][
-                     'amplifier_sample_rate'],)
+                     'amplifier_sample_rate'], )
     attrs.update(result['frequency_parameters'])
-    columns = {i: chan_attrs for i, chan_attrs in enumerate(result['amplifier_channels'])}
+    columns = {i: chan_attrs
+               for i, chan_attrs in enumerate(result['amplifier_channels'])}
     for k in columns:
-        columns[k]['units']='uV'
-        columns[k]['unit_scale']=result['amplifier_bit_microvolts']
+        columns[k]['units'] = 'uV'
+        columns[k]['unit_scale'] = result['amplifier_bit_microvolts']
     write_metadata(dsetname, columns=columns, **attrs)
 
 
@@ -115,6 +124,7 @@ def check_timestamp_gaps(data, max_gaps):
     if num_gaps > max_gaps:
         raise Exception("{} data gaps exceeds maximum limit {}".format(
             num_gaps, max_gaps))
+
 
 def check_exists(rhd_paths):
     for filepath in rhd_paths:
@@ -173,7 +183,7 @@ def rhds_to_entry(rhd_paths,
 
         # check that the same channels are being recorded
         if board_channels != cur_board_channels:
-            raise ValueError("""{} has channels {} 
+            raise ValueError("""{} has channels {}
                     {} has channels {} """.format(
                 rhdfile, cur_board_channels, rhd_paths[0], board_channels))
         if amplifier_channels != cur_amplifier_channels:

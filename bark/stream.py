@@ -2,6 +2,7 @@ from itertools import chain
 import numpy as np
 import bark
 
+
 def array_iterator(data, chunksize):
     index = 0
     while True:
@@ -26,7 +27,8 @@ class Stream():
         may be compromized by having too low of chunksize.
         """
         self.chunksize = int(chunksize)
-        if isinstance(data, np.ndarray):  # note: memmap is an ndarray subclass too
+        if isinstance(data,
+                      np.ndarray):  # note: memmap is an ndarray subclass too
             self.data = array_iterator(data, self.chunksize)
         else:
             self.data = data
@@ -42,7 +44,8 @@ class Stream():
         else:
             self.attrs = {}
         if 'columns' not in self.attrs:
-            self.attrs['columns'] = bark.template_columns(range(self.peek().shape[1]))
+            self.attrs['columns'] = bark.template_columns(range(self.peek(
+            ).shape[1]))
 
     def __iter__(self):
         return self
@@ -53,9 +56,8 @@ class Stream():
     def peek(self):
         "Returns the first buffer without removing it from the stream"
         x = next(self)
-        self.data = chain((x,), self.data)
+        self.data = chain((x, ), self.data)
         return x
-
 
     def __add__(self, other):
         return self._binary_operator(other, lambda x, y: x + y)
@@ -106,7 +108,7 @@ class Stream():
             with open(filename, "wb") as fp:
                 for data in self:
                     fp.write(data.tobytes())
-            dtype = data.dtype.name
+            dtype = data.dtype.str
         attrs["dtype"] = dtype
         try:
             bark.sampled_columns(data, attrs['columns'])
@@ -130,6 +132,34 @@ class Stream():
         newdata = (func(x) for x in self)
         return self.new_stream(newdata)
 
+    def padded_chunks(self, pad_len, edge_val=0):
+        """
+        returns overlapping chunks of the array.
+
+        each chunk is pad_len + self.chunksize + pad_len
+
+        first chunk's first pad is filled with edge_val
+        last chunk's last pad is filled with edge_val
+        """
+        peek = self.peek()
+        n_columns = peek.shape[1]
+        dtype = peek.dtype
+        edge_pad = np.array(
+            np.ones((pad_len, n_columns)) * edge_val,
+            dtype=dtype)
+        left_pad = edge_pad[:]
+        cur_x = None
+        for next_x in self:
+            if cur_x is None:  # first chunk
+                cur_x = next_x
+            else:
+                right_pad = next_x[:pad_len, :]
+                yield np.vstack((left_pad, cur_x, right_pad))
+                left_pad = cur_x[-pad_len:, :]
+                cur_x = next_x
+        # last chunk
+        yield np.vstack((left_pad, cur_x, edge_pad))
+
     def vector_map(self, func):
         """
         Calls func on overlapping chunks of data
@@ -141,8 +171,8 @@ class Stream():
         return self.new_stream(self._vector_map(func)).rechunk()
 
     def _vector_map(self, func):
-        """ helper function 
-        
+        """ helper function
+
         Run function over two consecutive buffers.
         return result in 1/3 sections, ensuring that
         there is always a extra 1/3 on either side if possible.
@@ -184,13 +214,13 @@ class Stream():
 
     def split(self, *args):
         if 'columns' in self.attrs:
-            self.attrs['columns'] = {i: self.attrs['columns'][x] for i, x in enumerate(args)}
+            self.attrs['columns'] = {i: self.attrs['columns'][x]
+                                     for i, x in enumerate(args)}
         return self.new_stream((x[:, args]) for x in self)
 
     def merge(*streams):
         "Concatenate columns from streams"
-        s = streams[0].new_stream((np.hstack(data) for data in zip(*streams)
-                                      ))
+        s = streams[0].new_stream((np.hstack(data) for data in zip(*streams)))
         i = 0
         newcols = {}
         if 'columns' in s.attrs:
@@ -200,10 +230,8 @@ class Stream():
                     newcols[i] = oldcols[oldi]
                     i += 1
             s.attrs['columns'] = newcols
-        return s 
+        return s
 
-
-        
     def chain(*streams):
         self = streams[0]
         return self.new_stream((data
@@ -270,13 +298,19 @@ class Stream():
     def filtfilt(self, b, a):
         " Performs forward backward filtering on the stream."
         from scipy.signal import filtfilt
-        filter_func = lambda x: filtfilt(b, a, x, axis=0)
+
+        def filter_func(x):
+            return filtfilt(b, a, x, axis=0)
+
         return self.new_stream(self.vector_map(filter_func))
 
     def lfilter(self, b, a):
         " Forward only filtering"
         from scipy.signal import lfilter
-        filter_func = lambda x: lfilter(b, a, x, axis=0)
+
+        def filter_func(x):
+            return lfilter(b, a, x, axis=0)
+
         return self.new_stream(self.vector_map(filter_func))
 
     def convolve(self, win):
@@ -298,12 +332,18 @@ class Stream():
 
     def demean(self):
         ' Subtracts the mean across channels for each sample.'
-        func = lambda x: x - np.mean(x, axis=1).reshape(-1, 1)
+
+        def func(x):
+            return x - np.mean(x, axis=1).reshape(-1, 1)
+
         return self.map(func)
 
     def demedian(self):
         ' Subtracts the median across channels for each sample.'
-        func = lambda x: x - np.median(x, axis=1).reshape(-1, 1)
+
+        def func(x):
+            return x - np.median(x, axis=1).reshape(-1, 1)
+
         return self.map(func)
 
 
@@ -329,7 +369,7 @@ def rechunk(stream, chunksize):
     yield buffer  # leftover samples at end of stream
 
 
-def read(fname, **kwargs):
+def read(fname, chunksize=2e6, **kwargs):
     """ input: the filename of a raw binary file
         should have an associated meta file
         returns FileStream
@@ -338,18 +378,18 @@ def read(fname, **kwargs):
     data = bark_obj.data
     sr = bark_obj.attrs["sampling_rate"]
     kwargs.update(bark_obj.attrs)
-    return Stream(data, sr=sr, attrs=kwargs)
+    return Stream(data, sr=sr, chunksize=chunksize, attrs=kwargs)
+
 
 def to_wav(stream, filename):
     import ewave
     data = stream.peek()
-    dtype = data.dtype.str,
-    nchannels = data.size[1]
-    with ewave.open(wavfile,
+    dtype = data.dtype.str
+    nchannels = data.shape[1]
+    with ewave.open(filename,
                     "w+",
                     sampling_rate=stream.sr,
-                    dtype=dtype,
+                    dtype=data.dtype.name,
                     nchannels=nchannels) as wavfp:
         for x in stream:
             wavfp.write(x)
-

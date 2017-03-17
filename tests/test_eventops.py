@@ -1,5 +1,5 @@
 import pytest
-from bark.io.eventops import (OpStack, Update, Merge, Delete, Split,
+from bark.io.eventops import (OpStack, New, Update, Merge, Delete, Split,
                               write_stack, read_stack)
 
 
@@ -24,6 +24,16 @@ def opstack(labels):
 @pytest.fixture
 def tempfile(tmpdir):
     return str(tmpdir.join('temp.yaml'))
+
+
+def test_new(labels):
+    New(2, 'b2', 3.1, 3.6).on(labels)
+    assert (len(labels) == 4)
+    assert labels[1]['name'] == 'b'
+    assert labels[2]['start'] == 3.1
+    assert labels[2]['stop'] == 3.6
+    assert labels[2]['name'] == 'b2'
+    assert labels[3]['name'] == 'c'
 
 
 def test_name(labels):

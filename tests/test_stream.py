@@ -27,6 +27,18 @@ def test_stream_chunksize():
     assert eq(data1, stream.call())
 
 
+def test_padded_chunks():
+    stream = Stream(data2, sr=10, chunksize=20) # 100 x 5
+    pchunks = list(stream.padded_chunks(10))
+    assert len(pchunks[0]) == 20 + 10 + 10
+    assert eq(pchunks[0][:10, :], np.zeros((10, 5)))
+    assert eq(pchunks[0][10:, :], data2[:30, :])
+    assert eq(pchunks[1][10:, :], data2[20:50, :])
+    assert eq(pchunks[-1][:30, :], data2[-30:, :])
+    assert eq(pchunks[-1][30:, :], np.zeros((10, 5)))
+    
+
+
 def test_stream_add():
     stream = Stream(data1, sr=10, chunksize=3)
     stream2 = stream + 4

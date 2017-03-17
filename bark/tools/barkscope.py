@@ -3,13 +3,14 @@ import os.path
 from xml.etree.ElementTree import Element, SubElement, ElementTree
 from bark import read_metadata
 
-#readable dtypes and their bit depth
-DTYPES = {'int16':'16',
-        '<i2':'16',
-        'int32': '32',
-        '<i4':'32',
-        'int64':'64',
-        '<i8':'64'}
+# readable dtypes and their bit depth
+DTYPES = {'int16': '16',
+          '<i2': '16',
+          'int32': '32',
+          '<i4': '32',
+          'int64': '64',
+          '<i8': '64'}
+
 
 def meta_to_neuroscope_xml(meta):
     '''
@@ -19,7 +20,7 @@ def meta_to_neuroscope_xml(meta):
     required keys:
     dtype
     sampling_rate
-    n_channels
+    columns
     '''
     assert meta['dtype'] in DTYPES
     parameters = Element('parameters')
@@ -37,10 +38,10 @@ def meta_to_neuroscope_xml(meta):
     anatdes = SubElement(parameters, 'anatomicalDescription')
     chngrp = SubElement(anatdes, 'channelGroup')
     grp = SubElement(chngrp, 'group')
-    for i in range(meta['n_channels']):
-            channel = SubElement(grp, 'channel')
-            channel.set('skip', '0')
-            channel.text = str(i)
+    for i in range(len(meta['columns'])):
+        channel = SubElement(grp, 'channel')
+        channel.set('skip', '0')
+        channel.text = str(i)
     SubElement(parameters, 'spikeDetection')
     neuroscope = SubElement(parameters, 'neuroscope')
     neuroscope.set('version', '2.0.0')
@@ -56,7 +57,7 @@ def meta_to_neuroscope_xml(meta):
     SubElement(spikes, 'nSamples').text = '32'
     SubElement(spikes, 'peakSampleIndex').text = '16'
     channels = SubElement(neuroscope, 'channels')
-    for i in range(meta['n_channels']):
+    for i in range(len(meta['columns'])):
         channelcolors = SubElement(channels, 'channelColors')
         SubElement(channelcolors, 'channel').text = str(i)
         SubElement(channelcolors, 'color').text = '#0080ff'
@@ -73,8 +74,7 @@ def main():
     p = argparse.ArgumentParser(description="""
     Open raw binary file in neuroscope.
     """)
-    p.add_argument("dat",
-            help="Raw binary file to open.")
+    p.add_argument("dat", help="Raw binary file to open.")
     args = p.parse_args()
     fname = os.path.splitext(args.dat)[0] + ".xml"
     if not os.path.isfile(fname):
@@ -90,6 +90,6 @@ def main():
     except AttributeError:
         subprocess.call(['neuroscope', args.dat])
 
+
 if __name__ == "__main__":
     main()
-
