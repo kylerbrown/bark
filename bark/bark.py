@@ -304,9 +304,9 @@ def convert_timestamp(obj, default_tz='America/Chicago'):
     If the object is not UTC aware, the timezone is set by default_tz."""
     dt = timestamp_to_datetime(obj)
     if dt.tzinfo:
-        return arrow.get(obj).isoformat()
+        return arrow.get(dt).isoformat()
     else:
-        return arrow.get(obj, default_tz).isoformat()
+        return arrow.get(dt, default_tz).isoformat()
 
 
 def timestamp_to_datetime(obj):
