@@ -244,7 +244,6 @@ def write_metadata(path, meta='.meta.yaml', **params):
     for k, v in params.items():
         if isinstance(v, (np.ndarray, np.generic)):
             params[k] = v.tolist()
-    print(metafile)
     with codecs.open(metafile, 'w', encoding='utf-8') as yaml_file:
         yaml_file.write(yaml.safe_dump(params, default_flow_style=False))
 

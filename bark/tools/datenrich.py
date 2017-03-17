@@ -79,17 +79,15 @@ def main():
     import argparse
     p = argparse.ArgumentParser(prog="datenrich")
     p.add_argument("dat", help="dat file")
+    p.add_argument("label",
+                   help="label file, a csv in seconds with 'label', 'start', \
+                   'stop' as a header")
+    p.add_argument("out", help="name of output dat file")
     p.add_argument("-c",
                    "--channels",
-                   help="subset of channels",
+                   help="subset of channels, by index",
                    type=int,
                    nargs="+")
-    p.add_argument("-o", "--out", help="name of output dat file")
-    p.add_argument("-l",
-                   "--label",
-                   help="label file, a csv in seconds with 'label', 'start', \
-                   'stop' as a header",
-                   required=True)
     p.add_argument("-w",
                    "--window",
                    type=float,
