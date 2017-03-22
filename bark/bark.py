@@ -18,7 +18,7 @@ from bark import stream
 BUFFER_SIZE = 10000
 
 spec_version = "0.2"
-__version__ = version = "0.2"
+__version__ = "0.2"
 
 __doc__ = """
 This is BARK, a python library for storing and accessing audio and ephys data
@@ -26,7 +26,7 @@ in directories and simple file formats.
 
 Library versions:
  bark: %s
-""" % (version)
+""" % (__version__)
 
 _Units = namedtuple('_Units', ['TIME_UNITS'])
 UNITS = _Units(TIME_UNITS=('s', 'samples'))
