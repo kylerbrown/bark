@@ -380,16 +380,3 @@ def read(fname, chunksize=2e6, **kwargs):
     kwargs.update(bark_obj.attrs)
     return Stream(data, sr=sr, chunksize=chunksize, attrs=kwargs)
 
-
-def to_wav(stream, filename):
-    import ewave
-    data = stream.peek()
-    dtype = data.dtype.str
-    nchannels = data.shape[1]
-    with ewave.open(filename,
-                    "w+",
-                    sampling_rate=stream.sr,
-                    dtype=data.dtype.name,
-                    nchannels=nchannels) as wavfp:
-        for x in stream:
-            wavfp.write(x)

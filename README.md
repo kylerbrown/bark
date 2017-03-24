@@ -107,7 +107,7 @@ There are many external tools for processing CSV files, including [pandas](http:
 - `csv-from-plexon-csv` -- converts a [Plexon OFS](http://www.plexon.com/products/offline-sorter) waveform CSV to a bark CSV
 - `dat-to-wave-clus` -- convert a sampled dataset to a [wave_clus](https://github.com/csn-le/wave_clus)
   compatible Matlab file
-- `dat-to-wav` -- convert a sampled dataset to a WAVE file.
+- `dat-to-audio` -- convert a sampled dataset to an audio file. Uses [SOX](http://sox.sourceforge.net/) under the hood, and so it can convert to any file type SOX supports.
 
 # Python interface
 ```python
