@@ -40,7 +40,7 @@ setup(name='bark',
               'dat-enrich=bark.tools.datenrich:main',
               'dat-spike-detect=bark.tools.datspike:_run',
               'dat-split=bark.tools.barkutils:_datchunk',
-              'dat-to-wav=bark.tools.barkutils:rb_to_wav',
+              'dat-to-audio=bark.tools.barkutils:rb_to_audio',
               'dat-to-wave-clus=bark.tools.barkutils:rb_to_wave_clus',
               'bark-label-view=bark.tools.labelview:_run',
           ]
