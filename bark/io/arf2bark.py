@@ -29,7 +29,7 @@ def copy_attrs(attrs):
     return new_attrs
 
 def arf2bark(arf_file, root_parent, verbose):
-    with arf.open_file(arf_file) as af:
+    with arf.open_file(arf_file, 'r') as af:
         # root
         root_dirname = os.path.splitext(arf_file)[0]
         root_path = os.path.join(os.path.abspath(root_parent), root_dirname)
