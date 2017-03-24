@@ -5,6 +5,9 @@ import argparse
 from bark import stream
 import arrow
 from dateutil import tz
+import numpy
+import sys
+import subprocess
 
 
 def meta_attr():
@@ -230,14 +233,43 @@ def rb_join():
     streams[0].merge(*streams[1:]).write(opt.out)
 
 
-def rb_to_wav():
+def rb_to_audio():
     p = argparse.ArgumentParser()
     p.add_argument("dat",
-                   help="""dat file to convert to wav,
+                   help="""dat file to convert to audio,
         can be any number of channels but you probably want 1 or 2""")
-    p.add_argument("-o", "--out", help="name of output wav file")
+    p.add_argument("out", help="name of output file, with filetype extension")
     opt = p.parse_args()
-    stream.to_wav(stream.read(opt.dat), opt.out)
+    attrs = bark.read_metadata(opt.dat)
+    sr = str(attrs['sampling_rate'])
+    ch = str(len(attrs['columns']))
+    dt = numpy.dtype(attrs['dtype'])
+    bd = str(dt.itemsize * 8)
+    if dt.name[:5] == 'float':
+        enc = 'floating-point'
+    elif dt.name[:3] == 'int':
+        enc = 'signed-integer'
+    elif dt.name[:4] == 'uint':
+        enc = 'unsigned-integer'
+    else:
+        raise TypeError('cannot handle dtype of ' + dtname)
+    if dt.byteorder == '<':
+        order = 'little'
+    elif dt.byteorder == '>':
+        order = 'big'
+    elif dt.byteorder == '=': # native
+        order = sys.byteorder
+    else:
+        raise ValueError('unrecognized endianness: ' + dt.byteorder)
+    sox_cmd = ['sox', '-r', sr, '-c', ch, '-b', bd, '-e', enc,
+               '--endian', order, '-t', 'raw', opt.dat, opt.out]
+    try:
+        subprocess.run(sox_cmd)
+    except FileNotFoundError as e:
+        if "'sox'" in str(e):
+            raise FileNotFoundError(str(e) + '. dat-to-audio requires SOX')
+        else:
+            raise
 
 
 def rb_to_wave_clus():
