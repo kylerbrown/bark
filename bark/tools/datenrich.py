@@ -7,7 +7,7 @@ import pandas as pd
 import bark
 
 
-def get_segments(label_file, window=5):
+def get_segments(labels, window=5):
     """
     deterimines chunks to extract based on label_file,
     which is a csv file with "start" and "stop" collumns
@@ -18,8 +18,6 @@ def get_segments(label_file, window=5):
     labels: a pandas array with updated label times, assuming
             chunks are concatenated.
     """
-    labels = pd.read_csv(label_file).sort_values('start').reset_index(
-        drop=True)
     wlabels = labels.copy()
     wlabels.start -= window
     wlabels.stop += window
@@ -42,37 +40,26 @@ def get_segments(label_file, window=5):
     return np.array(b), labels
 
 
-def datenrich(dat, channels, out, label, window):
-    # load and reshape dat file
+def datenrich(dat, out, label_file, window):
     dataset = bark.read_sampled(dat)
     data, params = dataset.data, dataset.attrs
     rate = params["sampling_rate"]
     nchannels = len(params["columns"])
-    if not channels:
-        channels = np.arange(nchannels)  # select all channels
-    rootname = os.path.splitext(dat)[0]
-    if not out:
-        out = rootname + "_enr.dat"
     # cut out labelled segments
-    segs, newlabels = get_segments(label, window)
+    label_dset = bark.read_events(label_file)
+    segs, newlabels = get_segments(label_dset.data, window)
     # convert to samples
     segs = np.array(segs * rate, dtype=int)
     n_samples = sum((b - a for a, b in segs))
-    outparams = params.copy()
-    outparams["n_samples"] = n_samples
-    outparams["n_channels"] = len(channels)
     # write to new file
     with open(out, "wb") as outfp:
         for start, stop in segs:
-            outfp.write(data[start:stop, channels].tobytes())
-    bark.write_metadata(out, **outparams)
-    newlabels.to_csv(
+            outfp.write(data[start:stop, :].tobytes())
+    bark.write_metadata(out, **params)
+    bark.write_events(
         os.path.splitext(out)[0] + ".csv",
-        header=True,
-        index=False)
-    if os.path.isfile(label + ".meta.yaml"):
-        shutil.copyfile(label + ".meta.yaml",
-                        os.path.splitext(out)[0] + ".csv.meta.yaml")
+        newlabels,
+        **label_dset.attrs)
 
 
 def main():
@@ -83,11 +70,6 @@ def main():
                    help="label file, a csv in seconds with 'label', 'start', \
                    'stop' as a header")
     p.add_argument("out", help="name of output dat file")
-    p.add_argument("-c",
-                   "--channels",
-                   help="subset of channels, by index",
-                   type=int,
-                   nargs="+")
     p.add_argument("-w",
                    "--window",
                    type=float,
@@ -95,7 +77,7 @@ def main():
                    include",
                    default=3.0)
     opt = p.parse_args()
-    datenrich(opt.dat, opt.channels, opt.out, opt.label, opt.window)
+    datenrich(opt.dat, opt.out, opt.label, opt.window)
 
 
 if __name__ == "__main__":
