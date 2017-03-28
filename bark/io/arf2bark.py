@@ -15,6 +15,10 @@ def _parse_args(raw_args):
                         '--verbose',
                         help='increase output verbosity',
                         action='store_true')
+    parser.add_argument('-t',
+                        '--timezone',
+                        help='timezone for data, tz database format (default is "America/Chicago")',
+                        default=None)
     parser.add_argument('arf_file', help='ARF file to convert')
     parser.add_argument('root_parent', help='directory in which to place the Bark Root')
     return parser.parse_args(raw_args)
@@ -26,7 +30,7 @@ def copy_attrs(attrs):
     na.update({k: v.decode() for k,v in na.items() if isinstance(v, bytes)})
     return na
 
-def arf2bark(arf_file, root_parent, verbose):
+def arf2bark(arf_file, root_parent, timezone, verbose):
     with arf.open_file(arf_file, 'r') as af:
         # root
         root_dirname = os.path.splitext(arf_file)[0]
@@ -42,6 +46,10 @@ def arf2bark(arf_file, root_parent, verbose):
                 entry_path = os.path.join(root_path, ename)
                 entry_attrs = copy_attrs(entry.attrs)
                 timestamp = entry_attrs.pop('timestamp')
+                if timezone:
+                    timestamp = bark.convert_timestamp(timestamp, timezone)
+                else:
+                    timestamp = bark.convert_timestamp(timestamp)
                 bark_entry = bark.create_entry(entry_path,
                                                timestamp,
                                                parents=False,
@@ -103,8 +111,8 @@ def transfer_dset(ds_name, ds, e_path, verbose=False):
               ' process. Skipping dataset ' + ds_name)
 
 def _main():
-    arg_dict = _parse_args(sys.argv[1:])
-    arf2bark(arg_dict.arf_file, arg_dict.root_parent, arg_dict.verbose)
+    args = _parse_args(sys.argv[1:])
+    arf2bark(args.arf_file, args.root_parent, args.timezone, args.verbose)
 
 if __name__ == '__main__':
     _main()
