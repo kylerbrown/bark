@@ -164,6 +164,7 @@ def _run():
                    '--step',
                    help='step size in milliseconds, default: {}'
                    .format(default_step_ms),
+                   type=int,
                    default=default_step_ms)
     p.add_argument('--min-syl',
                    help='minimum syllable length in ms, default: {}'
