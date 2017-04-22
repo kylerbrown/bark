@@ -190,8 +190,11 @@ def read_sampled(datfile, mode="r"):
 
 
 def write_events(eventsfile, data, **params):
+    import pandas as pd
     if 'columns' not in params:
         params['columns'] = event_columns(data)
+    if data.empty and not list(data.columns):
+        data = pd.DataFrame({c: [] for c in params['columns']})
     data.to_csv(eventsfile, index=False)
     write_metadata(eventsfile, **params)
     return read_events(eventsfile)
