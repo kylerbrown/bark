@@ -2,15 +2,13 @@ import numpy as np
 import bark
 from scipy.signal import argrelextrema
 
-default_order = 10
-default_std = -6.0
-
+default_order = 5
 
 def thres_extrema(x, y, thresh):
     if thresh < 0:
-        return (x < y) & (x < thresh)
+        return (x <= y) & (x < thresh)
     else:
-        return (x > y) & (x > thresh)
+        return (x >= y) & (x > thresh)
 
 
 def compute_std(dat):
@@ -34,20 +32,30 @@ def spikes(data, start_sample, threshs, pad_len, order):
         yield from [(col_i, sample) for sample in extreme_samples]
 
 
-def stream_spikes(stream, threshs, pad_len, order):
+def stream_spikes(stream, threshs, pad_len, order, min_dist=0):
+    prev_sample = np.ones_like(threshs) * -9999999
     for i, x in enumerate(stream.padded_chunks(pad_len)):
         start_sample = i * stream.chunksize
-        yield from spikes(x, start_sample, threshs, pad_len, order)
+        for channel, sample in spikes(x, start_sample, threshs, pad_len, order):
+            if sample - prev_sample[channel] > min_dist:
+                yield channel, sample
+                prev_sample[channel] = sample
 
 
-def main(dat, csv, std_const, order=5):
-    std = compute_std(dat)
-    threshs = std_const * std
+def main(dat, csv, thresh, is_std, order=default_order, min_dist=0):
+    if is_std:
+        std = compute_std(dat)
+        threshs = thresh * std
+    else:
+        # make threshs a vector if it's a scalar
+        n_channels = bark.read_sampled(dat).data.shape[1]
+        threshs = np.ones(n_channels) * thresh
+    print('thresholds:', threshs)
     s = bark.stream.read(dat)
     pad_len = order
     with open(csv, 'w') as fp:
         fp.write('channel,start\n')
-        for (channel, sample) in stream_spikes(s, threshs, pad_len, order):
+        for (channel, sample) in stream_spikes(s, threshs, pad_len, order, min_dist * s.sr):
             fp.write('{},{}\n'.format(channel, sample / s.sr))
     bark.write_metadata(csv,
                         datatype=1000,
@@ -67,20 +75,20 @@ def _run():
     ''')
     p.add_argument('dat', help='name of a sampled dataset')
     p.add_argument('out', help='name of output event dataset')
+    p.add_argument('-t', '--threshold', type=float, help='spike threshold, sign indicates direction')
+    p.add_argument('--mindist', type=float, help='minimum distance between spikes')
     p.add_argument('-s',
                    '--std',
-                   help='''standard deviation cutoff,
-        sign indicates detection direction, default: '''.format(default_std),
-                   default=default_std,
-                   type=float)
+                   action='store_true',
+                   help='''Use standard deviation threshold instead of the true signal value''')
     p.add_argument('--order',
                    help='number of samples on either \
-                side to compare to find extrema point, default: '
+                side to compare to find extrema point, default: {}'
                    .format(default_order),
                    default=default_order,
                    type=int)
     args = p.parse_args()
-    main(args.dat, args.out, args.std, args.order)
+    main(args.dat, args.out, args.threshold, args.std, args.order, args.mindist)
 
 
 if __name__ == '__main__':

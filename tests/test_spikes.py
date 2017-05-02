@@ -6,12 +6,15 @@ from bark.tools.datspike import main, spikes, thres_extrema, stream_spikes
 
 data0 = np.array([[0], [1], [0], ])
 data1 = np.array([[0, 0], [1, 0], [0, 0], ])
+data2 = np.array([[0], [1], [1], [0], ])
+
 
 
 def test_thres_extrema():
     rs, = argrelextrema(data1[:, 0], lambda x, y: thres_extrema(x, y, 0.1))
     assert len(rs) == 1
     assert rs == 1
+
 
 
 def test_spikes_1():
@@ -39,6 +42,25 @@ def test_stream_spikes():
     assert spikes[0][0] == 0
     assert spikes[0][1] == 9
     assert np.allclose(spikes[:, 1], np.arange(9, 100, 10))
+
+def test_min_distance():
+    # same as stream test, but only every other peak should be detected
+    # do to a minimum distance of 15
+    data = np.arange(100).reshape(-1, 1) % 10
+    spikes = np.array(list(stream_spikes(
+        bark.stream.Stream(data,
+                           sr=4,
+                           chunksize=6),
+        threshs=[0.1],
+        pad_len=5,
+        order=3,
+        min_dist=15)))
+    answer = np.arange(9, 100, 20)
+    assert len(spikes) == len(answer)
+    assert spikes[0][0] == 0
+    assert spikes[0][1] == 9
+    assert np.allclose(spikes[:, 1], np.arange(9, 100, 20))
+
 
 def test_main(tmpdir):
     csvfile = str(tmpdir.join('test.csv'))
