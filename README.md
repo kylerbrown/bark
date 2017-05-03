@@ -88,6 +88,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 - `dat-artifact` -- removes sections of a sampled dataset that exceed a threshold
 - `dat-enrich` -- concatenates subsets of a sampled dataset based on events in an events dataset
 - `dat-spike-detect` -- detects spike events in the channels of a sampled dataset
+- `dat-envelope-classify` -- classifies acoustic events, such as stimuli, by amplitude envelope
 - `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 
 There are many external tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
