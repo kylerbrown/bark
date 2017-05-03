@@ -5,6 +5,7 @@ import os.path
 from scipy.signal import filtfilt, butter
 from scipy.io import wavfile
 
+
 def abs_and_smooth(x, sr, lp=100):
     abs_x = np.abs(x)
     if len(x.shape) > 1:
@@ -49,30 +50,44 @@ def wav_envelopes(wavnames, new_sr=22050):
 
 def classify_stimuli(mic_data, mic_sr, starts, wav_names, wav_envs, common_sr):
     # get longest stimuli to determine how much data to grab
-    max_stim_duration = int(max([len(x) for x in wav_envs]) / common_sr * mic_sr)
+    max_stim_duration = int(max([len(x) for x in wav_envs]) / common_sr *
+                            mic_sr)
     max_stim_dur_common_sr = max([len(x) for x in wav_envs])
-    print('max stim n', max_stim_duration)
     # convert trigfile starts to samples
     start_samps = np.array(starts * mic_sr, dtype=int)
     labels = []
     for start_samp in start_samps:
         x = amplitude(mic_data[start_samp:start_samp + max_stim_duration],
-                mic_sr, common_sr)
-        print('len of x', len(x))
-        print('start time', start_samp/mic_sr)
-        print('duration of dset', len(mic_data)/mic_sr)
+                      mic_sr, common_sr)
         if len(x) < max_stim_dur_common_sr:
-            print('skipping...')
+            print('skipping {} ... too close to end of file'.format(
+                start_samp))
             continue
-        inner_prods = [x[0:len(y)] @ y for y in wav_envs]
+        inner_prods = [x[0:len(y)] @y for y in wav_envs]
         best_match = wav_names[np.argmax(inner_prods)]
         labels.append(best_match)
     return labels
 
 
-def write(outfile, starts, labels):
-    outdset = pd.DataFrame(dict(start=starts, name=labels))
-    columns = {'start': {'units': 's'}, 'name': {'units': None}}
+def get_stops(labels, starts, stim_names, stim_envs, sr):
+    '''
+    labels: sequence of identified stimuli names
+    starts: seqence of stimuli times, in seconds
+    stim_names: a vector of all stimulis names
+    stim_enves: a corresponding vector of stimulus envelopes
+    Returns a vector of times, indicating when the stimuli ended.'''
+    length_lookup = {name: len(env) / sr
+                     for name, env in zip(stim_names, stim_envs)}
+    stops = [start + length_lookup[name]
+             for start, name in zip(starts, labels)]
+    return stops
+
+
+def write(outfile, starts, stops, labels):
+    outdset = pd.DataFrame(dict(start=starts, stop=stops, name=labels))
+    columns = {'start': {'units': 's'},
+               'stop': {'units': 's'},
+               'name': {'units': None}}
     bark.write_events(outfile, outdset, columns=columns)
 
 
@@ -80,14 +95,14 @@ def main(datfile, trigfile, outfile, wavfiles):
     common_sr = 22050  # everything is resampled to this
     # get wav envelopes
     stim_names, stim_envs = wav_envelopes(wavfiles, common_sr)
-
     mic_dset = bark.read_sampled(datfile)
     mic_sr = mic_dset.sampling_rate
     starts = bark.read_events(trigfile).data.start
     # get most likely stimulus for each trigger time
     labels = classify_stimuli(mic_dset.data, mic_sr, starts, stim_names,
                               stim_envs, common_sr)
-    write(outfile, starts, labels)
+    stops = get_stops(labels, starts, stim_names, stim_envs, common_sr)
+    write(outfile, starts, stops, labels)
 
 
 def _run():
