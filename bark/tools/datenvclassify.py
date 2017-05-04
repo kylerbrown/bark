@@ -28,7 +28,7 @@ def amplitude(x, sr, new_sr):
     '''finds amplitude, resamples and demeans'''
     x_amp = abs_and_smooth(x, sr)
     x_resamp = myresample(x_amp, sr, new_sr)
-    return x_resamp - np.mean(x_resamp)
+    return x_resamp
 
 
 def wav_envelopes(wavnames, new_sr=22050):
@@ -53,6 +53,11 @@ def classify_stimuli(mic_data, mic_sr, starts, wav_names, wav_envs, common_sr):
     max_stim_duration = int(max([len(x) for x in wav_envs]) / common_sr *
                             mic_sr)
     max_stim_dur_common_sr = max([len(x) for x in wav_envs])
+    padded_wav_envs = []
+    for y in wav_envs:
+        pad = np.zeros(max_stim_dur_common_sr)
+        pad[:len(y)] = y
+        padded_wav_envs.append(pad)
     # convert trigfile starts to samples
     start_samps = np.array(starts * mic_sr, dtype=int)
     labels = []
@@ -60,13 +65,18 @@ def classify_stimuli(mic_data, mic_sr, starts, wav_names, wav_envs, common_sr):
         x = amplitude(mic_data[start_samp:start_samp + max_stim_duration],
                       mic_sr, common_sr)
         if len(x) < max_stim_dur_common_sr:
-            print('skipping {} ... too close to end of file'.format(
-                start_samp))
+            print('skipping {} ... too close to end of file'.format(start_samp
+                                                                    / mic_sr))
             continue
-        inner_prods = [x[0:len(y)] @y for y in wav_envs]
+        inner_prods = [pearson_r(x, y) for y in padded_wav_envs]
         best_match = wav_names[np.argmax(inner_prods)]
         labels.append(best_match)
     return labels
+
+
+def pearson_r(x, y):
+    return np.mean((x - np.mean(x)) *
+                   (y - np.mean(y))) / (np.std(x) * np.std(y))
 
 
 def get_stops(labels, starts, stim_names, stim_envs, sr):
@@ -84,6 +94,11 @@ def get_stops(labels, starts, stim_names, stim_envs, sr):
 
 
 def write(outfile, starts, stops, labels):
+    if len(labels) < len(starts):
+        print('warning, discarding {} events'.format(len(starts) - len(
+            labels)))
+        starts = starts[:len(labels)]
+
     outdset = pd.DataFrame(dict(start=starts, stop=stops, name=labels))
     columns = {'start': {'units': 's'},
                'stop': {'units': 's'},
