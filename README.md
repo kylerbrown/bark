@@ -111,6 +111,10 @@ There are many external tools for processing CSV files, including [pandas](http:
   compatible Matlab file
 - `dat-to-audio` -- convert a sampled dataset to an audio file. Uses [SOX](http://sox.sourceforge.net/) under the hood, and so it can convert to any file type SOX supports.
 
+## Control Flow
+
+- `bark-for-each` -- apply a command to a list of Entries.
+
 # Python interface
 ```python
 import bark
