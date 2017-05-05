@@ -99,7 +99,8 @@ def main(datname,
          thresh=default_threshold,
          lowcut=default_lowcut,
          highcut=default_highcut,
-         time_domain=False):
+         time_domain=False,
+         label=''):
     from pandas import DataFrame
     if not outfile:
         outfile = os.path.splitext(datname)[0] + '.csv'
@@ -133,7 +134,7 @@ def main(datname,
     bark.write_events(outfile,
                       DataFrame(dict(start=start,
                                      stop=stop,
-                                     name='')),
+                                     name=label)),
                       **attrs)
 
 
@@ -196,11 +197,14 @@ def _run():
                    help='uses a time domain thresholding method instead of \
                 spectral, may be faster but less accurate',
                    action='store_true')
+    p.add_argument('--label',
+                   help='label to give found segments, default is an empty string',
+                   default='')
 
     args = p.parse_args()
     main(args.dat, args.out, args.fftn, args.step, args.min_syl,
          args.min_silent, args.threshold, args.lowfreq, args.highfreq,
-         args.timedomain)
+         args.timedomain, args.label)
 
 
 if __name__ == '__main__':
