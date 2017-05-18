@@ -184,7 +184,10 @@ def read_sampled(datfile, mode="r"):
     """
     path = os.path.abspath(datfile)
     params = read_metadata(datfile)
-    data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
+    try:
+        data = np.memmap(datfile, dtype=params["dtype"], mode=mode)
+    except ValueError:
+        data = np.array([])
     data = data.reshape(-1, len(params['columns']))
     return SampledData(data, path, params)
 
