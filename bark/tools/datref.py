@@ -1,7 +1,7 @@
 import numpy as np
 import bark
 BUF = bark.BUFFER_SIZE
-
+#COEF_EST_MAX_SIZE = BUF * 500
 
 def datref(datfile, outfile):
     dataset = bark.read_sampled(datfile)
@@ -26,7 +26,7 @@ def datref(datfile, outfile):
         c_coefs = coefs[c, :]
         c_power = power[c, :]
         mask = c_power >= np.percentile(c_power, 90)
-        best_C[c] = np.mean(c_coefs[mask])
+        best_C[c] = np.nanmean(c_coefs[mask])
     print("best reference coefficients: {}".format(best_C))
     for i, c in enumerate(best_C):
         outparams['columns'][i]['reference_coefficient'] = float(c)
