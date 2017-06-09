@@ -42,6 +42,17 @@ DATATYPES = _dt(name_to_code={name: code
                 code_to_name={code: name
                               for name, code in _pairs})
 
+                
+
+class LazyDict(dict):
+    '''if value is a function, evaluates on first call,
+    useful for lazy loading of data and then memoizing the result'''
+    def __getitem__(self, item):
+        value = dict.__getitem__(self, item)
+        if callable(value):
+            value = value()
+            dict.__setitem__(self, item, value)
+        return value
 
 # hierarchical classes
 class Root():
@@ -50,7 +61,10 @@ class Root():
         self.name = os.path.split(self.path)[-1]
         all_sub = [os.path.join(path, x) for x in listdir(self.path)]
         subdirs = [x for x in all_sub if os.path.isdir(x) and x[-1] != '.']
-        self.entries = {os.path.split(x)[-1]: read_entry(x) for x in subdirs}
+        # entries are lazily loaded by creating a dictionary
+        # with the entry name and a function, that when called
+        # loads the data. See the custom LazyDict data structure
+        self.entries = LazyDict({os.path.split(x)[-1]: lambda: read_entry(x) for x in subdirs})
 
     def __getitem__(self, item):
         return self.entries[item]
@@ -300,8 +314,11 @@ def read_entry(name, meta=".meta.yaml"):
     dset_metas = glob(os.path.join(path, "*" + meta))
     dset_full_names = [x[:-len(meta)] for x in dset_metas]
     dset_names = [os.path.split(x)[-1] for x in dset_full_names]
-    datasets = {name: read_dataset(full_name)
-                for name, full_name in zip(dset_names, dset_full_names)}
+    # datasets are lazily loaded by creating a dictionary
+    # with the dataset name and a function, that when called
+    # loads the data. See the custom LazyDict data structure
+    datasets = LazyDict({name: lambda: read_dataset(full_name)
+                for name, full_name in zip(dset_names, dset_full_names)})
     return Entry(datasets, path, attrs)
 
 
