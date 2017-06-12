@@ -54,6 +54,12 @@ class LazyDict(dict):
             dict.__setitem__(self, item, value)
         return value
 
+def lazy_fun(x):
+    ''' x will not be evaluated until lazy_fun(x)() is called. Used for storing functions
+    in the LazyDict
+    '''
+    return lambda: x
+
 # hierarchical classes
 class Root():
     def __init__(self, path):
@@ -64,7 +70,7 @@ class Root():
         # entries are lazily loaded by creating a dictionary
         # with the entry name and a function, that when called
         # loads the data. See the custom LazyDict data structure
-        self.entries = LazyDict({os.path.split(x)[-1]: lambda: read_entry(x) for x in subdirs})
+        self.entries = LazyDict({os.path.split(x)[-1]: lazy_fun(read_entry(x)) for x in subdirs})
 
     def __getitem__(self, item):
         return self.entries[item]
@@ -317,7 +323,7 @@ def read_entry(name, meta=".meta.yaml"):
     # datasets are lazily loaded by creating a dictionary
     # with the dataset name and a function, that when called
     # loads the data. See the custom LazyDict data structure
-    datasets = LazyDict({name: lambda: read_dataset(full_name)
+    datasets = LazyDict({name: lazy_fun(read_dataset(full_name))
                 for name, full_name in zip(dset_names, dset_full_names)})
     return Entry(datasets, path, attrs)
 
