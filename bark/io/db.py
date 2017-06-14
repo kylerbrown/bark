@@ -70,9 +70,11 @@ def add_root(root, db_connection_string, events=False):
     if events:
         event_table = db['event']
     root_table.upsert(root_to_record(root), ['path'])
-    for entry in root.entries.values():
+    for entrykey in root.entries:
+        entry = root[entrykey]
         entry_table.upsert(entry_to_record(entry, root), ['path'])
-        for dset in entry.datasets.values():
+        for dsetkey in entry.datasets:
+            dset = entry[dsetkey]
             dataset_table.upsert(dset_to_record(dset, entry), ['path'])
             for column in dset_columns_to_records(dset):
                 column_table.upsert(column, ['path', 'name'])
