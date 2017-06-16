@@ -14,7 +14,7 @@ def thres_extrema(x, y, thresh):
 def compute_std(dat):
     s = bark.stream.read(dat)
     std = np.zeros(len(s.attrs['columns']))
-    for i, x in enumerate(bark.stream.read(dat)[:10]):
+    for i, x in enumerate(bark.stream.read(dat)):
         std += np.std(x, 0)
     return std / (i + 1)
 
@@ -76,7 +76,7 @@ def _run():
     p.add_argument('dat', help='name of a sampled dataset')
     p.add_argument('out', help='name of output event dataset')
     p.add_argument('-t', '--threshold', type=float, help='spike threshold, sign indicates direction')
-    p.add_argument('--mindist', type=float, help='minimum distance between spikes')
+    p.add_argument('--mindist', type=float, help='minimum distance between spikes', default=0)
     p.add_argument('-s',
                    '--std',
                    action='store_true',
