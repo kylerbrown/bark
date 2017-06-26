@@ -44,14 +44,14 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
         cluster_grades = {n: cluster_grades[idx] for idx,n in enumerate(cluster_names)}
     # write times and amplitudes to event dataset
     attrs = {'columns': {'start': {'units': 's'},
-                         'template_name': {'units': None},
+                         'name': {'units': None},
                          'amplitude': {'units': None}},
              'datatype': 1001,
              'sampling_rate': sr,
              'templates': {name: {'score': score} for name,score in cluster_grades.items()}}
     return bark.write_events(os.path.join(entry_fn, out_fn),
                              pandas.DataFrame({'start': [event[1] for event in zipped],
-                                               'template_name': [event[0] for event in zipped],
+                                               'name': [event[0] for event in zipped],
                                                'amplitude': [event[2] for event in zipped]}),
                              **attrs)
 
