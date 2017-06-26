@@ -12,6 +12,7 @@ SC_GRADES_DICT = {1.0: 'O',
                   4.0: 'C',
                   5.0: 'B',
                   6.0: 'A'}
+SC_TEMPLATE_PREFIX = 'temp_'
 
 def get_sc_path(entry_fn, dataset, sc_suffix, sc_filename):
     sc_dir = os.path.splitext(dataset)[0]
@@ -22,6 +23,12 @@ def get_sc_path(entry_fn, dataset, sc_suffix, sc_filename):
     fn = sc_dir + '.spyc.' + sc_filename + sc_suffix + '.hdf5'
     return os.path.join(entry_fn, sc_dir, fn)
 
+def unique_temp_name(tn):
+    return tn[len(SC_TEMPLATE_PREFIX):]
+
+def long_temp_name(stn):
+    return SC_TEMPLATE_PREFIX + stn
+
 def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
     sr = bark.read_metadata(os.path.join(entry_fn, dataset))['sampling_rate']
     # determine file names
@@ -29,10 +36,11 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
     templates_path = get_sc_path(entry_fn, dataset, sc_suffix, 'templates')
     # extract times and amplitudes
     with h5py.File(results_path) as rf:
-        cluster_indices = {name: np.array(indices).astype(float) / sr for name,indices in rf['spiketimes'].items()}
-        cluster_amplitudes = {name: np.array(amplitudes)
+        cluster_indices = {unique_temp_name(name): np.array(indices).astype(float) / sr
+                           for name,indices in rf['spiketimes'].items()}
+        cluster_amplitudes = {unique_temp_name(name): np.array(amplitudes)
                               for name,amplitudes in rf['amplitudes'].items()}
-        cluster_names = sorted(cluster_indices.keys(), key=lambda x: int(x[5:]))
+        cluster_names = sorted(cluster_indices.keys(), key=int)
         zipped = []
         for n in cluster_names:
             zipped.extend([(n, idx[0], amp[0])
@@ -48,7 +56,8 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
                          'amplitude': {'units': None}},
              'datatype': 1001,
              'sampling_rate': sr,
-             'templates': {name: {'score': score} for name,score in cluster_grades.items()}}
+             'templates': {name: {'score': score,
+                                  'sc_name': long_temp_name(name)} for name,score in cluster_grades.items()}}
     return bark.write_events(os.path.join(entry_fn, out_fn),
                              pandas.DataFrame({'start': [event[1] for event in zipped],
                                                'name': [event[0] for event in zipped],
