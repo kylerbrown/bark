@@ -114,7 +114,8 @@ There are many external tools for processing CSV files, including [pandas](http:
 ## Control Flow
 
 - `bark-for-each` -- apply a command to a list of Entries.
-
+## bark-extra
+More tools with less generality can be found in the [bark-extra](https://github.com/gfetterman/bark-extra) repository.
 # Python interface
 ```python
 import bark
