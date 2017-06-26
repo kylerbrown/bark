@@ -4,6 +4,10 @@ import bark
 
 
 def array_iterator(data, chunksize):
+    # check if data is empty
+    if data.shape[0] == 0:
+        raise StopIteration('''Cannot stream from an empty array, 
+                file may be empty.''')
     index = 0
     while True:
         try:
@@ -379,4 +383,3 @@ def read(fname, chunksize=2e6, **kwargs):
     sr = bark_obj.attrs["sampling_rate"]
     kwargs.update(bark_obj.attrs)
     return Stream(data, sr=sr, chunksize=chunksize, attrs=kwargs)
-

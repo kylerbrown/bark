@@ -88,6 +88,7 @@ Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 - `dat-artifact` -- removes sections of a sampled dataset that exceed a threshold
 - `dat-enrich` -- concatenates subsets of a sampled dataset based on events in an events dataset
 - `dat-spike-detect` -- detects spike events in the channels of a sampled dataset
+- `dat-envelope-classify` -- classifies acoustic events, such as stimuli, by amplitude envelope
 - `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 
 There are many external tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
@@ -110,6 +111,11 @@ There are many external tools for processing CSV files, including [pandas](http:
   compatible Matlab file
 - `dat-to-audio` -- convert a sampled dataset to an audio file. Uses [SOX](http://sox.sourceforge.net/) under the hood, and so it can convert to any file type SOX supports.
 
+## Control Flow
+
+- `bark-for-each` -- apply a command to a list of Entries.
+## bark-extra
+More tools with less generality can be found in the [bark-extra](https://github.com/gfetterman/bark-extra) repository.
 # Python interface
 ```python
 import bark
