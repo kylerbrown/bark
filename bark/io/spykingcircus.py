@@ -1,5 +1,6 @@
 import argparse
 import bark
+import collections
 import h5py
 import numpy as np
 import os
@@ -13,6 +14,8 @@ SC_GRADES_DICT = {1.0: 'O',
                   5.0: 'B',
                   6.0: 'A'}
 SC_TEMPLATE_PREFIX = 'temp_'
+
+SpikeEvent = collections.namedtuple('SpikeEvent', ['name', 'time', 'amplitude'])
 
 def get_sc_path(entry_fn, dataset, sc_suffix, sc_filename):
     sc_dir = os.path.splitext(dataset)[0]
@@ -36,16 +39,16 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
     templates_path = get_sc_path(entry_fn, dataset, sc_suffix, 'templates')
     # extract times and amplitudes
     with h5py.File(results_path) as rf:
-        cluster_indices = {unique_temp_name(name): np.array(indices).astype(float) / sr
+        cluster_times = {unique_temp_name(name): np.array(indices).astype(float) / sr
                            for name,indices in rf['spiketimes'].items()}
         cluster_amplitudes = {unique_temp_name(name): np.array(amplitudes)
                               for name,amplitudes in rf['amplitudes'].items()}
-        cluster_names = sorted(cluster_indices.keys(), key=int)
-        zipped = []
+        cluster_names = sorted(cluster_times.keys(), key=int)
+        event_list = []
         for n in cluster_names:
-            zipped.extend([(n, idx[0], amp[0])
-                           for idx,amp in zip(cluster_indices[n], cluster_amplitudes[n])])
-        zipped.sort(key=lambda x: x[1]) # sort by time
+            event_list.extend([SpikeEvent(n, time[0], amp[0])
+                               for time,amp in zip(cluster_times[n], cluster_amplitudes[n])])
+        event_list.sort(key=lambda se: se.time)
     # extract grades
     with h5py.File(templates_path) as tf:
         cluster_grades = [SC_GRADES_DICT[tag[0]] for tag in tf['tagged']]
@@ -59,9 +62,9 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
              'templates': {name: {'score': score,
                                   'sc_name': long_temp_name(name)} for name,score in cluster_grades.items()}}
     return bark.write_events(os.path.join(entry_fn, out_fn),
-                             pandas.DataFrame({'start': [event[1] for event in zipped],
-                                               'name': [event[0] for event in zipped],
-                                               'amplitude': [event[2] for event in zipped]}),
+                             pandas.DataFrame({'start': [event.time for event in event_list],
+                                               'name': [event.name for event in event_list],
+                                               'amplitude': [event.amplitude for event in event_list]}),
                              **attrs)
 
 def _parse_args(raw_args):
