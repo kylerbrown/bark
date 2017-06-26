@@ -23,18 +23,19 @@ def get_sc_path(entry_fn, dataset, sc_suffix, sc_filename):
     return os.path.join(entry_fn, sc_dir, fn)
 
 def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
+    sr = bark.read_metadata(os.path.join(entry_fn, dataset))['sampling_rate']
     # determine file names
     results_path = get_sc_path(entry_fn, dataset, sc_suffix, 'result')
     templates_path = get_sc_path(entry_fn, dataset, sc_suffix, 'templates')
     # extract times and amplitudes
     with h5py.File(results_path) as rf:
-        cluster_indices = {name: np.array(indices) for name,indices in rf['spiketimes'].items()}
+        cluster_indices = {name: np.array(indices).astype(float) / sr for name,indices in rf['spiketimes'].items()}
         cluster_amplitudes = {name: np.array(amplitudes)
                               for name,amplitudes in rf['amplitudes'].items()}
         cluster_names = sorted(cluster_indices.keys(), key=lambda x: int(x[5:]))
         zipped = []
         for n in cluster_names:
-            zipped.extend([(n, int(idx[0]), amp[0])
+            zipped.extend([(n, idx[0], amp[0])
                            for idx,amp in zip(cluster_indices[n], cluster_amplitudes[n])])
         zipped.sort(key=lambda x: x[1]) # sort by time
     # extract grades
@@ -42,11 +43,11 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
         cluster_grades = [SC_GRADES_DICT[tag[0]] for tag in tf['tagged']]
         cluster_grades = {n: cluster_grades[idx] for idx,n in enumerate(cluster_names)}
     # write times and amplitudes to event dataset
-    attrs = {'columns': {'start': {'units': 'samples'},
+    attrs = {'columns': {'start': {'units': 's'},
                          'template_name': {'units': None},
                          'amplitude': {'units': None}},
              'datatype': 1001,
-             'sampling_rate': bark.read_metadata(os.path.join(entry_fn, dataset))['sampling_rate'],
+             'sampling_rate': sr,
              'templates': {name: {'score': score} for name,score in cluster_grades.items()}}
     return bark.write_events(os.path.join(entry_fn, out_fn),
                              pandas.DataFrame({'start': [event[1] for event in zipped],
