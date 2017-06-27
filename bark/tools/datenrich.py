@@ -19,7 +19,7 @@ def get_segments(labels, window=5):
     wlabels = labels.copy()
     wlabels.start -= window
     wlabels.stop += window
-    wlabels.sort(['start', 'stop'])
+    wlabels.sort_values(by=['start', 'stop'])
     wlabels.reset_index(drop=True, inplace=True)
     # union segments
     b = []
@@ -41,7 +41,7 @@ def get_segments(labels, window=5):
     # update label times to new chunks
     nlabels = labels.copy()
     prevchunks = 0  # total length of all previous chunks
-    for start, stop in enumerate(b):
+    for start, stop in b:
         mask = (labels.start >= start) & (labels.stop <= stop
                                           )  # find labels in enriched chunk
         offset = -start + prevchunks  # set offset to the start of the chunk
