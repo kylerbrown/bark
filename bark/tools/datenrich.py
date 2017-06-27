@@ -18,6 +18,9 @@ def get_segments(labels, window=5):
     """
     wlabels = labels.copy()
     wlabels.start -= window
+    # check for < 0 
+    # awkward indexing to prevent pandas warnings
+    wlabels.loc[wlabels.start < 0, 'start'] = 0
     wlabels.stop += window
     wlabels.sort_values(by=['start', 'stop'])
     wlabels.reset_index(drop=True, inplace=True)
@@ -63,6 +66,9 @@ def datenrich(dat, out, label_file, window):
         assert x.start * rate < total_samples
         assert x.stop > 0
         assert x.stop * rate < total_samples
+        if x.start - window < 0:
+                print(
+                    'warning, cannot place a full window at beginning of data')
     segs, newlabels = get_segments(label_dset.data, window)
     # convert to samples
     segs = np.array(segs * rate, dtype=int)
@@ -71,11 +77,8 @@ def datenrich(dat, out, label_file, window):
         for start, stop in segs:
             assert stop > 0
             assert start < total_samples
-            if start < 0:
-                print(
-                    'warning, cannot place a full window at beginning of data')
-                start = 0
-            elif stop >= total_samples:
+            assert start >= 0
+            if stop >= total_samples:
                 print('warning, cannot place a full window at end of data')
                 stop = total_samples - 1
             outfp.write(data[start:stop, :].tobytes())
