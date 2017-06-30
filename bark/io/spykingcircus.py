@@ -38,7 +38,7 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
     results_path = get_sc_path(entry_fn, dataset, sc_suffix, 'result')
     templates_path = get_sc_path(entry_fn, dataset, sc_suffix, 'templates')
     # extract times and amplitudes
-    with h5py.File(results_path) as rf:
+    with h5py.File(results_path, 'r') as rf:
         cluster_times = {unique_temp_name(name): np.array(indices).astype(float) / sr
                            for name,indices in rf['spiketimes'].items()}
         cluster_amplitudes = {unique_temp_name(name): np.array(amplitudes)
@@ -50,7 +50,7 @@ def extract_sc(entry_fn, dataset, sc_suffix, out_fn):
                                for time,amp in zip(cluster_times[n], cluster_amplitudes[n])])
         event_list.sort(key=lambda se: se.time)
     # extract grades and center pad
-    with h5py.File(templates_path) as tf:
+    with h5py.File(templates_path, 'r') as tf:
         cluster_grades = [SC_GRADES_DICT[tag[0]] for tag in tf['tagged']]
         cluster_grades = {n: cluster_grades[idx] for idx,n in enumerate(cluster_names)}
         NUM_TEMPLATES = int(tf['temp_shape'][2][0] / 2)
@@ -102,7 +102,7 @@ def _parse_args(raw_args):
 
 def _main():
     parsed_args = _parse_args(sys.argv[1:])
-    _ = extract_sc(parsed_args.entry, parsed_args.dataset, parsed_args.suffix, parsed_args.out)
+    extract_sc(parsed_args.entry, parsed_args.dataset, parsed_args.suffix, parsed_args.out)
 
 if __name__ == '__main__':
     _main()
