@@ -95,8 +95,8 @@ There are many external tools for processing CSV files, including [pandas](http:
 ## Visualizations
 
 - `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
-To enable launching neuroscope and bark-scope on MacOS terminal, run this command on terminal:  
-$ ln -s /Applications/neuroscope.app/Contents/MacOS/neuroscope /usr/local/bin/neuroscope  
+Note for  MacOS users: run this command in the terminal:  
+`$ ln -s /Applications/neuroscope.app/Contents/MacOS/neuroscope /usr/local/bin/neuroscope`
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 
 ## Conversion
