@@ -7,7 +7,8 @@ import os
 import pandas
 import sys
 
-SC_GRADES_DICT = {1.0: 'O',
+SC_GRADES_DICT = {0.0: 'O',
+                  1.0: 'F',
                   2.0: 'E',
                   3.0: 'D',
                   4.0: 'C',
