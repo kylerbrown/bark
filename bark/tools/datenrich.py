@@ -22,7 +22,7 @@ def get_segments(labels, window=5):
     # awkward indexing to prevent pandas warnings
     wlabels.loc[wlabels.start < 0, 'start'] = 0
     wlabels.stop += window
-    wlabels.sort_values(by=['start', 'stop'])
+    wlabels.sort_values(by=['start', 'stop'], inplace=True)
     wlabels.reset_index(drop=True, inplace=True)
     # union segments
     b = []
