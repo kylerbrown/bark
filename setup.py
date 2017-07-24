@@ -47,5 +47,6 @@ setup(name='bark',
               'dat-to-wave-clus=bark.tools.barkutils:rb_to_wave_clus',
               'bark-label-view=bark.tools.labelview:_run',
               'bark-for-each=bark.tools.barkforeach:_main',
+              'bark-rasters=bark.tools.genrasters:_main',
           ]
       })
