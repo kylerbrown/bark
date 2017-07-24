@@ -13,7 +13,6 @@ from collections import namedtuple
 import arrow
 import yaml
 import numpy as np
-from bark import stream
 import functools as ft
 
 BUFFER_SIZE = 10000
@@ -46,8 +45,11 @@ DATATYPES = _dt(name_to_code={name: code
                 
 
 class LazyDict(dict):
-    '''if value is a function, evaluates on first call,
-    useful for lazy loading of data and then memoizing the result'''
+    """Allows lazy loading of data and memoizing the result.
+    
+    If value is a function, evaluates and replaces with the return
+    value. In all other respects, acts as a regular dictionary.
+    """
     def __getitem__(self, item):
         value = dict.__getitem__(self, item)
         if callable(value):
@@ -128,6 +130,7 @@ class SampledData(Data):
         self.sampling_rate = self.attrs['sampling_rate']
 
     def toStream(self):
+        from bark import stream
         return stream.read(self.path)
 
     def write(self, path=None):
@@ -145,10 +148,28 @@ class EventData(Data):
 
 
 def template_columns(fields):
+    """Produces a template columns dict for use in a meta file.
+    
+    Args:
+        fields (sequence of str): sequence of column names
+       
+    Returns:
+        dict: minimal template columns dictionary
+    """
     return {f: {'units': None} for f in fields}
 
 
 def event_columns(dataframe, columns=None):
+    """Produces a columns dict for event data, for use in a meta file.
+    
+    Args:
+        dataframe (Pandas DataFrame): dataframe containing event data
+        columns (dict): existing columns dict to bring into
+            register with `dataframe`'s columns
+    
+    Returns:
+        dict, or None: Columns dictionary for `dataframe`
+    """
     if columns is None:
         return template_columns(dataframe.columns)
     for fieldkey in columns:
@@ -162,7 +183,21 @@ def event_columns(dataframe, columns=None):
 
 
 def sampled_columns(data, columns=None):
-    'If columns=None, create new columns attribute, otherwise verify columns.'
+    """Produces a columns dict for sampled data, for use in a meta file.
+    
+    If `columns` is `None`, create new columns dict; otherwise, verify columns.
+    
+    Args:
+        data (sequence): time series data of at most 2 dimensions
+        columns (dict): existing columns dict to bring into
+            register with shape of `data`
+    
+    Returns:
+        dict, or None: Columns dictionary for `data`
+    
+    Raises:
+        ValueError: if the keys in `columns` don't match up with `data`
+    """
     if len(data.shape) == 1:
         n_channels = 1
     else:
@@ -181,6 +216,19 @@ def sampled_columns(data, columns=None):
 
 
 def write_sampled(datfile, data, sampling_rate, **params):
+    """Writes a sampled dataset to disk as a raw binary file, plus a meta file.
+    
+    Args:
+        datfile (str): path to file to write to. If the file exists, it is
+            overwritten.
+        data (sequence): time series data of at most 2 dimensions
+        sampling_rate (int or float): sampling rate of `data`
+        **params: all other keyword arguments are treated as dataset attributes,
+            and added to the meta file
+    
+    Returns:
+        SampledData: sampled dataset containing `data`
+    """
     if 'columns' not in params:
         params['columns'] = sampled_columns(data)
     params["dtype"] = data.dtype.str
@@ -193,10 +241,15 @@ def write_sampled(datfile, data, sampling_rate, **params):
 
 
 def read_sampled(datfile, mode="r"):
-    """ loads raw binary file
-
-    mode may be "r" or "r+"; use "r+" for modifiying the data (not
-    recommended).
+    """Loads raw binary file and associated metadata into a sampled dataset.
+    
+    Args:
+        datfile (str): path to raw binary file to read from
+        mode: may be "r" or "r+"; use "r+" for modifying the data
+            (not recommended)
+    
+    Returns:
+        SampledData: sampled dataset containing `datfile`'s data
     """
     path = os.path.abspath(datfile)
     params = read_metadata(datfile)
@@ -209,6 +262,18 @@ def read_sampled(datfile, mode="r"):
 
 
 def write_events(eventsfile, data, **params):
+    """Writes an event dataset and its metadata to disk.
+    
+    Args:
+        eventsfile (str): path to file to write to. If the file exists, it is
+            overwritten.
+        data (Pandas DataFrame): event data; one column must be named 'start'
+        **params: all other keyword arguments are treated as dataset attributes,
+            and added to the meta file
+    
+    Returns:
+        EventData: event dataset containing `data`
+    """
     import pandas as pd
     if 'columns' not in params:
         params['columns'] = event_columns(data)
@@ -220,6 +285,14 @@ def write_events(eventsfile, data, **params):
 
 
 def read_events(eventsfile):
+    """Loads event data file and associated metadata into an event dataset.
+    
+    Args:
+        eventsfile (str): path to file to read from
+    
+    Returns:
+       EventData: event dataset containing `eventsfile`'s data
+    """
     import pandas as pd
     data = pd.read_csv(eventsfile).fillna('')
     params = read_metadata(eventsfile)
@@ -227,7 +300,14 @@ def read_events(eventsfile):
 
 
 def read_dataset(fname):
-    "determines if file is sampled or event data and reads accordingly"
+    """Loads a file as a sampled or event dataset, as appropriate.
+    
+    Args:
+        fname (str): path to file to load
+    
+    Returns:
+        Data: dataset containing `fname`'s data
+    """
     params = read_metadata(fname)
     if 'dtype' in params:
         dset = read_sampled(fname)
@@ -237,6 +317,23 @@ def read_dataset(fname):
 
 
 def read_metadata(path, meta='.meta.yaml'):
+    """Loads metadata for a dataset.
+    
+    Args:
+        path (str): path to **dataset** (not meta file) whose metadata
+            is to be loaded
+        meta (str): suffix identifying the dataset's meta file
+    
+    Returns:
+        dict: the loaded metadata
+    
+    Raises:
+        SystemExit: if 
+            
+            1. `path` does not exist,
+            2. `path` is a meta file and not a dataset, or
+            3. `path` has no associated meta file
+    """
     if os.path.isdir(path):
         metafile = os.path.join(path, meta[1:])
         return yaml.safe_load(open(metafile, 'r'))
@@ -255,6 +352,16 @@ def read_metadata(path, meta='.meta.yaml'):
 
 
 def write_metadata(path, meta='.meta.yaml', **params):
+    """Writes metadata for a dataset.
+    
+    Args:
+        path (str): path to **dataset** (not meta file) whose metadata
+            is to be written. If the meta file already exists, it will be
+            overwritten.
+        meta (str): suffix identifying the dataset's meta file
+        **params: all other keyword arguments are treated as dataset attributes,
+            and added to the meta file
+    """
     if 'n_channels' in params:
         del params['n_channels']
     if 'n_samples' in params:
@@ -271,29 +378,38 @@ def write_metadata(path, meta='.meta.yaml', **params):
 
 
 def read_root(name):
+    """Constructs a `Root` object from a directory.
+    
+    Args:
+        name (str): path to a directory containig zero or more entries.
+    
+    Returns:
+        Root: a Root object containing all entries below `name`
+    """
     return Root(name)
 
 
 def create_entry(name, timestamp, parents=False, **attributes):
-    """Creates a new BARK entry under group, setting required attributes.
-
+    """Creates a new Bark Entry, setting required attributes.
+    
     An entry is an abstract collection of data which all refer to the same time
     frame. Data can include physiological recordings, sound recordings, and
-    derived data such as spike times and labels. See add_data() for information
-    on how data are stored.
-
-    name -- the name of the new entry. any valid python string.
-
-    timestamp -- timestamp of entry (datetime object, or seconds since
-               January 1, 1970). Can be an integer, a float, or a tuple
-               of integers (seconds, microsceconds)
-
-    parents -- if True, no error is raised if file already exists. Metadata
-                is overwritten
-
-    Additional keyword arguments are set as attributes on created entry.
-
-    Returns: newly created entry object
+    derived data such as spike times and labels.
+    
+    Args:
+        name (str): path to the entry directory
+        timestamp: timestamp of entry; see :meth:`timestamp_to_datetime` for
+            supported types
+        parents (bool): if `True`, no error is raised if directory `name` already
+            exists, and metadata is overwritten
+        **attributes: additional keyword arguments are set as attributes on the
+            created entry
+    
+    Returns:
+        Entry: newly-created Entry object
+    
+    Raises:
+        IOError: if `parents` is `False` and directory `name` already exists
     """
     path = os.path.abspath(name)
     if os.path.isdir(path):
@@ -310,6 +426,15 @@ def create_entry(name, timestamp, parents=False, **attributes):
 
 
 def read_entry(name, meta=".meta.yaml"):
+    """Reads a Bark Entry from a directory.
+    
+    Args:
+        name (str): path to Entry
+        meta (str): suffix identifying the entry's meta file
+    
+    Returns:
+        Entry: Entry containing all datasets in `name`
+    """
     path = os.path.abspath(name)
     attrs = read_metadata(path, meta)
     # load only files with associated metadata files
@@ -325,8 +450,19 @@ def read_entry(name, meta=".meta.yaml"):
 
 
 def convert_timestamp(obj, default_tz='America/Chicago'):
-    """Makes a BARK timestamp from an object.
-    If the object is not UTC aware, the timezone is set by default_tz."""
+    """Makes a Bark timestamp from an object.
+    
+    If the object is not timezone-aware, the timezone is set to be `default_tz.`
+    
+    Args:
+        obj: time object; see :meth:`timestamp_to_datetime` for supported types
+        default_tz (str): timezone to use if `obj` is timezone-naive; must be a
+            string from the `tz database
+            <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_.
+    
+    Returns:
+        Arrow: Bark timestamp
+    """
     dt = timestamp_to_datetime(obj)
     if dt.tzinfo:
         return arrow.get(dt).isoformat()
@@ -335,15 +471,27 @@ def convert_timestamp(obj, default_tz='America/Chicago'):
 
 
 def timestamp_to_datetime(obj):
-    """Converts a BARK timestamp to a datetime.datetime object (aware local time)
+    """Converts an object to a `datetime.datetime` object.
+    
+    Note that because floating point values are approximate, some conversions
+    may not be reversible.
+    
+    Args:
+        obj: may be any of the following:
+    
+            1. `datetime.datetime` object
+            2. Arrow object
+            3. ISO 8601 string
+            4. `time.struct_time` object
+            5. integer (epoch time)
+            6. float (epoch time)
+            7. 2-tuple of integers (seconds and microseconds, epoch time)
 
-    Argument can be an ISO 8601 string, a datetime.datetime object,
-    a time.struct_time, an integer,
-    a float, or a tuple of integers. The returned value is a string in
-    ISO 8601 format.
-
-    Note that because floating point values are approximate, the conversion
-    between float and integer tuple may not be reversible.
+    Returns:
+        datetime.datetime: (local) timezone-aware object
+    
+    Raises:
+        TypeError: if `obj` cannot be interpreted according to the list above
     """
     import numbers
     from time import mktime, struct_time
@@ -366,5 +514,12 @@ def timestamp_to_datetime(obj):
 
 
 def timestamp_to_float(timestamp):
-    """Converts a BARK timestamp to a floating point value (sec since epoch)"""
+    """Converts a time object to a floating point value (epoch time).
+    
+    Args:
+        obj: time object; see :meth:`timestamp_to_datetime` for supported types
+    
+    Returns:
+        float: epoch time representation of `timestamp`
+    """
     return timestamp_to_datetime(timestamp).timestamp()
