@@ -58,6 +58,12 @@ The python interface requires Python 3.5+. Installation with [Conda](http://cond
 
     git clone https://github.com/kylerbrown/bark
     cd bark
+    
+    git clone https://github.com/kylerbrown/resin
+    cd resin
+    pip install .
+    cd ..
+  
     pip install -r requirements.txt
     pip install .
 
