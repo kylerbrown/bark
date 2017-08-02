@@ -328,27 +328,24 @@ def read_metadata(path, meta='.meta.yaml'):
         dict: the loaded metadata
     
     Raises:
-        SystemExit: if 
-            
-            1. `path` does not exist,
-            2. `path` is a meta file and not a dataset, or
-            3. `path` has no associated meta file
+        FileNotFoundError: if either `path` or its metafile do not exist.
+        ValueError: if `path` is a metafile instead of a data file
     """
     if os.path.isdir(path):
         metafile = os.path.join(path, meta[1:])
-        return yaml.safe_load(open(metafile, 'r'))
-    if os.path.isfile(path):
-        metafile = path + meta
-        if os.path.isfile(metafile):
-            return yaml.safe_load(open(metafile, 'r'))
-        elif os.path.splitext(path)[-1] == meta:
-            print("Tried to open metadata file instead of data file.")
-        if os.path.exists(path):
-            print("{} is missing an associated meta file, should named {}"
-                  .format(path, meta))
+    elif os.path.isfile(path):
+        if path[-(len(meta) - 1):] == meta[1:]:
+            m = "{} appears to be a metafile, not a data file."
+            raise ValueError(m.format(path))
+        else:
+            metafile = path + meta
     else:
-        print("{} does not exist".format(path))
-    sys.exit(1)
+        raise FileNotFoundError("No such file or directory:  '{}'".format(path))
+    if os.path.exists(metafile):
+        return yaml.safe_load(open(metafile, 'r'))
+    else:
+        m = "'{}' is missing an associated metafile, which should be named '{}'"
+        raise FileNotFoundError(m.format(path, metafile))
 
 
 def write_metadata(path, meta='.meta.yaml', **params):
