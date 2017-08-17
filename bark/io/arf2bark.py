@@ -10,7 +10,8 @@ import collections as coll
 
 def _parse_args(raw_args):
     desc = 'Unspool an HDF5 ARF file into a Bark tree.'
-    parser = argparse.ArgumentParser(description=desc)
+    epi = 'Fails if bark_root already exists.'
+    parser = argparse.ArgumentParser(description=desc, epilog=epi)
     parser.add_argument('-v',
                         '--verbose',
                         help='increase output verbosity',
