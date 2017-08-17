@@ -10,7 +10,8 @@ import collections as coll
 
 def _parse_args(raw_args):
     desc = 'Unspool an HDF5 ARF file into a Bark tree.'
-    parser = argparse.ArgumentParser(description=desc)
+    epi = 'Fails if bark_root already exists.'
+    parser = argparse.ArgumentParser(description=desc, epilog=epi)
     parser.add_argument('-v',
                         '--verbose',
                         help='increase output verbosity',
@@ -20,7 +21,7 @@ def _parse_args(raw_args):
                         help='timezone for data, tz database format (default is "America/Chicago")',
                         default=None)
     parser.add_argument('arf_file', help='ARF file to convert')
-    parser.add_argument('root_parent', help='directory in which to place the Bark Root')
+    parser.add_argument('bark_root', help='location of new bark root')
     return parser.parse_args(raw_args)
 
 def copy_attrs(attrs):
@@ -30,11 +31,8 @@ def copy_attrs(attrs):
     na.update({k: v.decode() for k,v in na.items() if isinstance(v, bytes)})
     return na
 
-def arf2bark(arf_file, root_parent, timezone, verbose):
+def arf2bark(arf_file, root_path, timezone, verbose):
     with arf.open_file(arf_file, 'r') as af:
-        # root
-        root_dirname = os.path.splitext(arf_file)[0]
-        root_path = os.path.join(os.path.abspath(root_parent), root_dirname)
         os.mkdir(root_path)
         root = bark.Root(root_path)
         if verbose:
@@ -112,7 +110,7 @@ def transfer_dset(ds_name, ds, e_path, verbose=False):
 
 def _main():
     args = _parse_args(sys.argv[1:])
-    arf2bark(args.arf_file, args.root_parent, args.timezone, args.verbose)
+    arf2bark(args.arf_file, args.bark_root, args.timezone, args.verbose)
 
 if __name__ == '__main__':
     _main()
