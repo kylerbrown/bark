@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 import bark
 from bark.io.eventops import (OpStack, write_stack, read_stack, Update, Merge,
                               Split, Delete, New)
-
 import warnings
 warnings.filterwarnings('ignore')  # suppress matplotlib warnings
+from bark.tools.spectral import BarkSpectra
+
 
 help_string = '''
 Pressing any number or letter (uppercase or lowercase) will mark a segment.
@@ -97,6 +98,9 @@ def plot_spectrogram(data,
                      ax=None,
                      lowfreq=300,
                      highfreq=8000,
+                     n_tapers=2,
+                     NW=1.5,
+                     derivative=True,
                      window=('kaiser', 8),
                      **kwargs):
     '''
@@ -108,6 +112,13 @@ def plot_spectrogram(data,
     ax : axis object to plot spectrogram on.
     lowfreq : lowest frequency to plot
     highfreq : highest frequency to plot
+    n_tapers : Number of tapers to use in a custom multi-taper Fourier
+               transform estimate
+    NW : multi-taper bandwidth parameter for custom multi-taper Fourier
+         transform estimate increasing this value reduces side-band
+         ripple, decreasing sharpens peaks
+    derivative: if True, plots the spectral derivative, SAP style
+
     '''
     nfft = int(ms_nfft / 1000. * sr)
     start_samp = int(start * sr) - nfft // 2
@@ -121,25 +132,39 @@ def plot_spectrogram(data,
     pixels = 1000
     samples_per_pixel = int((stop - start) * sr / pixels)
     noverlap = max(nfft - samples_per_pixel, 0)
-    f, t, Sxx = spectrogram(x,
-                            sr,
-                            nperseg=nfft,
-                            noverlap=noverlap,
-                            mode='magnitude',
-                            window=window, )
+    
+    from matplotlib import colors
+    
+    spa = BarkSpectra(sr, 
+                    NFFT=nfft, 
+                    noverlap=noverlap, 
+                    data_window=int(0.01 * sr), 
+                    n_tapers=n_tapers, 
+                    NW=NW,
+                    freq_range=(lowfreq, highfreq))
+    spa.signal(x)
+    pxx, f, t, thresh = spa.spectrogram(ax=ax, derivative=derivative)  
+
+    # calculate the parameter for the plot 
     freq_mask = (f > lowfreq) & (f < highfreq)
     fsub = f[freq_mask]
-    Sxxsub = Sxx[freq_mask, :]
-    vmax = np.percentile(Sxxsub, 98)
+    Sxxsub = pxx[freq_mask, :]
     t += start
-    if ax is None:
-        ax = plt.gca()
-    image = ax.pcolorfast(t,
+    
+    # plot the spectrogram 
+    if derivative:
+        image = ax.pcolorfast(t,
+                      fsub,
+                      Sxxsub,
+                      cmap='inferno',
+                      norm=colors.SymLogNorm(linthresh=thresh)) 
+    else:
+        image = ax.pcolorfast(t,
                           fsub,
                           Sxxsub,
-                          cmap=plt.get_cmap('viridis'),
-                          vmax=vmax,
-                          **kwargs)
+                          cmap='inferno',
+                          norm=colors.LogNorm(vmin=thresh))
+
     plt.sca(ax)
     plt.ylim(lowfreq, highfreq)
     return image

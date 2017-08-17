@@ -21,17 +21,17 @@ These tools can be chained together using GNU Make to build data pipelines.
 
 Bark takes the architecture of ARF and replaces HDF5 with common data storage formats, the advantages of this approach are:
 
-+ Use standard Unix tools to explore your data (cd, ls, grep, find, mv)
-+ Build robust data processing pipelines with shell scripting or
+- Use standard Unix tools to explore your data (cd, ls, grep, find, mv)
+- Build robust data processing pipelines with shell scripting or
   [make](http://kbroman.org/minimal_make/).
-+ Edit metadata with a standard text editor
-+ Leverage any third party tools that use Bark's common data formats.
-  + Raw binary tools: [Aplot](https://github.com/melizalab/aplot), [Neuroscope](http://neurosuite.sourceforge.net/), 
+- Edit metadata with a standard text editor
+- Leverage any third party tools that use Bark's common data formats.
+  - Raw binary tools: [Aplot](https://github.com/melizalab/aplot), [Neuroscope](http://neurosuite.sourceforge.net/), 
 [Plexon Offline Sorter](http://www.plexon.com/products/offline-sorter), [Wave_clus](https://github.com/csn-le/wave_clus), 
 [spyking circus](https://spyking-circus.readthedocs.io), [phy](https://github.com/kwikteam/phy), [sox](http://sox.sourceforge.net/sox.html).
-  + CSV tools: R, Pandas (Python), Excel, csvkit and Unix tools like sed and
+  - CSV tools: R, Pandas (Python), Excel, csvkit and Unix tools like sed and
       awk.
-+ Include non-standard data such as images or video in Bark entries.
+- Include non-standard data such as images or video in Bark entries.
 
 ## The elements of Bark
 Bark trees are made from the following elements:
@@ -58,6 +58,12 @@ The python interface requires Python 3.5+. Installation with [Conda](http://cond
 
     git clone https://github.com/kylerbrown/bark
     cd bark
+    
+    git clone https://github.com/kylerbrown/resin
+    cd resin
+    pip install .
+    cd ..
+  
     pip install -r requirements.txt
     pip install .
 
@@ -67,11 +73,12 @@ The python interface requires Python 3.5+. Installation with [Conda](http://cond
 
 
 You'll also probably want to install [Neuroscope](http://neurosuite.sourceforge.net/). [Sox](http://sox.sourceforge.net/sox.html) is also useful.
-# Shell Commands
+
+## Shell Commands
 
 Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 
-## Transformations
+### Transformations
 
 - `bark-entry` -- create entry directories for datasets
 - `bark-attribute` -- create or modify an attribute of a bark entry or dataset
@@ -92,14 +99,15 @@ Every command has help accessible with the flag `-h` (e.g. `bark-entry -h`).
 - `dat-segment` -- segments a sampled dataset based on a band of spectral power, as described in [Koumura & Okanoya](dx.doi.org/10.1371/journal.pone.0159188)
 
 There are many external tools for processing CSV files, including [pandas](http://pandas.pydata.org/) and [csvkit](https://csvkit.readthedocs.io).
-## Visualizations
+
+### Visualizations
 
 - `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
 Note for  MacOS users: run this command in the terminal:  
 `$ ln -s /Applications/neuroscope.app/Contents/MacOS/neuroscope /usr/local/bin/neuroscope`
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 
-## Conversion
+### Conversion
 
 - `bark-db` -- adds the metadata from a Bark tree to a database
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
@@ -113,12 +121,14 @@ Note for  MacOS users: run this command in the terminal:
   compatible Matlab file
 - `dat-to-audio` -- convert a sampled dataset to an audio file. Uses [SOX](http://sox.sourceforge.net/) under the hood, and so it can convert to any file type SOX supports.
 
-## Control Flow
+### Control Flow
 
 - `bark-for-each` -- apply a command to a list of Entries.
-## bark-extra
+
+### bark-extra
 More tools with less generality can be found in the [bark-extra](https://github.com/gfetterman/bark-extra) repository.
-# Python interface
+
+## Python interface
 ```python
 import bark
 root = bark.read_root("black5")
@@ -138,20 +148,20 @@ hvc.data.shape
 # (7604129, 3)
 ```
 
-
 The `Stream` object in the `bark.stream` module exposes a powerful data pipeline design system for sampled data.
+
 Example usage:
 ![Example usage](bark-stream-example.png)
 
 
-# Pipelines with GNU Make
+## Pipelines with GNU Make
 Some links to get started with Make:
 
 + http://kbroman.org/minimal_make/
 + https://bost.ocks.org/mike/make/
 + https://swcarpentry.github.io/make-novice/
 
-# Related projects
+## Related projects
 
 -   NEO <https://github.com/NeuralEnsemble/python-neo>
 -   NWB <http://www.nwb.org/>
@@ -159,7 +169,7 @@ Some links to get started with Make:
 -   neuroshare (<http://neuroshare.org>) is a set of routines for reading and
     writing data in various proprietary and open formats.
 
-# Authors
+## Authors
 
 Dan Meliza created ARF.
 Bark was was written by Kyler Brown so he could finish his damn thesis in 2017. Graham Fetterman also made

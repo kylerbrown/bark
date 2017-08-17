@@ -7,6 +7,37 @@ import pandas as pd
 import os.path
 
 
+def test_read_metadata(tmpdir):
+    # entry/dir with good metadata file
+    entry_path = os.path.join(tmpdir.strpath, "myentry")
+    dtime = arrow.get("2020-01-02T03:04:05+06:00").datetime
+    entry = bark.create_entry(entry_path, dtime, food="pizza")
+    entry_metadata = bark.read_metadata(entry_path)
+    assert 'timestamp' in entry_metadata
+    # try to read entry/dir metadata file directly
+    with pytest.raises(ValueError):
+        entry_metadata = bark.read_metadata(os.path.join(entry_path, 'meta.yaml'))
+    # entry/dir without metadata file
+    with pytest.raises(FileNotFoundError):
+        entry_metadata = bark.read_metadata(tmpdir.strpath)
+    # dataset with good metadata file
+    data = np.zeros((10,3), dtype='int16')
+    params = dict(sampling_rate=30000, units="mV", unit_scale=0.025, extra="barley")
+    dset_path = os.path.join(tmpdir.strpath, "test_sampled")
+    dset = bark.write_sampled(datfile=dset_path, data=data, **params)
+    dset_metadata = bark.read_metadata(dset_path)
+    assert 'sampling_rate' in dset_metadata
+    # try to read dataset metadata file directly
+    with pytest.raises(ValueError):
+        dset_metadata = bark.read_metadata(dset_path + '.meta.yaml')
+    # dataset without metadata file
+    os.remove(dset_path + '.meta.yaml')
+    with pytest.raises(FileNotFoundError):
+        dset_metadata = bark.read_metadata(dset_path)
+    # dataset that doesn't exist
+    with pytest.raises(FileNotFoundError):
+        dset_metadata = bark.read_metadata(os.path.join(tmpdir.strpath, 'fake_dset.dat'))
+
 def test_write_sampled_empty(tmpdir):
     with pytest.raises(TypeError):
         bark.write_sampled("test_sampled", sampling_rate=10, units="mV", 
