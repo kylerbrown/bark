@@ -13,9 +13,11 @@ from collections import namedtuple
 import arrow
 import yaml
 import numpy as np
+import pandas as pd
 import functools as ft
 
 BUFFER_SIZE = 10000
+DEFAULT_META = '.meta.yaml'
 
 spec_version = "0.2"
 __version__ = "0.2"
@@ -27,9 +29,6 @@ in directories and simple file formats.
 Library versions:
  bark: %s
 """ % (__version__)
-
-_Units = namedtuple('_Units', ['TIME_UNITS'])
-UNITS = _Units(TIME_UNITS=('s', 'samples'))
 
 _pairs = ((None, None), ('UNDEFINED', 0), ('ACOUSTIC', 1), ('EXTRAC_HP', 2),
           ('EXTRAC_LF', 3), ('EXTRAC_EEG', 4), ('INTRAC_CC', 5),
@@ -168,18 +167,20 @@ def event_columns(dataframe, columns=None):
             register with `dataframe`'s columns
     
     Returns:
-        dict, or None: Columns dictionary for `dataframe`
+        dict: Columns dictionary for `dataframe`
     """
     if columns is None:
-        return template_columns(dataframe.columns)
-    for fieldkey in columns:
-        if fieldkey not in dataframe.columns:
-            del columns[fieldkey]
-    for col in dataframe.columns:
-        if col not in columns:
-            columns[col] = {'units': None}
-        if 'units' not in columns[col]:
-            columns[col]['units'] = None
+        columns = template_columns(dataframe.columns)
+    else:
+        for fieldkey in columns:
+            if fieldkey not in dataframe.columns:
+                del columns[fieldkey]
+        for col in dataframe.columns:
+            if col not in columns:
+                columns[col] = {'units': None}
+            if 'units' not in columns[col]:
+                columns[col]['units'] = None
+    return columns
 
 
 def sampled_columns(data, columns=None):
@@ -193,7 +194,7 @@ def sampled_columns(data, columns=None):
             register with shape of `data`
     
     Returns:
-        dict, or None: Columns dictionary for `data`
+        dict: Columns dictionary for `data`
     
     Raises:
         ValueError: if the keys in `columns` don't match up with `data`
@@ -203,16 +204,18 @@ def sampled_columns(data, columns=None):
     else:
         n_channels = data.shape[1]
     if columns is None:
-        return template_columns(range(n_channels))
-    if len(columns) != n_channels:
-        raise ValueError(
-            'the columns attribute does not match the number of columns')
-    for i in range(n_channels):
-        if i not in columns:
+        columns = template_columns(range(n_channels))
+    else:
+        if len(columns) != n_channels:
             raise ValueError(
-                'the columns attribute is missing column {}'.format(i))
-        if 'units' not in columns[i]:
-            columns[i]['units'] = None
+                'the columns attribute does not match the number of columns')
+        for i in range(n_channels):
+            if i not in columns:
+                raise ValueError(
+                    'the columns attribute is missing column {}'.format(i))
+            if 'units' not in columns[i]:
+                columns[i]['units'] = None
+    return columns
 
 
 def write_sampled(datfile, data, sampling_rate, **params):
@@ -229,6 +232,7 @@ def write_sampled(datfile, data, sampling_rate, **params):
     Returns:
         SampledData: sampled dataset containing `data`
     """
+    path = os.path.abspath(datfile)
     if 'columns' not in params:
         params['columns'] = sampled_columns(data)
     params["dtype"] = data.dtype.str
@@ -237,7 +241,7 @@ def write_sampled(datfile, data, sampling_rate, **params):
     mdata[:] = data[:]
     write_metadata(datfile, sampling_rate=sampling_rate, **params)
     params['sampling_rate'] = sampling_rate
-    return SampledData(mdata, datfile, params)
+    return SampledData(mdata, path, params)
 
 
 def read_sampled(datfile, mode="r"):
@@ -274,7 +278,6 @@ def write_events(eventsfile, data, **params):
     Returns:
         EventData: event dataset containing `data`
     """
-    import pandas as pd
     if 'columns' not in params:
         params['columns'] = event_columns(data)
     if data.empty and not list(data.columns):
@@ -293,10 +296,10 @@ def read_events(eventsfile):
     Returns:
        EventData: event dataset containing `eventsfile`'s data
     """
-    import pandas as pd
-    data = pd.read_csv(eventsfile).fillna('')
+    path = os.path.abspath(eventsfile)
     params = read_metadata(eventsfile)
-    return EventData(data, eventsfile, params)
+    data = pd.read_csv(eventsfile).fillna('')
+    return EventData(data, path, params)
 
 
 def read_dataset(fname):
@@ -316,7 +319,7 @@ def read_dataset(fname):
     return dset
 
 
-def read_metadata(path, meta='.meta.yaml'):
+def read_metadata(path, meta=DEFAULT_META):
     """Loads metadata for a dataset.
     
     Args:
@@ -348,7 +351,7 @@ def read_metadata(path, meta='.meta.yaml'):
         raise FileNotFoundError(m.format(path, metafile))
 
 
-def write_metadata(path, meta='.meta.yaml', **params):
+def write_metadata(path, meta=DEFAULT_META, **params):
     """Writes metadata for a dataset.
     
     Args:
@@ -359,6 +362,7 @@ def write_metadata(path, meta='.meta.yaml', **params):
         **params: all other keyword arguments are treated as dataset attributes,
             and added to the meta file
     """
+    # the two following checks are for backwards-compatibility
     if 'n_channels' in params:
         del params['n_channels']
     if 'n_samples' in params:
@@ -422,7 +426,7 @@ def create_entry(name, timestamp, parents=False, **attributes):
     return read_entry(name)
 
 
-def read_entry(name, meta=".meta.yaml"):
+def read_entry(name, meta=DEFAULT_META):
     """Reads a Bark Entry from a directory.
     
     Args:

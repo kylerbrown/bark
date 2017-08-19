@@ -56,14 +56,14 @@ This repository contains:
 
 The python interface requires Python 3.5+. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
 
-    git clone https://github.com/kylerbrown/bark
-    cd bark
-    
     git clone https://github.com/kylerbrown/resin
     cd resin
     pip install .
     cd ..
-  
+
+    git clone https://github.com/margoliashlab/bark
+    cd bark
+    
     pip install -r requirements.txt
     pip install .
 
@@ -113,6 +113,7 @@ Note for  MacOS users: run this command in the terminal:
 - `bark-convert-rhd` -- converts [Intan](http://intantech.com/) .rhd files to datasets in a Bark entry
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
 - `bark-convert-arf` -- converts an ARF file to entries in a Bark Root
+- `bark-convert-spyking` -- converts [Spyking Circus](https://spyking-circus.readthedocs.io/en/latest/) spike-sorted event data to a Bark event dataset
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a CSV
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a CSV
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a CSV
