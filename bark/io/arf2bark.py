@@ -60,10 +60,13 @@ def arf2bark(arf_file, root_path, timezone, verbose):
                     else:
                         transfer_dset(ds_name, dataset, entry_path, verbose)
             elif isinstance(entry, h5py.Dataset): # top-level datasets
-                if tle is None:
-                    path = os.path.join(root_path, 'top_level')
-                    tle = bark.create_entry(path, 0, parents=False).path
-                transfer_dset(ename, entry, tle, verbose)
+                if arf.is_time_series(entry) or arf.is_marked_pointproc(entry):
+                    if tle is None:
+                        path = os.path.join(root_path, 'top_level')
+                        tle = bark.create_entry(path, 0, parents=False).path
+                    transfer_dset(ename, entry, tle, verbose)
+                else:
+                    unknown_ds_warning(ename) # and skip, w/o creating TLE
         if found_trigin:
             print('Warning: found datasets named "trig_in". Jill-created ' +
                   '"trig_in" datasets segfault when read, so these datasets' +
@@ -81,6 +84,10 @@ def build_columns(units, column_names=None):
         d.update({k: v.decode() for k,v in d.items() if isinstance(v, bytes)})
         d.update({k: None for k,v in d.items() if (k == 'units' and v == '')})
     return cols
+
+def unknown_ds_warning(ds_name):
+    print('Warning: unknown dataset type - neither time series nor point' +
+          ' process. Skipping dataset ' + ds_name)
 
 def transfer_dset(ds_name, ds, e_path, verbose=False):
     ds_attrs = copy_attrs(ds.attrs)
@@ -105,8 +112,7 @@ def transfer_dset(ds_name, ds, e_path, verbose=False):
         if verbose:
             print('Created event dataset: ' + ds_path)
     else:
-        print('Warning: unknown dataset type - neither time series nor point' +
-              ' process. Skipping dataset ' + ds_name)
+        unknown_ds_warning(ds_name)
 
 def _main():
     args = _parse_args(sys.argv[1:])
