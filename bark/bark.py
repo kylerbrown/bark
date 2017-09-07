@@ -43,7 +43,7 @@ DATATYPES = _dt(name_to_code={name: code
 
                 
 
-class LazyDict(dict):
+class _LazyDict(dict):
     """Allows lazy loading of data and memoizing the result.
     
     If value is a function, evaluates and replaces with the return
@@ -67,7 +67,7 @@ class Root():
         # entries are lazily loaded by creating a dictionary
         # with the entry name and a function, that when called
         # loads the data. See the custom LazyDict data structure
-        self.entries = LazyDict({os.path.split(x)[-1]: ft.partial(read_entry, name=x) for x in subdirs})
+        self.entries = _LazyDict({os.path.split(x)[-1]: ft.partial(read_entry, name=x) for x in subdirs})
 
     def __getitem__(self, item):
         return self.entries[item]
@@ -445,7 +445,7 @@ def read_entry(name, meta=DEFAULT_META):
     # datasets are lazily loaded by creating a dictionary
     # with the dataset name and a function, that when called
     # loads the data. See the custom LazyDict data structure
-    datasets = LazyDict({name: ft.partial(read_dataset, fname=full_name)
+    datasets = _LazyDict({name: ft.partial(read_dataset, fname=full_name)
                 for name, full_name in zip(dset_names, dset_full_names)})
     return Entry(datasets, path, attrs)
 
