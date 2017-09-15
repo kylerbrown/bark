@@ -106,6 +106,7 @@ There are many external tools for processing CSV files, including [pandas](http:
 Note for  MacOS users: run this command in the terminal:  
 `$ ln -s /Applications/neuroscope.app/Contents/MacOS/neuroscope /usr/local/bin/neuroscope`
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
+- `bark-psg-view` -- Annotate or review  on mutiply channels of .dat files. 
 
 ### Conversion
 
