@@ -77,6 +77,15 @@ class Root():
 
     def __contains__(self, item):
         return self.entries.__contains__(item)
+    
+    def close(self):
+        for e_name in self.entries:
+            entry = self.entries.get(e_name)
+            if not callable(entry):
+                entry.close()
+                p = entry.path
+                self.entries[e_name] = ft.partial(read_entry, name=p)
+                del entry
 
 
 class Entry():
@@ -99,6 +108,14 @@ class Entry():
 
     def __lt__(self, other):
         return self.timestamp < other.timestamp
+    
+    def close(self):
+        for ds_name in self.datasets:
+            dataset = self.datasets.get(ds_name)
+            if not callable(dataset):
+                p = dataset.path
+                self.datasets[ds_name] = ft.partial(read_dataset, fname=p)
+                del dataset
 
 
 class Data():

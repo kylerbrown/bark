@@ -121,3 +121,44 @@ def test_datatypes():
     assert bark.DATATYPES.code_to_name[1] == 'ACOUSTIC'
     assert bark.DATATYPES.code_to_name[2002] == 'COMPONENTL'
     assert bark.DATATYPES.code_to_name[None] is None
+
+def test_closing(tmpdir):
+    # setup
+    ds_name = 'test_sampled.dat'
+    entry1_path = os.path.join(tmpdir.strpath, "entry1")
+    dtime = arrow.get("2020-01-02T03:04:05+06:00").datetime
+    entry1 = bark.create_entry(entry1_path, dtime, food="pizza")
+    entry2_path = os.path.join(tmpdir.strpath, "entry2")
+    dtime = arrow.get("2020-01-10T03:04:05+06:00").datetime
+    entry2 = bark.create_entry(entry2_path, dtime, food="burritos")
+    data = np.zeros((10,3), dtype='int16')
+    params = dict(sampling_rate=30000, units="mV", unit_scale=0.025, extra="barley")
+    dset_path = os.path.join(entry1_path, ds_name)
+    dset = bark.write_sampled(datfile=dset_path, data=data, **params)
+    del entry1, entry2, dset
+    r = bark.read_root(tmpdir.strpath)
+    # initial checking
+    assert len(r.entries) == 2
+    for ename in r.entries:
+        assert callable(r.entries.get(ename))
+    # load entry1
+    entry1 = r.entries['entry1']
+    assert isinstance(r.entries.get('entry1'), bark.Entry)
+    assert callable(r.entries.get('entry2'))
+    # load sampled dataset
+    assert callable(entry1.datasets.get(ds_name))
+    ds1 = entry1.datasets[ds_name]
+    assert not callable(entry1.datasets.get(ds_name))
+    assert isinstance(ds1, bark.SampledData)
+    # close entry
+    del ds1
+    assert not callable(entry1.datasets.get(ds_name))
+    assert isinstance(entry1.datasets.get(ds_name), bark.SampledData)
+    entry1.close()
+    assert callable(entry1.datasets.get(ds_name))
+    # close root
+    del entry1
+    assert not callable(r.entries.get('entry1'))
+    assert isinstance(r.entries.get('entry1'), bark.Entry)
+    r.close()
+    assert callable(r.entries.get('entry1'))
