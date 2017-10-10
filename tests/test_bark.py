@@ -162,3 +162,42 @@ def test_closing(tmpdir):
     assert isinstance(r.entries.get('entry1'), bark.Entry)
     r.close()
     assert callable(r.entries.get('entry1'))
+
+def test_datchunk(tmpdir):
+    from bark.tools import barkutils
+    CHUNK = 350
+    TOTAL_SIZE = 1000
+    data = np.array([range(TOTAL_SIZE),
+                     range(TOTAL_SIZE, 2 * TOTAL_SIZE)]).transpose()
+    params = dict(sampling_rate=30000, units="mV", unit_scale=0.025,
+                  extra="barley")
+    dset = bark.write_sampled(os.path.join(tmpdir.strpath, "test.dat"), data=data, **params)
+    barkutils.datchunk(dset.path, CHUNK, use_seconds=False, one_cut=True)
+    first_fn = os.path.join(tmpdir.strpath, "test-chunk-0.dat")
+    second_fn = os.path.join(tmpdir.strpath, "test-chunk-1.dat")
+    assert os.path.exists(first_fn)
+    assert os.path.exists(second_fn)
+    first = bark.read_sampled(first_fn)
+    second = bark.read_sampled(second_fn)
+    assert (first.data == dset.data[:CHUNK,:]).all()
+    assert first.attrs.pop('offset') == 0
+    assert first.attrs == dset.attrs
+    assert (second.data == dset.data[CHUNK:TOTAL_SIZE,:]).all()
+    assert second.attrs.pop('offset') == CHUNK
+    assert second.attrs == dset.attrs
+    del first, second
+    os.remove(first_fn)
+    os.remove(second_fn)
+    assert not os.path.exists(first_fn)
+    assert not os.path.exists(second_fn)
+    barkutils.datchunk(dset.path, CHUNK, use_seconds=False, one_cut=False)
+    third_fn = os.path.join(tmpdir.strpath, "test-chunk-2.dat")
+    assert os.path.exists(first_fn)
+    assert os.path.exists(second_fn)
+    assert os.path.exists(third_fn)
+    first = bark.read_sampled(first_fn)
+    second = bark.read_sampled(second_fn)
+    third = bark.read_sampled(third_fn)
+    assert (first.data == dset.data[:CHUNK,:]).all()
+    assert (second.data == dset.data[CHUNK:2*CHUNK,:]).all()
+    assert (third.data == dset.data[2*CHUNK:,:]).all()

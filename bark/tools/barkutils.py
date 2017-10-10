@@ -298,18 +298,27 @@ def _datchunk():
     p.add_argument("--seconds",
                    help="specify seconds instead of samples",
                    action='store_true')
+    p.add_argument("--onecut",
+                   help="only perform the first cut",
+                   action="store_true")
     args = p.parse_args()
-    datchunk(args.dat, args.stride, args.seconds)
+    datchunk(args.dat, args.stride, args.seconds, args.onecut)
 
 
-def datchunk(dat, stride, use_seconds):
-    attrs = bark.read_metadata(dat)
-    sr = attrs['sampling_rate']
-    if use_seconds:
-        stride = stride * sr
-    stride = int(stride)
-    basename = os.path.splitext(dat)[0]
-    for i, chunk in enumerate(stream.read(dat, chunksize=stride)):
+def datchunk(dat, stride, use_seconds, one_cut):
+    def write_chunk(chunk, attrs, i):
         filename = "{}-chunk-{}.dat".format(basename, i)
         attrs['offset'] = stride * i
         bark.write_sampled(filename, chunk, **attrs)
+    attrs = bark.read_metadata(dat)
+    if use_seconds:
+        stride = stride * attrs['sampling_rate']
+    stride = int(stride)
+    basename = os.path.splitext(dat)[0]
+    if one_cut:
+        sds = bark.read_sampled(dat)
+        write_chunk(sds.data[:stride,:], attrs, 0)
+        write_chunk(sds.data[stride:,:], attrs, 1)
+    else:
+        for i, chunk in enumerate(stream.read(dat, chunksize=stride)):
+            write_chunk(chunk, attrs, i)
