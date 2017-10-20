@@ -1,5 +1,8 @@
 # Bark
-Bark is a standard for electrophysiology data. 
+Bark is:
+1. a standard for time-series data, and a python implementation for reading and writing bark formatted data.
+2. A python module for signal processing on larger-than-memory data sets.
+3. A set of command-line tools for building data processing pipelines.
 
 [![Build Status](https://travis-ci.org/kylerbrown/bark.svg?branch=master)](https://travis-ci.org/kylerbrown/bark)
 
@@ -13,13 +16,13 @@ Version: 0.2
 By emphasizing filesystem directories, plain text files and a common binary array format, Bark makes it easy to use both
 large external projects and simple command-line utilities.
 
-Bark's [small specification](specification.md) and Python implementation are easy to use in custom tools.
+Bark's [small specification](../specification.md) and Python implementation are easy to use in custom tools.
 
 These tools can be chained together using GNU Make to build data pipelines.
 
 ## Why use Bark?
 
-Bark takes the architecture of ARF and replaces HDF5 with common data storage formats, the advantages of this approach are:
+Inspired by ARF, Bark uses a hierarchy of common data storage formats. The advantages of this approach are:
 
 - Use standard Unix tools to explore your data (cd, ls, grep, find, mv)
 - Build robust data processing pipelines with shell scripting or
