@@ -18,7 +18,7 @@ def bark_rhd_to_entry():
             channels recorded.
             """)
     p.add_argument("rhdfiles", help="RHD file(s) to convert", nargs="+")
-    p.add_argument("-o", "--out", help="name of bark entry")
+    p.add_argument("-o", "--out", help="name of bark entry", required=True)
     p.add_argument("-a",
                    "--attributes",
                    action='append',
