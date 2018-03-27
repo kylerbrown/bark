@@ -59,6 +59,8 @@ This repository contains:
 
 The python interface requires Python 3.5+. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
 
+If any error happens, please make sure your matplotlib version is 2.0.2 and the pyqt version is 5.6.0.
+
     git clone https://github.com/kylerbrown/resin
     cd resin
     pip install .
