@@ -345,8 +345,8 @@ class SegmentReviewer:
         self.start += self.window_size/2
         self.stop = self.start + self.window_size
         if self.stop > self.max_time:
-            self.start = self.stop - self.window_size
-            self.stop = self.start
+            self.start = self.max_time - self.window_size
+            self.stop = self.max_time
         self.update_plot_data()
 
     def dec_i(self):
