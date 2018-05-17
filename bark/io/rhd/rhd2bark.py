@@ -3,7 +3,8 @@ import os.path
 import arrow
 from dateutil import tz
 import numpy as np
-from bark.io.rhd.load_intan_rhd_format import read_data
+import bark.io.rhd.load_intan_rhd_format
+import bark.io.rhd.legacy_load_intan_rhd_format
 from bark import create_entry, write_metadata
 
 
@@ -48,11 +49,16 @@ def bark_rhd_to_entry():
         .format(default_max_gaps),
         type=int,
         default=default_max_gaps)
+    p.add_argument(
+        "-l",
+        "--legacy",
+        help="Use original Intan-derived code (slower)",
+        action="store_true")
     args = p.parse_args()
     attrs = dict(args.keyvalues) if args.keyvalues else {}
     check_exists(args.rhdfiles)
     rhds_to_entry(args.rhdfiles, args.out, args.timestamp, args.parents,
-                  args.maxgaps, args.timestamp, **attrs)
+                  args.maxgaps, args.timestamp, legacy=args.legacy, **attrs)
 
 
 def rhd_filename_to_timestamp(fname, timezone):
@@ -139,10 +145,15 @@ def rhds_to_entry(rhd_paths,
                   parents=False,
                   max_gaps=10,
                   timezone='America/Chicago',
+                  legacy=False,
                   **attrs):
     """
     Converts a temporally contiguous list of .rhd files to a bark entry.
     """
+    if legacy:
+        read_data = bark.io.rhd.legacy_load_intan_rhd_format.read_data
+    else:
+        read_data = bark.io.rhd.load_intan_rhd_format.read_data
     if not timestamp:
         timestamp = rhd_filename_to_timestamp(rhd_paths[0], timezone)
     else:
