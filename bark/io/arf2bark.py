@@ -8,6 +8,8 @@ import pandas
 import numpy
 import collections as coll
 
+ENTRY_PREFIX = 'entry'
+
 def _parse_args(raw_args):
     desc = 'Unspool an HDF5 ARF file into a Bark tree.'
     epi = 'Fails if bark_root already exists.'
@@ -20,6 +22,10 @@ def _parse_args(raw_args):
                         '--timezone',
                         help='timezone for data, tz database format (default is "America/Chicago")',
                         default=None)
+    parser.add_argument('-m',
+                        '--mangle-prefix',
+                        help='prefix for names which collide with bark function arguments (default: {})'.format(ENTRY_PREFIX),
+                        default=ENTRY_PREFIX)
     parser.add_argument('arf_file', help='ARF file to convert')
     parser.add_argument('bark_root', help='location of new bark root')
     return parser.parse_args(raw_args)
@@ -31,7 +37,7 @@ def copy_attrs(attrs):
     na.update({k: v.decode() for k,v in na.items() if isinstance(v, bytes)})
     return na
 
-def arf2bark(arf_file, root_path, timezone, verbose):
+def arf2bark(arf_file, root_path, timezone, verbose, mangle_prefix=ENTRY_PREFIX):
     with arf.open_file(arf_file, 'r') as af:
         os.mkdir(root_path)
         root = bark.Root(root_path)
@@ -43,6 +49,21 @@ def arf2bark(arf_file, root_path, timezone, verbose):
             if isinstance(entry, h5py.Group): # entries
                 entry_path = os.path.join(root_path, ename)
                 entry_attrs = copy_attrs(entry.attrs)
+                for pos_arg in ('name', 'parents'):
+                    # along with 'timestamp' below, these are positional arguments to create_entry
+                    # for now, I prefer hard-coding them over messing with runtime introspection
+                    new_name = pos_arg
+                    while new_name in entry_attrs:
+                        new_name = '{}_{}'.format(mangle_prefix, new_name)
+                    try:
+                        entry_attrs[new_name] = entry_attrs.pop(pos_arg)
+                    except KeyError:
+                        pass
+                    else:
+                        if verbose:
+                            print('Renamed attribute {} of entry {} to {}'.format(pos_arg,
+                                                                                  ename,
+                                                                                  new_name))
                 timestamp = entry_attrs.pop('timestamp')
                 if timezone:
                     timestamp = bark.convert_timestamp(timestamp, timezone)
@@ -116,7 +137,7 @@ def transfer_dset(ds_name, ds, e_path, verbose=False):
 
 def _main():
     args = _parse_args(sys.argv[1:])
-    arf2bark(args.arf_file, args.bark_root, args.timezone, args.verbose)
+    arf2bark(args.arf_file, args.bark_root, args.timezone, args.verbose, args.mangle_prefix)
 
 if __name__ == '__main__':
     _main()
