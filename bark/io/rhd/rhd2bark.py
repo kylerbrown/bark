@@ -1,12 +1,14 @@
 import sys
 import os.path
 import arrow
+import itertools
 from dateutil import tz
 import numpy as np
-import bark.io.rhd.load_intan_rhd_format
-import bark.io.rhd.legacy_load_intan_rhd_format
+import bark.io.rhd.load_intan_rhd_format as lirf
+import bark.io.rhd.legacy_load_intan_rhd_format as legacy_lirf
 from bark import create_entry, write_metadata
 
+DEFAULT_MAX_MEM = '3GB'
 
 def bark_rhd_to_entry():
     import argparse
@@ -54,12 +56,31 @@ def bark_rhd_to_entry():
         "--legacy",
         help="Use original Intan-derived code (slower)",
         action="store_true")
+    p.add_argument(
+        "-m",
+        "--max-memory",
+        help='Rough maximum memory usage (default: "{}")'.format(DEFAULT_MAX_MEM),
+        default=DEFAULT_MAX_MEM)
     args = p.parse_args()
     attrs = dict(args.keyvalues) if args.keyvalues else {}
     check_exists(args.rhdfiles)
+    max_mem = max_mem_from_string(args.max_memory)
     rhds_to_entry(args.rhdfiles, args.out, args.timestamp, args.parents,
-                  args.maxgaps, args.timestamp, legacy=args.legacy, **attrs)
+                  args.maxgaps, args.timestamp, legacy=args.legacy, max_mem=max_mem, **attrs)
 
+
+def max_mem_from_string(s):
+    mem_dict = {'kb': 10, 'mb': 20, 'gb': 30}
+    if len(s) < 2:
+        raise ValueError('{} is not a valid amount of memory'.format(s))
+    s = ''.join(s.split()).lower()
+    if s[-2:] in mem_dict:
+        pwr = mem_dict[s[-2:]]
+    elif s[-1] == 'b':
+        pwr = 0
+    else:
+        raise ValueError('{} is not a valid amount of memory'.format(s))
+    return int(float(s[:-2])) * (2 ** pwr)
 
 def rhd_filename_to_timestamp(fname, timezone):
     return arrow.get(fname, 'YYMMDD_HHmmss').replace(
@@ -123,13 +144,14 @@ def not_implemented_warnings(result):
         print("TEMP SENSOR DATA CONVERSION NOT YET IMPLEMENTED")
 
 
-def check_timestamp_gaps(data, max_gaps):
-    num_gaps = np.sum(~np.isclose(
-        np.diff(data['t_amplifier']), 1. / data['frequency_parameters'][
-            'amplifier_sample_rate']))
-    if num_gaps > max_gaps:
-        raise Exception("{} data gaps exceeds maximum limit {}".format(
-            num_gaps, max_gaps))
+def count_timestamp_gaps(data, last_chunk_last_timestamp):
+    epsilon = 1. / data['frequency_parameters']['amplifier_sample_rate']
+    num_gaps = 0
+    if not np.isclose(data['t_amplifier'][0] - last_chunk_last_timestamp,
+                      epsilon):
+        num_gaps += 1
+    num_gaps += np.sum(~np.isclose(np.diff(data['t_amplifier']), epsilon))
+    return num_gaps
 
 
 def check_exists(rhd_paths):
@@ -146,68 +168,87 @@ def rhds_to_entry(rhd_paths,
                   max_gaps=10,
                   timezone='America/Chicago',
                   legacy=False,
+                  max_mem=DEFAULT_MAX_MEM,
                   **attrs):
     """
     Converts a temporally contiguous list of .rhd files to a bark entry.
     """
-    if legacy:
-        read_data = bark.io.rhd.legacy_load_intan_rhd_format.read_data
-    else:
-        read_data = bark.io.rhd.load_intan_rhd_format.read_data
     if not timestamp:
         timestamp = rhd_filename_to_timestamp(rhd_paths[0], timezone)
     else:
         timestamp = input_string_to_timestamp(timestamp, timezone)
-    # extract data and metadata from first file
-    print(rhd_paths[0])
-    result = read_data(rhd_paths[0], no_floats=True)
-    not_implemented_warnings(result)
-    check_timestamp_gaps(result, max_gaps)
-    # make entry
-    entry_attrs = result['notes']
-    attrs.update(entry_attrs)
+    # process first file and create entry and datasets as needed
+    first,rest = data_feed(rhd_paths[0], legacy, max_mem)
+    attrs.update(first['notes'])
     create_entry(entry_name, timestamp, parents, **attrs)
-    # make datasets
-    board_channels = adc_chan_names(result)
-    if board_channels:
-        dsetname = os.path.join(entry_name, 'board_adc.dat')
-        board_adc_metadata(result, dsetname)
-        with open(dsetname, 'wb') as fp:
-            fp.write(result['board_adc_data'].T.tobytes())
+    adc_channels = adc_chan_names(first)
+    amp_channels = amp_chan_names(first)
+    adc_dset_name = None
+    amp_dset_name = None
+    if adc_channels:
+        adc_dset_name = os.path.join(entry_name, 'board_adc.dat')
+        board_adc_metadata(first, adc_dset_name)
+        open(adc_dset_name, 'wb').close()
+    if amp_channels:
+        amp_dset_name = os.path.join(entry_name, 'amplifier.dat')
+        amplifier_metadata(first, amp_dset_name)
+        open(amp_dset_name, 'wb').close()
+    write_data_feed(first, rest, adc_dset_name, amp_dset_name, max_gaps)
+    # process the rest of the files
+    for rhd_file in rhd_paths[1:]:
+        first,rest = data_feed(rhd_file, legacy, max_mem)
+        # check that channels are all the same as first file
+        for cur,old in zip((adc_channels, amp_channels),
+                           (adc_chan_names(first), amp_chan_names(first))):
+            if cur != old:
+                msg = '{} has channels {}\n{} has channels {}'
+                raise ValueError(msg.format(rhd_file, cur, rhd_paths[0], old))
+        write_data_feed(first, rest, adc_dset_name, amp_dset_name, max_gaps)
 
-    amplifier_channels = amp_chan_names(result)
-    if amplifier_channels:
-        dsetname = os.path.join(entry_name, 'amplifier.dat')
-        amplifier_metadata(result, dsetname)
-        with open(dsetname, 'wb') as fp:
-            fp.write(result['amplifier_data'].T.tobytes())
+def data_feed(rhd_file, legacy, max_memory):
+    """Set up a stream to feed data from rhd_file in chunks.
 
-    # now that the metadata has been written (and data from the first file)
-    # write data for the remainder of the files
-    for rhdfile in rhd_paths[1:]:
-        print(rhdfile)
-        result = read_data(rhdfile, no_floats=True)
-        not_implemented_warnings(result)
-        check_timestamp_gaps(result, max_gaps)
-        cur_board_channels = adc_chan_names(result)
-        cur_amplifier_channels = amp_chan_names(result)
+    Args:
+        rhd_file (str): filename
+        legacy (bool): whether to use legacy Intan-provided code
+        max_memory (number): memory size of chunks, in bytes
 
-        # check that the same channels are being recorded
-        if board_channels != cur_board_channels:
-            raise ValueError("""{} has channels {}
-                    {} has channels {} """.format(
-                rhdfile, cur_board_channels, rhd_paths[0], board_channels))
-        if amplifier_channels != cur_amplifier_channels:
-            raise ValueError("""{} has channels {}
-                    {} has channels {}"""
-                             .format(rhdfile, cur_amplifier_channels,
-                                     rhd_paths[0], amplifier_channels))
-        # write data
-        if cur_board_channels:
-            dsetname = os.path.join(entry_name, 'board_adc.dat')
-            with open(dsetname, 'ab') as fp:
-                fp.write(result['board_adc_data'].T.tobytes())
-        if cur_amplifier_channels:
-            dsetname = os.path.join(entry_name, 'amplifier.dat')
-            with open(dsetname, 'ab') as fp:
-                fp.write(result['amplifier_data'].T.tobytes())
+    Returns:
+        tuple(dict, iterable): first chunk in stream, plus rest of stream
+    """
+    print(rhd_file)
+    if legacy:
+        # the legacy code reads the entire file's contents into memory at once,
+        # so there's nothing left after the first chunk
+        return (legacy_lirf.read_data(rhd_file, no_floats=True), [])
+    else:
+        feed = lirf.read_data(rhd_file, no_floats=True, max_memory=max_memory)
+        return (next(feed), feed)
+
+def write_data_feed(first, rest, adc_fn, amp_fn, max_gaps):
+    """Write a data feed to disk.
+
+    Args:
+        first (dict): first chunk in the data feed
+        rest (iterable): rest of the data feed
+        adc_fn (str or None): filename of the ADC bark dataset
+        amp_fn (str or None): filename of the amplifier bark dataset
+        max_gaps (int): maximum number of "non-small" gaps in the timestamps
+                        that will be tolerated
+    """
+    not_implemented_warnings(first)
+    last_timestamp = first['t_amplifier'][0]
+    timestamp_gaps = 0
+    for data_chunk in itertools.chain([first], rest):
+        timestamp_gaps += count_timestamp_gaps(data_chunk, last_timestamp)
+        last_timestamp = data_chunk['t_amplifier'][-1]
+        if adc_fn:
+            with open(adc_fn, 'ab') as fp:
+                 data_chunk['board_adc_data'].T.tofile(fp)
+        if amp_fn:
+            with open(amp_fn, 'ab') as fp:
+                 data_chunk['amplifier_data'].T.tofile(fp)
+    if timestamp_gaps > max_gaps:
+        msg = '{} timestamp gaps in data exceed maximum limit {}'
+        raise Exception(msg.format(timestamp_gaps, max_gaps))
+
