@@ -9,11 +9,11 @@ def data_to_result(header, data, data_present):
     result['notes'] = header['notes']
     result['frequency_parameters'] = header['frequency_parameters']
 
+    result['t_amplifier'] = data['t_amplifier']
     if header['num_amplifier_channels'] > 0:
         result['amplifier_channels'] = header['amplifier_channels']
         if data_present:
             result['amplifier_data'] = data['amplifier_data']
-            result['t_amplifier'] = data['t_amplifier']
             result['spike_triggers'] = header['spike_triggers']
 
     if header['num_aux_input_channels'] > 0:
