@@ -10,6 +10,8 @@ $ cd bark
 $ git checkout -b awesome-feature
 ```
 
+For more help with `git`, see the [git workflow suggestions](git_workflow.md).
+
 Before you submit a pull request, make sure the tests work. (If it makes sense to, write tests for your new feature, too.)
 
 ```
