@@ -167,9 +167,10 @@ def rb_select():
     stream = bark.read_sampled(fname).toStream()
     if col_attr:
         columns = stream.attrs['columns']
-        channels = [i
-                    for i in range(len(columns))
-                    if columns[i][col_attr] in channels]
+        rev_attr = {col[col_attr]: idx
+                    for idx, col in columns.items()
+                    if col_attr in col} # so you can tag only some channels
+        channels = [rev_attr[c] for c in channels]
     else:
         channels = [int(c) for c in channels]
     stream[channels].write(outfname)
