@@ -120,6 +120,7 @@ Note for  MacOS users: run this command in the terminal:
 - `bark-convert-openephys` -- converts a folder of [Open-Ephys](http://www.open-ephys.org/) .kwd files to datasets in a Bark entry
 - `bark-convert-arf` -- converts an ARF file to entries in a Bark Root
 - `bark-convert-spyking` -- converts [Spyking Circus](https://spyking-circus.readthedocs.io/en/latest/) spike-sorted event data to a Bark event dataset
+- `bark-convert-mountainsort` -- converts [MountainSort](https://github.com/flatironinstitute/mountainlab-js) spike-sorted data to a Bark event dataset
 - `csv-from-waveclus` -- converts a [wave_clus](https://github.com/csn-le/wave_clus) spike time file to a CSV
 - `csv-from-textgrid` -- converts a [praat](http://www.fon.hum.uva.nl/praat/) TextGrid file to a CSV
 - `csv-from-lbl` -- converts an [aplot](https://github.com/melizalab/aplot) [lbl](https://github.com/kylerbrown/lbl) file to a CSV
@@ -127,6 +128,7 @@ Note for  MacOS users: run this command in the terminal:
 - `dat-to-wave-clus` -- convert a sampled dataset to a [wave_clus](https://github.com/csn-le/wave_clus)
   compatible Matlab file
 - `dat-to-audio` -- convert a sampled dataset to an audio file. Uses [SOX](http://sox.sourceforge.net/) under the hood, and so it can convert to any file type SOX supports.
+- `dat-to-mda` -- convert a Bark sampled dataset to a [MountainSort](https://github.com/flatironinstitute/mountainlab-js)-compatible `.mda` file
 
 ### Control Flow
 
