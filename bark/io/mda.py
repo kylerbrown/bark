@@ -59,21 +59,39 @@ def read_mda_header(filename):
             raise ValueError('invalid datatype code: {}'.format(dt_code))
         return MdaHeader(datatype, dimensions, uses_64bit_dims)
 
-def read_mda_data(filename):
+def read_mda_data(filename, chan_axis='columns'):
     """Read an .mda file's data.
     
     Args:
         filename (str): path to the .mda file to read
+        chan_axis ('rows' or 'columns'): which axis of the array returned should
+            correspond to channels. To get Bark-formatted data out, 'columns'
+            is appropriate.
     
     Returns:
         numpy.ndarray: Numpy array containing the data
+
+    Raises:
+        ValueError: if `chan_axis` is neither 'rows' nor 'columns'
     """
     hdr = read_mda_header(filename)
+    # a proper .mda file is written with channels as rows and serialization in
+    # 'F' or "Fortran" format. To get channels as columns (i.e., the transpose
+    # of the .mda standard) you read in 'C' format and reverse the dimensions
+    if chan_axis == 'rows':
+        order = 'F'
+        array_shape = ndr.dims
+    elif chan_axis == 'columns':
+        order = 'C'
+        array_shape = tuple(reversed(hdr.dims))
+    else: 
+        raise ValueError('chan_axis must be either "rows" or "columns"')
     with open(filename, 'rb') as mda_file:
         mda_file.seek(hdr.header_size)
-        return np.fromfile(mda_file, dtype=hdr.dt).reshape(hdr.dims, order='F')
+        return np.fromfile(mda_file, dtype=hdr.dt).reshape(array_shape,
+                                                           order=order)
 
-def write_mda_file(filename, data, dtype=None):
+def write_mda_file(filename, data, dtype=None, chan_axis='columns'):
     """Write an array to a .mda file (including a header).
     
     The only departure from the .mda spec is that the dimension sizes are
@@ -87,13 +105,27 @@ def write_mda_file(filename, data, dtype=None):
         data (ndarray): data to write
         dtype (str, or None): numpy-compatible datatype string; if `None`, the
             data is written in its current datatype
+        chan_axis ('rows' or 'columns'): which axis of `data` corresponds to
+            channels. For Bark datasets, 'columns' is the standard.
     
     Returns:
         None
     
     Raises:
-        ValueError: if `dtype` is not supported
+        ValueError: if `dtype` is not supported, or if `chan_axis` is neither
+            'rows' nor 'columns'
     """
+    # 'order' and 'array_shape' are chosen so that a proper .mda file is written
+    # this corresponds to channels as rows and serialization in 'F' or "Fortran"
+    # format
+    if chan_axis == 'rows':
+        order = 'F'
+        array_shape = data.shape
+    elif chan_axis == 'columns':
+        order = 'C'
+        array_shape = tuple(reversed(data.shape))
+    else:
+        raise ValueError('chan_axis must be either "rows" or "columns"')
     if dtype is None:
         dtype = str(data.dtype)
     bytes_per_entry = np.dtype(dtype).itemsize
@@ -106,12 +138,12 @@ def write_mda_file(filename, data, dtype=None):
         # to save some needless complexity, always use 64-bit ints for dim sizes
         ndim_code = -1 * data.ndim
         mda_file.write(struct.pack('<iii', dt_code, bytes_per_entry, ndim_code))
-        mda_file.write(struct.pack('<' + 'q' * data.ndim, *data.shape))
-        # transform data into column-major ("Fortran") order
-        transformed_data = np.reshape(data, data.size, order='F')
+        mda_file.write(struct.pack('<' + 'q' * data.ndim, *array_shape))
         if data.dtype != dtype:
-            transformed_data = transformed_data.astype(dtype)
-        transformed_data.tofile(mda_file)
+            data = data.astype(dtype)
+        if order == 'F': # if order == 'C', tofile() below will handle it
+            data = data.transpose()
+        data.tofile(mda_file)
 
 def spike_times_dataframe_from_mda(mda_hdr, mda_data, sampling_rate, keep=None):
     """Converts data from an .mda file to a Pandas DataFrame usable by Bark.
