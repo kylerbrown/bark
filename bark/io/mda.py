@@ -80,7 +80,7 @@ def read_mda_data(filename, chan_axis='columns'):
     # of the .mda standard) you read in 'C' format and reverse the dimensions
     if chan_axis == 'rows':
         order = 'F'
-        array_shape = ndr.dims
+        array_shape = hdr.dims
     elif chan_axis == 'columns':
         order = 'C'
         array_shape = tuple(reversed(hdr.dims))
@@ -145,7 +145,11 @@ def write_mda_file(filename, data, dtype=None, chan_axis='columns'):
             data = data.transpose()
         data.tofile(mda_file)
 
-def spike_times_dataframe_from_mda(mda_hdr, mda_data, sampling_rate, keep=None):
+def spike_times_dataframe_from_array(mda_hdr,
+                                     mda_data,
+                                     sampling_rate,
+                                     chan_axis='columns',
+                                     keep=None):
     """Converts data from an .mda file to a Pandas DataFrame usable by Bark.
     
     Args:
@@ -154,6 +158,8 @@ def spike_times_dataframe_from_mda(mda_hdr, mda_data, sampling_rate, keep=None):
             MountainSort output file 'firings.mda'
         sampling_rate (number): the sampling rate corresponding to the cluster
             times in the .mda data
+        chan_axis('rows' or 'columns'): which axis of `mda_data` corresponds to
+            channels. For Bark-formatted datasets, 'columns' is standard.
         keep (iterable or None): the clusters to keep (all others are dropped);
             if None, all clusters are kept
     
@@ -161,10 +167,17 @@ def spike_times_dataframe_from_mda(mda_hdr, mda_data, sampling_rate, keep=None):
         pandas.DataFrame: with columns 'amplitude', 'name', and 'start'
     """
     df = pd.DataFrame(columns=['center_channel', 'amplitude', 'name', 'start'])
-    df['center_channel'] = mda_data[0]
     # amplitude is not currently provided by MountainSort, so it'll be NaNs
-    df['name'] = mda_data[2].astype('int16')
-    df['start'] = mda_data[1] / sampling_rate
+    if chan_axis == 'rows':
+        df['center_channel'] = mda_data[0]
+        df['name'] = mda_data[2].astype('int16')
+        df['start'] = mda_data[1] / sampling_rate
+    elif chan_axis == 'columns':
+        df['center_channel'] = mda_data[:, 0]
+        df['name'] = mda_data[:, 2].astype('int16')
+        df['start'] = mda_data[:, 1] / sampling_rate
+    else:
+        raise ValueError('chan_axis must be either "rows" or "columns"')
     if keep is None:
         keep = df['name'].unique()
     return df[df['name'].isin(keep)]
@@ -222,7 +235,7 @@ def bark_event_ds_from_mda(mda_file, out_file, sampling_rate, keep=None):
     """
     hdr = read_mda_header(mda_file)
     data = read_mda_data(mda_file)
-    df = spike_times_dataframe_from_mda(hdr, data, sampling_rate, keep)
+    df = spike_times_dataframe_from_array(hdr, data, sampling_rate, keep=keep)
     metadata = bark_metadata_from_df(hdr, df, sampling_rate)
     return bark.write_events(out_file, df, **metadata)
 
