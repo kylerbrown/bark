@@ -5,9 +5,12 @@
 Clone the repo locally, create a branch for the feature or bugfix, and start work!
 
 ```
-$ git clone https://github.com/margoliashlab/bark dir/to/use
+$ git clone https://github.com/margoliashlab/bark
+$ cd bark
 $ git checkout -b awesome-feature
 ```
+
+For more help with `git`, see the [git workflow suggestions](git_workflow.md).
 
 Before you submit a pull request, make sure the tests work. (If it makes sense to, write tests for your new feature, too.)
 
@@ -43,9 +46,9 @@ Documentation lives in two places in the repository, depending on what it is.
 
 Documentation on the usage of modules, functions, classes, and scripts lives in their docstrings. These should be formatted according to the [Google Python docstring guidelines](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html). They are collected via Sphinx's `autodoc` extension and parsed by the `napoleon` extension.
 
-Documentation on the repository as a whole, including installation, example usage and workflows, and other information not directly related to the code itself, lives in the `docs` folder, where it is built by Sphinx. It may be written in either [reStructuredText](http://docutils.sourceforge.net/docs/user/rst/quickref.html) or [(CommonMark-compatible) Markdown](http://commonmark.org/help/) (which is quite similar, but not quite identical, to Github-flavored Markdown.
+Documentation on the repository as a whole, including installation, example usage and workflows, and other information not directly related to the code itself, lives in the `docs` folder, where it is built by Sphinx. It may be written in either [reStructuredText](http://docutils.sourceforge.net/docs/user/rst/quickref.html) or [(CommonMark-compatible) Markdown](http://commonmark.org/help/) (which is similar, but not quite identical, to Github-flavored Markdown).
 
-The Sphinx-built documentation can be viewed online at [Read the Docs](bark.readthedocs.io/).
+The Sphinx-built documentation can be viewed online at [Read the Docs](http://bark.readthedocs.io/).
 
 ## Additional notes
 

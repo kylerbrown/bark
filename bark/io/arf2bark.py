@@ -8,9 +8,12 @@ import pandas
 import numpy
 import collections as coll
 
+ENTRY_PREFIX = 'entry'
+
 def _parse_args(raw_args):
     desc = 'Unspool an HDF5 ARF file into a Bark tree.'
-    parser = argparse.ArgumentParser(description=desc)
+    epi = 'Fails if bark_root already exists.'
+    parser = argparse.ArgumentParser(description=desc, epilog=epi)
     parser.add_argument('-v',
                         '--verbose',
                         help='increase output verbosity',
@@ -19,8 +22,12 @@ def _parse_args(raw_args):
                         '--timezone',
                         help='timezone for data, tz database format (default is "America/Chicago")',
                         default=None)
+    parser.add_argument('-m',
+                        '--mangle-prefix',
+                        help='prefix for names which collide with bark function arguments (default: {})'.format(ENTRY_PREFIX),
+                        default=ENTRY_PREFIX)
     parser.add_argument('arf_file', help='ARF file to convert')
-    parser.add_argument('root_parent', help='directory in which to place the Bark Root')
+    parser.add_argument('bark_root', help='location of new bark root')
     return parser.parse_args(raw_args)
 
 def copy_attrs(attrs):
@@ -30,11 +37,8 @@ def copy_attrs(attrs):
     na.update({k: v.decode() for k,v in na.items() if isinstance(v, bytes)})
     return na
 
-def arf2bark(arf_file, root_parent, timezone, verbose):
+def arf2bark(arf_file, root_path, timezone, verbose, mangle_prefix=ENTRY_PREFIX):
     with arf.open_file(arf_file, 'r') as af:
-        # root
-        root_dirname = os.path.splitext(arf_file)[0]
-        root_path = os.path.join(os.path.abspath(root_parent), root_dirname)
         os.mkdir(root_path)
         root = bark.Root(root_path)
         if verbose:
@@ -45,6 +49,21 @@ def arf2bark(arf_file, root_parent, timezone, verbose):
             if isinstance(entry, h5py.Group): # entries
                 entry_path = os.path.join(root_path, ename)
                 entry_attrs = copy_attrs(entry.attrs)
+                for pos_arg in ('name', 'parents'):
+                    # along with 'timestamp' below, these are positional arguments to create_entry
+                    # for now, I prefer hard-coding them over messing with runtime introspection
+                    new_name = pos_arg
+                    while new_name in entry_attrs:
+                        new_name = '{}_{}'.format(mangle_prefix, new_name)
+                    try:
+                        entry_attrs[new_name] = entry_attrs.pop(pos_arg)
+                    except KeyError:
+                        pass
+                    else:
+                        if verbose:
+                            print('Renamed attribute {} of entry {} to {}'.format(pos_arg,
+                                                                                  ename,
+                                                                                  new_name))
                 timestamp = entry_attrs.pop('timestamp')
                 if timezone:
                     timestamp = bark.convert_timestamp(timestamp, timezone)
@@ -62,10 +81,13 @@ def arf2bark(arf_file, root_parent, timezone, verbose):
                     else:
                         transfer_dset(ds_name, dataset, entry_path, verbose)
             elif isinstance(entry, h5py.Dataset): # top-level datasets
-                if tle is None:
-                    path = os.path.join(root_path, 'top_level')
-                    tle = bark.create_entry(path, 0, parents=False).path
-                transfer_dset(ename, entry, tle, verbose)
+                if arf.is_time_series(entry) or arf.is_marked_pointproc(entry):
+                    if tle is None:
+                        path = os.path.join(root_path, 'top_level')
+                        tle = bark.create_entry(path, 0, parents=False).path
+                    transfer_dset(ename, entry, tle, verbose)
+                else:
+                    unknown_ds_warning(ename) # and skip, w/o creating TLE
         if found_trigin:
             print('Warning: found datasets named "trig_in". Jill-created ' +
                   '"trig_in" datasets segfault when read, so these datasets' +
@@ -83,6 +105,10 @@ def build_columns(units, column_names=None):
         d.update({k: v.decode() for k,v in d.items() if isinstance(v, bytes)})
         d.update({k: None for k,v in d.items() if (k == 'units' and v == '')})
     return cols
+
+def unknown_ds_warning(ds_name):
+    print('Warning: unknown dataset type - neither time series nor point' +
+          ' process. Skipping dataset ' + ds_name)
 
 def transfer_dset(ds_name, ds, e_path, verbose=False):
     ds_attrs = copy_attrs(ds.attrs)
@@ -107,12 +133,11 @@ def transfer_dset(ds_name, ds, e_path, verbose=False):
         if verbose:
             print('Created event dataset: ' + ds_path)
     else:
-        print('Warning: unknown dataset type - neither time series nor point' +
-              ' process. Skipping dataset ' + ds_name)
+        unknown_ds_warning(ds_name)
 
 def _main():
     args = _parse_args(sys.argv[1:])
-    arf2bark(args.arf_file, args.root_parent, args.timezone, args.verbose)
+    arf2bark(args.arf_file, args.bark_root, args.timezone, args.verbose, args.mangle_prefix)
 
 if __name__ == '__main__':
     _main()

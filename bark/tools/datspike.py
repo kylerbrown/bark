@@ -1,5 +1,6 @@
 import numpy as np
 import bark
+from bark import stream
 from scipy.signal import argrelextrema
 
 default_order = 5
@@ -12,9 +13,9 @@ def thres_extrema(x, y, thresh):
 
 
 def compute_std(dat):
-    s = bark.stream.read(dat)
+    s = stream.read(dat)
     std = np.zeros(len(s.attrs['columns']))
-    for i, x in enumerate(bark.stream.read(dat)):
+    for i, x in enumerate(stream.read(dat)):
         std += np.std(x, 0)
     return std / (i + 1)
 
@@ -51,7 +52,7 @@ def main(dat, csv, thresh, is_std, order=default_order, min_dist=0):
         n_channels = bark.read_sampled(dat).data.shape[1]
         threshs = np.ones(n_channels) * thresh
     print('thresholds:', threshs)
-    s = bark.stream.read(dat)
+    s = stream.read(dat)
     pad_len = order
     with open(csv, 'w') as fp:
         fp.write('channel,start\n')
@@ -60,7 +61,7 @@ def main(dat, csv, thresh, is_std, order=default_order, min_dist=0):
     bark.write_metadata(csv,
                         datatype=1000,
                         columns={'channel': {'units': None},
-                                 'start': {'units', 's'}},
+                                 'start': {'units': 's'}},
                         thresholds=threshs,
                         order=order,
                         source=dat)

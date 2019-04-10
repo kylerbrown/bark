@@ -4,13 +4,20 @@ import string
 import yaml
 import numpy as np
 from scipy.signal import spectrogram
-import matplotlib.pyplot as plt
 import bark
 from bark.io.eventops import (OpStack, write_stack, read_stack, Update, Merge,
                               Split, Delete, New)
 import warnings
 warnings.filterwarnings('ignore')  # suppress matplotlib warnings
 from bark.tools.spectral import BarkSpectra
+
+if sys.platform == 'darwin':
+    # Keystrokes aren't correctly captured by many matplotlib backends on Mac OS X,
+    # including the native Cocoa backend. Qt5 does capture them correctly.
+    import matplotlib
+    matplotlib.use('Qt5Agg')
+
+import matplotlib.pyplot as plt
 
 
 help_string = '''
