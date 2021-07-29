@@ -208,13 +208,13 @@ class SegmentReviewer:
         self.update_plot_data()
 
     def initialize_plots(self):
-        self.osc_ax.set_axis_bgcolor('k')
+        self.osc_ax.set_facecolor('k')
         self.osc_ax.tick_params(axis='x',
                                 which='both',
                                 bottom='off',
                                 top='off',
                                 labelbottom='off')
-        self.spec_ax.set_axis_bgcolor('k')
+        self.spec_ax.set_facecolor('k')
         self.osc_line, = self.osc_ax.plot(
             np.arange(self.N_points),
             np.zeros(self.N_points),
@@ -231,7 +231,7 @@ class SegmentReviewer:
 
     def initialize_minimap(self):
         times, values = labels_to_scatter_coords(self.opstack.events)
-        self.map_ax.set_axis_bgcolor('k')
+        self.map_ax.set_facecolor('k')
         self.map_ax.scatter(times,
                             values,
                             c=values,
