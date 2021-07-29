@@ -1,8 +1,7 @@
-pytest
-pandas
-numpy
-PyYAML
+numpy<1.17
 scipy
+pandas<1.3
+pytest
+PyYAML
 arrow==0.10.0
 dataset==0.8.0
-pyqt5

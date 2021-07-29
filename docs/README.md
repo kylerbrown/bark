@@ -59,13 +59,6 @@ This repository contains:
 
 The python interface requires Python 3.5+. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
 
-If any error happens, please make sure your matplotlib version is 2.0.2 and the pyqt version is 5.6.0.
-
-    git clone https://github.com/kylerbrown/resin
-    cd resin
-    pip install .
-    cd ..
-
     git clone https://github.com/margoliashlab/bark
     cd bark
     
@@ -75,9 +68,29 @@ If any error happens, please make sure your matplotlib version is 2.0.2 and the 
 
     # optional tests
     pytest -v
+    
+This simple installation supports the main bark library, most of the conversion scripts,
+and most of the command-line data manipulation tools. Exceptions are noted below.
 
+The requirements file omits dependencies for a few optional graphical tools included in this
+repository. Their additional requirements are as follows (if you don't intend to use them,
+you don't need to worry about this):
 
-You'll also probably want to install [Neuroscope](http://neurosuite.sourceforge.net/). [Sox](http://sox.sourceforge.net/sox.html) is also useful.
+* `bark-label-view` (for hand-labeling audio data), requires:
+  * Matplotlib (>=2.0)
+  * the spectral analysis library [`resin`](https://github.com/margoliashlab/resin)
+* `bark-psg-view` (for hand-scoring PSG data), requires:
+  * Matplotlib (2.0.2)
+  * PyQt (5.6.0)
+* `bark-scope` opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/).
+  It obviously requires an installation of neuroscope.
+  Note for MacOS users: you need to link the installed neuroscope to where `bark-scope`
+  expects to find it:
+  `$ ln -s /Applications/neuroscope.app/Contents/MacOS/neuroscope /usr/local/bin/neuroscope`
+
+Finally, [Sox](http://sox.sourceforge.net/sox.html) is also extremely useful for working
+with audio data. One conversion routine, `dat-to-audio`, is a wrapper around Sox, and thus
+requires it to be installed.
 
 ## Shell Commands
 
