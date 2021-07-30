@@ -69,19 +69,21 @@ The python interface requires Python 3.5+. Installation with [Conda](http://cond
     # optional tests
     pytest -v
     
-This simple installation supports the main bark library, most of the conversion scripts,
-and most of the command-line data manipulation tools. Exceptions are noted below.
+These installation instructions cover the main bark library and almost all of the conversion
+scripts and command-line data manipulation tools. Exceptions are noted below.
 
 The requirements file omits dependencies for a few optional graphical tools included in this
-repository. Their additional requirements are as follows (if you don't intend to use them,
-you don't need to worry about this):
+repository. Their additional requirements are as follows, and are not shared across them.
+If you don't intend to use one, you can ignore its requirements.
 
 * `bark-label-view` (for hand-labeling audio data), requires:
   * Matplotlib (>=2.0)
   * the spectral analysis library [`resin`](https://github.com/margoliashlab/resin)
+  * (optional) PyQt5 (provides a slightly better experience, but `bark-label-view` is
+    perfectly usable without it)
 * `bark-psg-view` (for hand-scoring PSG data), requires:
   * Matplotlib (2.0.2)
-  * PyQt (5.6.0)
+  * PyQt5 (5.6.0)
 * `bark-scope` opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/).
   It obviously requires an installation of neuroscope.
   Note for MacOS users: you need to link the installed neuroscope to where `bark-scope`
@@ -121,8 +123,6 @@ There are many external tools for processing CSV files, including [pandas](http:
 ### Visualizations
 
 - `bark-scope` -- opens a sampled data file in [neuroscope](http://neurosuite.sourceforge.net/). (Requires an installation of neuroscope)  
-Note for  MacOS users: run this command in the terminal:  
-`$ ln -s /Applications/neuroscope.app/Contents/MacOS/neuroscope /usr/local/bin/neuroscope`
 - `bark-label-view` -- Annotate or review events in relation to a sampled dataset, such as birdsong syllable labels on a microphone recording.
 - `bark-psg-view` -- Annotate or review  on mutiply channels of .dat files. 
 

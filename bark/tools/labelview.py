@@ -12,12 +12,32 @@ warnings.filterwarnings('ignore')  # suppress matplotlib warnings
 from bark.tools.spectral import BarkSpectra
 
 if sys.platform == 'darwin':
-    # Keystrokes aren't correctly captured by many matplotlib backends on Mac OS X,
-    # including the native Cocoa backend. Qt5 does capture them correctly.
+    # Keystrokes aren't correctly captured by many matplotlib backends on
+    # Mac OS X, including the native Cocoa backend.
+    # Both Qt5 and Tk capture them (mostly) correctly. Qt5 is a slightly
+    # better experience, but Tk is fine - and Tk is available out-of-the-box.
     import matplotlib
-    matplotlib.use('Qt5Agg')
+    try:
+        matplotlib.use('Qt5Agg')
+        import matplotlib.pyplot as plt
+    except ImportError: # PyQt not installed
+        matplotlib.use('TkAgg')
+        import matplotlib.pyplot as plt
+else: # default backends on linux and windows are fine
+    import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as plt
+# Use of control, windows, or command is tricky for cross-platform
+# compatibility, as they're the keys most likely to be treated differently
+# by different OSes and GUI frameworks.
+# This manifests here relating to detecting keydowns during a mouse click.
+# Control and command recognition is dodgy, but shift is fine.
+# This is a bit of a kludge, but it preserves existing behavior on linux
+# and windows.
+if sys.platform == 'darwin':
+    click_meta_char = 'shift'
+else:
+    click_meta_char = 'control'
+
 
 
 help_string = '''
@@ -39,8 +59,8 @@ ctrl+y                  redo
 ctrl+w                  close
 
 click on segment boundary       move boundary
-ctrl+click inside a segment     split segment
-ctrl+click outside a segment    new segment (TODO)
+ctrl+click inside a segment     split segment (shift+click on Mac)
+ctrl+click outside a segment    new segment (shift+click on Mac)
 
 click on segment boundaries to adjust them.
 
@@ -364,18 +384,18 @@ class SegmentReviewer:
             self.i = i
             self.update_plot_data()
         # sylable splitting
-        elif (event.key == 'control' and event.xdata > start_pos and
+        elif (event.key == click_meta_char and event.xdata > start_pos and
               event.xdata < stop_pos):
             self.opstack.push(Split(self.i, float(event.xdata)))
             self.update_plot_data()
         # new syllable before
-        elif event.key == 'control' and event.xdata < start_pos:
+        elif event.key == click_meta_char and event.xdata < start_pos:
             self.opstack.push(New(self.i,
                                   name='',
                                   start=float(event.xdata),
                                   stop=float(event.xdata) + .020))
             self.update_plot_data()
-        elif event.key == 'control' and event.xdata > stop_pos:
+        elif event.key == click_meta_char and event.xdata > stop_pos:
             self.opstack.push(New(self.i + 1,
                                   name='',
                                   start=float(event.xdata),
