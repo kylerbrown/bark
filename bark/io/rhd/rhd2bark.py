@@ -14,7 +14,7 @@ def bark_rhd_to_entry():
     import argparse
     default_max_gaps = 10
     p = argparse.ArgumentParser(
-        description="""Create a Bark entry from RHD files
+        description="""Create a Bark entry from RHD files.
             RHD files should be contiguous in time.
 
             An error is raised if the RHD files do not all have the same
@@ -31,7 +31,7 @@ def bark_rhd_to_entry():
     p.add_argument(
         "-t",
         "--timestamp",
-        help="""format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.S, if left unspecified
+        help="""format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.S; if left unspecified
             the timestamp will be inferred from the filename of the
             first RHD file.""")
     p.add_argument('--timezone',
@@ -41,7 +41,7 @@ def bark_rhd_to_entry():
     p.add_argument(
         "-p",
         "--parents",
-        help="No error if already exists, new meta-data written, \
+        help="No error if entry already exists, new meta-data written, \
                 and datasets will be overwritten.",
         action="store_true")
     p.add_argument(
@@ -67,7 +67,6 @@ def bark_rhd_to_entry():
     max_mem = max_mem_from_string(args.max_memory)
     rhds_to_entry(args.rhdfiles, args.out, args.timestamp, args.parents,
                   args.maxgaps, args.timestamp, legacy=args.legacy, max_mem=max_mem, **attrs)
-
 
 def max_mem_from_string(s):
     mem_dict = {'kb': 10, 'mb': 20, 'gb': 30}
@@ -123,6 +122,8 @@ def amplifier_metadata(result, dsetname):
                  sampling_rate=result['frequency_parameters'][
                      'amplifier_sample_rate'], )
     attrs.update(result['frequency_parameters'])
+    if 'digital_reference_channel' in result:
+        attrs['digital_reference_channel'] = result['digital_reference_channel']
     columns = {i: chan_attrs
                for i, chan_attrs in enumerate(result['amplifier_channels'])}
     for k in columns:
@@ -155,10 +156,8 @@ def count_timestamp_gaps(data, last_chunk_last_timestamp):
 
 
 def check_exists(rhd_paths):
-    for filepath in rhd_paths:
-        if not os.path.exists(filepath):
-            print("file {} does not exist".format(filepath))
-            sys.exit(0)
+    if not all(os.path.exists(filepath) for filepath in rhd_paths):
+        raise FileNotFoundError(filepath)
 
 
 def rhds_to_entry(rhd_paths,
@@ -178,8 +177,10 @@ def rhds_to_entry(rhd_paths,
     else:
         timestamp = input_string_to_timestamp(timestamp, timezone)
     # process first file and create entry and datasets as needed
-    first,rest = data_feed(rhd_paths[0], legacy, max_mem)
+    first, rest = data_feed(rhd_paths[0], legacy, max_mem)
     attrs.update(first['notes'])
+    attrs['intan_gui_version'] = '{}.{}'.format(first['version']['major'],
+                                                first['version']['minor'])
     create_entry(entry_name, timestamp, parents, **attrs)
     adc_channels = adc_chan_names(first)
     amp_channels = amp_chan_names(first)
@@ -196,13 +197,13 @@ def rhds_to_entry(rhd_paths,
     write_data_feed(first, rest, adc_dset_name, amp_dset_name, max_gaps)
     # process the rest of the files
     for rhd_file in rhd_paths[1:]:
-        first,rest = data_feed(rhd_file, legacy, max_mem)
+        first, rest = data_feed(rhd_file, legacy, max_mem)
         # check that channels are all the same as first file
-        for cur,old in zip((adc_channels, amp_channels),
-                           (adc_chan_names(first), amp_chan_names(first))):
-            if cur != old:
+        for curr, old in zip((adc_channels, amp_channels),
+                             (adc_chan_names(first), amp_chan_names(first))):
+            if curr != old:
                 msg = '{} has channels {}\n{} has channels {}'
-                raise ValueError(msg.format(rhd_file, cur, rhd_paths[0], old))
+                raise ValueError(msg.format(rhd_file, curr, rhd_paths[0], old))
         write_data_feed(first, rest, adc_dset_name, amp_dset_name, max_gaps)
 
 def data_feed(rhd_file, legacy, max_memory):

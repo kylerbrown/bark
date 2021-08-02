@@ -3,7 +3,7 @@
 # Michael Gibson 23 April 2015
 
 
-import sys, struct, os
+import struct, os
 
 def read_qstring(fid):
     """Read Qt style QString.  
@@ -29,13 +29,5 @@ def read_qstring(fid):
         c, = struct.unpack('<H', fid.read(2))
         data.append(c)
 
-    if sys.version_info >= (3,0):
-        a = ''.join([chr(c) for c in data])
-    else:
-        a = ''.join([unichr(c) for c in data])
-    
+    a = ''.join([chr(c) for c in data])
     return a
-  
-if __name__ == '__main__':
-    a=read_qstring(open(sys.argv[1], 'rb'))
-    print(a)

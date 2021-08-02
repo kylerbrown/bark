@@ -6,8 +6,11 @@ def data_to_result(header, data, data_present):
     """Moves the header and data (if present) into a common object."""
 
     result = {}
+    result['version'] = header['version']
     result['notes'] = header['notes']
     result['frequency_parameters'] = header['frequency_parameters']
+    if 'reference_channel' in header:
+        result['digital_reference_channel'] = header['reference_channel']
 
     result['t_amplifier'] = data['t_amplifier']
     if header['num_amplifier_channels'] > 0:

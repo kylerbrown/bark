@@ -5,74 +5,56 @@
 
 import numpy as np
 
-NAMES = ['time', 'amp', 'aux', 'supply', 'temp', 'adc', 'digin', 'digout']
+from . import constants as const
 
-TIME_SAMPLES = 60
-AMP_SAMPLES = 60
-AUX_SAMPLES = 15
-SUPPLY_SAMPLES = 1
-TEMP_SAMPLES = 1
-ADC_SAMPLES = 60
-DIGIN_SAMPLES = 60
-DIGOUT_SAMPLES = 60
-ALL_SAMPLES = [TIME_SAMPLES, AMP_SAMPLES, AUX_SAMPLES, SUPPLY_SAMPLES, TEMP_SAMPLES, ADC_SAMPLES, DIGIN_SAMPLES, DIGOUT_SAMPLES]
-
-TIME_DTYPE_NEW = 'i4'
-TIME_DTYPE_OLD = 'u4'
-AMP_DTYPE = 'u2'
-AUX_DTYPE = 'u2'
-SUPPLY_DTYPE = 'u2'
-TEMP_DTYPE = 'u2'
-ADC_DTYPE = 'u2'
-DIGIN_DTYPE = 'u2'
-DIGOUT_DTYPE = 'u2'
-ALL_DTYPES = [TIME_DTYPE_NEW, AMP_DTYPE, AUX_DTYPE, SUPPLY_DTYPE, TEMP_DTYPE, ADC_DTYPE, DIGIN_DTYPE, DIGOUT_DTYPE]
-
-def preallocate_memory(header, num_datablocks):
+def preallocate_memory(header, num_datablocks, digital_io_data_dtype=np.uint):
     """Preallocates space for a chunk of data.
 
     Args:
         header (dict): metadata
         num_datablocks (int): size of chunk in datablocks
+        digital_io_data_dtype (numpy dtype): what dtype the digital I/O data is
+                                             stored as (default: np.uint)
 
     Returns:
         dict of numpy arrays: array sizes and types depend on Intan specs
     """
     data = {}
     if ((header['version']['major'], header['version']['minor']) >= (1, 2)):
-        time_dt = np.int
+        time_dtype = const.TIMESTAMP_DTYPE_GE_V1_2
     else:
-        time_dt = np.uint
-    data['t_amplifier'] = np.zeros(AMP_SAMPLES * num_datablocks, dtype=time_dt)
+        time_dtype = const.TIMESTAMP_DTYPE_LE_V1_1
+    num_samples = header['num_samples_per_data_block']
+    data['t_amplifier'] = np.zeros(num_samples * num_datablocks, dtype=time_dtype)
     data['amplifier_data'] = np.zeros([header['num_amplifier_channels'],
-                                       AMP_SAMPLES * num_datablocks],
-                                      dtype=np.uint16)
+                                       num_samples * num_datablocks],
+                                      dtype=const.AMPLIFIER_DTYPE)
     data['aux_input_data'] = np.zeros([header['num_aux_input_channels'],
-                                       AUX_SAMPLES * num_datablocks],
-                                      dtype=np.uint16)
+                                       (num_samples // 4) * num_datablocks],
+                                      dtype=const.AUXILIARY_DTYPE)
     data['supply_voltage_data'] = np.zeros([header['num_supply_voltage_channels'],
-                                            SUPPLY_SAMPLES * num_datablocks],
-                                           dtype=np.uint16)
+                                            1 * num_datablocks],
+                                           dtype=const.SUPPLY_DTYPE)
     data['temp_sensor_data'] = np.zeros([header['num_temp_sensor_channels'],
-                                         TEMP_SAMPLES * num_datablocks],
-                                        dtype=np.uint16)
+                                         1 * num_datablocks],
+                                        dtype=const.TEMP_DTYPE)
     data['board_adc_data'] = np.zeros([header['num_board_adc_channels'],
-                                       ADC_SAMPLES * num_datablocks],
-                                      dtype=np.uint16)
+                                       num_samples * num_datablocks],
+                                      dtype=const.ADC_DTYPE)
     data['board_dig_in_data'] = np.zeros([header['num_board_dig_in_channels'],
-                                          DIGIN_SAMPLES * num_datablocks],
-                                         dtype=np.uint)
-    data['board_dig_in_raw'] = np.zeros(DIGIN_SAMPLES * num_datablocks,
-                                        dtype=np.uint)
+                                          num_samples * num_datablocks],
+                                         dtype=digital_io_data_dtype)
+    data['board_dig_in_raw'] = np.zeros(num_samples * num_datablocks,
+                                        dtype=const.DIG_IN_DTYPE)
     data['board_dig_out_data'] = np.zeros([header['num_board_dig_out_channels'],
-                                           DIGOUT_SAMPLES * num_datablocks],
-                                          dtype=np.uint)
-    data['board_dig_out_raw'] = np.zeros(DIGOUT_SAMPLES * num_datablocks,
-                                         dtype=np.uint)
+                                           num_samples * num_datablocks],
+                                          dtype=digital_io_data_dtype)
+    data['board_dig_out_raw'] = np.zeros(num_samples * num_datablocks,
+                                         dtype=const.DIG_OUT_DTYPE)
     return data
 
 def read_data_blocks(data, header, fid, datablocks_per_chunk=1):
-    """Reads a number of 60-sample data blocks from fid into data.
+    """Reads a number of data blocks from fid into data.
 
     Args:
         data (dict of numpy arrays): having the same format as the return value
@@ -81,43 +63,117 @@ def read_data_blocks(data, header, fid, datablocks_per_chunk=1):
         fid (file object): file to read from
         datablocks_per_chunk (int): how many datablocks to read in
     """
+    all_names = ['time',
+                 'amp',
+                 'aux',
+                 'supply',
+                 'temp',
+                 'adc',
+                 'digin',
+                 'digout']
+
     # In version 1.2, Intan moved from saving timestamps as unsigned
     # integers to signed integers to accommodate negative (adjusted)
     # timestamps for pretrigger data.
     if ((header['version']['major'], header['version']['minor']) >= (1, 2)):
-        ALL_DTYPES[0] = TIME_DTYPE_NEW
+        time_dtype = const.TIMESTAMP_DTYPE_GE_V1_2
     else:
-        ALL_DTYPES[0] = TIME_DTYPE_OLD
+        time_dtype = const.TIMESTAMP_DTYPE_LE_V1_1
     
-    time_chan = 1
-    amp_chan = header['num_amplifier_channels']
-    aux_chan = header['num_aux_input_channels']
-    supply_chan = header['num_supply_voltage_channels']
-    temp_chan = header['num_temp_sensor_channels']
-    adc_chan = header['num_board_adc_channels']
-    digin_chan = header['num_board_dig_in_channels']
-    digout_chan = header['num_board_dig_out_channels']
-    all_chans = [time_chan, amp_chan, aux_chan, supply_chan, temp_chan, adc_chan, digin_chan, digout_chan]
+    all_dtypes = [time_dtype,
+                  const.AMPLIFIER_DTYPE,
+                  const.AUXILIARY_DTYPE,
+                  const.SUPPLY_DTYPE,
+                  const.TEMP_DTYPE,
+                  const.ADC_DTYPE,
+                  const.DIG_IN_DTYPE,
+                  const.DIG_OUT_DTYPE]
+
+    num_time_chans = 1
+    all_chans = [num_time_chans,
+                 header['num_amplifier_channels'],
+                 header['num_aux_input_channels'],
+                 header['num_supply_voltage_channels'],
+                 header['num_temp_sensor_channels'],
+                 header['num_board_adc_channels'],
+                 header['num_board_dig_in_channels'],
+                 header['num_board_dig_out_channels']]
+
+    num_samples = header['num_samples_per_data_block']
+    all_samples = [num_samples,
+                   num_samples,
+                   num_samples // 4,
+                   1,
+                   1,
+                   num_samples,
+                   num_samples,
+                   num_samples]
     
     # create a structured dtype for one datablock
-    db_dtype = [(name, (dt, (chans * samples))) for name,dt,chans,samples in zip(NAMES, ALL_DTYPES, all_chans, ALL_SAMPLES)]
+    db_dtype = [(name, (dt, chans * samples))
+                for name, dt, chans, samples
+                in zip(all_names, all_dtypes, all_chans, all_samples)]
 
     chunk = np.fromfile(fid, dtype=np.dtype(db_dtype), count=datablocks_per_chunk)
     
-    for idx,db in enumerate(chunk):
-        data['t_amplifier'][(idx * TIME_SAMPLES):((idx + 1) * TIME_SAMPLES)] = db['time']
-        if amp_chan:
-            data['amplifier_data'][range(amp_chan), (idx * AMP_SAMPLES):((idx + 1) * AMP_SAMPLES)] = db['amp'].reshape(amp_chan, AMP_SAMPLES)
-        if aux_chan:
-            data['aux_input_data'][range(aux_chan), (idx * AUX_SAMPLES):((idx + 1) * AUX_SAMPLES)] = db['aux'].reshape(aux_chan, AUX_SAMPLES)
-        if supply_chan:
-            data['supply_voltage_data'][range(supply_chan), (idx * SUPPLY_SAMPLES):((idx + 1) * SUPPLY_SAMPLES)] = db['supply'].reshape(supply_chan, SUPPLY_SAMPLES)
-        if temp_chan:
-            data['temp_sensor_data'][range(temp_chan), (idx * TEMP_SAMPLES):((idx + 1) * TEMP_SAMPLES)] = db['temp'].reshape(temp_chan, TEMP_SAMPLES)
-        if adc_chan:
-            data['board_adc_data'][range(adc_chan), (idx * ADC_SAMPLES):((idx + 1) * ADC_SAMPLES)] = db['adc'].reshape(adc_chan, ADC_SAMPLES)
-        if digin_chan:
-            data['board_dig_in_raw'][(idx * DIGIN_SAMPLES):((idx + 1) * DIGIN_SAMPLES)] = db['digin'].reshape(digin_chan, DIGIN_SAMPLES)
-        if digout_chan:
-            data['board_dig_out_raw'][(idx * DIGOUT_SAMPLES):((idx + 1) * DIGOUT_SAMPLES)] = db['digout'].reshape(digout_chan, DIGOUT_SAMPLES)
+    for idx, db in enumerate(chunk):
 
+        # Timebase
+        start = idx * num_samples
+        stop = (idx + 1) * num_samples
+        data['t_amplifier'][start:stop] = db['time']
+
+        # Amplifier channels
+        if header['num_amplifier_channels']:
+            start = idx * num_samples
+            stop = (idx + 1) * num_samples
+            values = db['amp'].reshape(header['num_amplifier_channels'],
+                                       num_samples)
+            data['amplifier_data'][:,start:stop] = values
+
+        # Auxiliary channels
+        if header['num_aux_input_channels']:
+            start = idx * (num_samples // 4)
+            stop = (idx + 1) * (num_samples // 4)
+            values = db['aux'].reshape(header['num_aux_input_channels'],
+                                       num_samples // 4)
+            data['aux_input_data'][:,start:stop] = values
+
+        # Supply voltage channels
+        if header['num_supply_voltage_channels'] > 0:
+            start = idx * 1
+            stop = (idx + 1) * 1
+            values = db['supply'].reshape(header['num_supply_voltage_channels'],
+                                          1)
+            data['supply_voltage_data'][:,start:stop] = values
+
+        # Temperature sensor channels
+        if header['num_temp_sensor_channels'] > 0:
+            start = idx * 1
+            stop = (idx + 1) * 1
+            values = db['temp'].reshape(header['num_temp_sensor_channels'], 1)
+            data['temp_sensor_data'][:,start:stop] = values
+
+        # Board ADC channels
+        if header['num_board_adc_channels'] > 0:
+            start = idx * num_samples
+            stop = (idx + 1) * num_samples
+            values = db['adc'].reshape(header['num_board_adc_channels'],
+                                       num_samples)
+            data['board_adc_data'][:,start:stop] = values
+
+        # Board digital input channels (packed together)
+        if header['num_board_dig_in_channels'] > 0:
+            start = idx * num_samples
+            stop = (idx + 1) * num_samples
+            values = db['digin'].reshape(header['num_board_dig_in_channels'],
+                                         num_samples)
+            data['board_dig_in_raw'][start:stop] = values
+
+        # Board digital output channels (packed together)
+        if header['num_board_dig_out_channels'] > 0:
+            start = idx * num_samples
+            stop = (idx + 1) * num_samples
+            values = db['digout'].reshape(header['num_board_dig_out_channels'],
+                                          num_samples)
+            data['board_dig_out_raw'][start:stop] = values
