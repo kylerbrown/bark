@@ -8,10 +8,10 @@ import numpy as np
 
 eq = np.allclose
 
-data1 = np.arange(30).reshape(10, 3)
-data2 = np.arange(500).reshape(100, 5)
-data3 = np.arange(1000).reshape(500, 2)
-data4 = np.arange(11111).reshape(-1, 1)
+data1 = np.arange(1, 31).reshape(10, 3)
+data2 = np.arange(1, 501).reshape(100, 5)
+data3 = np.arange(1, 1001).reshape(500, 2)
+data4 = np.arange(1, 11112).reshape(-1, 1)
 def dummyf(x): return x
 
 

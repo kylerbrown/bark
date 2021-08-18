@@ -13,9 +13,9 @@ def array_iterator(data, chunksize):
         try:
             result = data[index:index + chunksize]
         except IndexError:
-            raise StopIteration
+            return
         if result.shape[0] == 0:
-            raise StopIteration
+            return
         yield result
         index += chunksize
 

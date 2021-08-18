@@ -6,14 +6,17 @@ def data_to_result(header, data, data_present):
     """Moves the header and data (if present) into a common object."""
 
     result = {}
+    result['version'] = header['version']
     result['notes'] = header['notes']
     result['frequency_parameters'] = header['frequency_parameters']
+    if 'reference_channel' in header:
+        result['digital_reference_channel'] = header['reference_channel']
 
+    result['t_amplifier'] = data['t_amplifier']
     if header['num_amplifier_channels'] > 0:
         result['amplifier_channels'] = header['amplifier_channels']
         if data_present:
             result['amplifier_data'] = data['amplifier_data']
-            result['t_amplifier'] = data['t_amplifier']
             result['spike_triggers'] = header['spike_triggers']
 
     if header['num_aux_input_channels'] > 0:
