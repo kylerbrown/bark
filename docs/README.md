@@ -57,7 +57,7 @@ This repository contains:
 
 ## Installation
 
-The python interface requires Python 3.5+. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
+The python interface runs under Python 3.5 through 3.8. Installation with [Conda](http://conda.pydata.org/miniconda.html) is recommended.
 
     git clone https://github.com/margoliashlab/bark
     cd bark
